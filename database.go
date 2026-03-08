@@ -48,3 +48,12 @@ func SaveRecipe(db *sql.DB, r Recipe) error {
 	_, err := db.Exec(query, r.SourceFile, r.Title, tags, ingreds, instruc, r.Notes)
 	return err
 }
+
+func GetRecipeCount(db *sql.DB) int {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM recipes").Scan(&count)
+	if err != nil {
+		return 0
+	}
+	return count
+}

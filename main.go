@@ -1,86 +1,92 @@
 package main
 
 import (
+	"bufio"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
 func main() {
-	// 1. Configuration
 	inputDir := "recipes_to_import"
 	outputDir := "Printables"
 	dbFile := "recipes.db"
 
-	// 2. Ensure folders exist
+	// These functions must be defined below or in another file
 	ensureDirExists(inputDir)
 	ensureDirExists(outputDir)
 
-	// 3. Connect to the Database
 	db, err := InitDB(dbFile)
 	if err != nil {
-		log.Fatalf("Critical: Could not initialize database: %v", err)
+		log.Fatalf("Critical: %v", err)
 	}
 	defer db.Close()
 
-	// 4. Read the input folder
-	files, err := os.ReadDir(inputDir)
-	if err != nil {
-		log.Fatalf("Critical: Could not read folder %s: %v", inputDir, err)
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		clearScreen()
+		count := GetRecipeCount(db)
+
+		fmt.Println("########################################################")
+		fmt.Println("#             GOURMET RECIPE TRACKER v2.1              #")
+		fmt.Printf("#          Library Size: %d Recipes Saved               #\n", count)
+		fmt.Println("########################################################")
+		fmt.Println("#                                                      #")
+		fmt.Println("#  [1] SYNC: Standard (Full Page)                      #")
+		fmt.Println("#  [2] SYNC: Booklet (Half-Page / Book Size)           #")
+		fmt.Println("#  [3] OPEN: View 'Printables' Folder                  #")
+		fmt.Println("#  [4] CLEAN: Re-create Template.txt                   #")
+		fmt.Println("#                                                      #")
+		fmt.Println("#  [Q] QUIT                                            #")
+		fmt.Println("########################################################")
+		fmt.Print("\n > Selection: ")
+
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(strings.ToUpper(input))
+
+		switch input {
+		case "1":
+			runFullSync(db, inputDir, false)
+			pause(reader)
+		case "2":
+			runFullSync(db, inputDir, true)
+			pause(reader)
+		case "3":
+			openFolder(outputDir)
+		case "4":
+			setupTemplateFile(filepath.Join(inputDir, "Template.txt"))
+			fmt.Println("\nTemplate refreshed!")
+			pause(reader)
+		case "Q":
+			return
+		}
 	}
+}
 
-	fmt.Println("========================================")
-	fmt.Println("   RECIPE TRACKER: ACTIVE SYNC          ")
-	fmt.Println("========================================")
-
-	successCount := 0
-	errorCount := 0
+func runFullSync(db *sql.DB, inputDir string, isBooklet bool) {
+	fmt.Printf("\nGenerating PDFs (Booklet Mode: %v)...\n", isBooklet)
+	files, _ := os.ReadDir(inputDir)
 
 	for _, file := range files {
-		// Only process .txt files
 		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".txt") {
-
-			// --- THE IGNORE RULE ---
-			// If the filename is Template.txt (case-insensitive), we skip it
 			if strings.EqualFold(file.Name(), "Template.txt") {
 				continue
 			}
-
-			fullPath := filepath.Join(inputDir, file.Name())
-
-			recipe, err := ParseFile(fullPath)
-			if err != nil {
-				fmt.Printf("[FAIL] Could not read %s: %v\n", file.Name(), err)
-				errorCount++
-				continue
-			}
-
-			err = SaveRecipe(db, recipe)
-			if err != nil {
-				fmt.Printf("[FAIL] Database error for %s: %v\n", recipe.Title, err)
-				errorCount++
-				continue
-			}
-
-			err = ExportToPDF(recipe)
-			if err != nil {
-				fmt.Printf("[FAIL] PDF error for %s: %v\n", recipe.Title, err)
-				errorCount++
-				continue
-			}
-
-			fmt.Printf("[OK] Synced: %s\n", recipe.Title)
-			successCount++
+			recipe, _ := ParseFile(filepath.Join(inputDir, file.Name()))
+			SaveRecipe(db, recipe)
+			ExportToPDF(recipe, isBooklet)
+			fmt.Printf("[OK] %s\n", recipe.Title)
 		}
 	}
-
-	fmt.Println("========================================")
-	fmt.Printf("Sync Complete: %d Updated, %d Failed.\n", successCount, errorCount)
-	fmt.Println("========================================")
 }
 
+// FIX: Added the missing ensureDirExists function
 func ensureDirExists(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err := os.Mkdir(path, 0755)
@@ -88,4 +94,46 @@ func ensureDirExists(path string) {
 			log.Fatalf("Could not create folder %s: %v", path, err)
 		}
 	}
+}
+
+func pause(reader *bufio.Reader) {
+	fmt.Println("\nPress Enter to continue...")
+	reader.ReadString('\n')
+}
+
+func clearScreen() {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cls")
+	} else {
+		cmd = exec.Command("clear")
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+}
+
+func openFolder(path string) {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("explorer", path)
+	} else if runtime.GOOS == "darwin" {
+		cmd = exec.Command("open", path)
+	}
+	if cmd != nil {
+		cmd.Run()
+	}
+}
+
+func setupTemplateFile(path string) {
+	content := `RECIPE: 
+TAGS: 
+
+--- INGREDIENTS ---
+- 
+
+--- INSTRUCTIONS ---
+1. 
+
+NOTES: `
+	_ = os.WriteFile(path, []byte(content), 0644)
 }
