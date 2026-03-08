@@ -1,0 +1,14 @@
+# Executables
+*.exe
+RecipeTracker
+
+# Local Database
+recipes.db
+
+# Output Folders
+Printables/
+recipes_to_import/
+
+# OS specific
+.DS_Store
+Thumbs.db
