@@ -63,8 +63,9 @@ func ExportMasterCookbook(recipes []Recipe, isBooklet bool) error {
 	}
 	pdf.SetTextColor(0, 0, 0)
 
-	// 3. Add Recipe Pages
+	// 3. Add Recipe Pages - FIX: Ensure AddPage is inside the loop
 	for _, r := range recipes {
+		pdf.AddPage() // Forces each recipe to start on a fresh sheet
 		pdf.SetLink(links[r.Title], 0, -1)
 		drawRecipePage(pdf, r, isBooklet, tr)
 	}
@@ -93,8 +94,9 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 		pdf.SetFont("Arial", "I", 8)
 		pdf.CellFormat(0, 0.4, tr(fmt.Sprintf("Page %d", pdf.PageNo())), "", 0, "C", false, 0, "")
 	})
-	pdf.AddPage()
+	pdf.AddPage() // Start the first page
 	drawRecipePage(pdf, r, isBooklet, tr)
+
 	suffix := ""
 	if isBooklet {
 		suffix = "_Booklet"
@@ -103,26 +105,36 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 }
 
 func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) string) {
+	// Standard Letter defaults
 	startX, titleSize, rowH, sidebarW, contentW, gutter := 1.0, 32.0, 0.5, 2.2, 4.5, 0.3
 	accentW, bodySize, headerSize := 0.4, 11.0, 13.0
+
 	if isBooklet {
 		startX, titleSize, rowH, sidebarW, contentW, gutter = 0.75, 20.0, 0.35, 1.4, 2.6, 0.2
 		accentW, bodySize, headerSize = 0.2, 9.0, 11.0
 	}
 
+	// 1. Accent Bar
 	pdf.SetFillColor(60, 60, 60)
 	pdf.Rect(0, 0, accentW, 12, "F")
+
+	// 2. Title Header
 	pdf.SetX(startX)
 	pdf.SetFont("Times", "B", titleSize)
 	pdf.SetTextColor(40, 40, 40)
 	pdf.MultiCell(0, rowH, tr(r.Title), "", "L", false)
+
+	// 3. Tags
 	pdf.SetX(startX)
 	pdf.SetFont("Arial", "I", bodySize-1)
 	pdf.SetTextColor(100, 100, 100)
 	pdf.CellFormat(0, 0.2, tr(strings.Join(r.Tags, "  •  ")), "", 1, "L", false, 0, "")
 	pdf.Ln(0.2)
 
+	// Save the Y position after the header so columns align
 	colY := pdf.GetY()
+
+	// 4. Left Column: Ingredients
 	pdf.SetX(startX)
 	pdf.SetFont("Arial", "B", headerSize)
 	pdf.SetTextColor(80, 20, 20)
@@ -136,16 +148,19 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) 
 		pdf.Ln(0.05)
 	}
 
-	pdf.SetY(colY)
-	pdf.SetX(startX + sidebarW + gutter)
+	// 5. Right Column: Preparation
+	pdf.SetY(colY) // Reset height to match Ingredients header
+	mainColX := startX + sidebarW + gutter
+	pdf.SetX(mainColX)
 	pdf.SetFont("Arial", "B", headerSize)
 	pdf.SetTextColor(80, 20, 20)
 	pdf.Cell(contentW, 0.35, tr("PREPARATION"))
 	pdf.Ln(0.35)
+
 	pdf.SetFont("Times", "", bodySize+1)
 	pdf.SetTextColor(30, 30, 30)
 	for i, step := range r.Instructions {
-		pdf.SetX(startX + sidebarW + gutter)
+		pdf.SetX(mainColX)
 		pdf.SetFont("Times", "B", bodySize+1)
 		pdf.Cell(0.25, 0.25, fmt.Sprintf("%d. ", i+1))
 		pdf.SetFont("Times", "", bodySize+1)
@@ -153,9 +168,10 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) 
 		pdf.Ln(0.12)
 	}
 
+	// 6. Notes
 	if r.Notes != "" {
 		pdf.Ln(0.2)
-		pdf.SetX(startX + sidebarW + gutter)
+		pdf.SetX(mainColX)
 		pdf.SetFillColor(255, 255, 240)
 		pdf.SetFont("Arial", "I", bodySize)
 		pdf.MultiCell(contentW, 0.22, tr("Cook's Note: "+r.Notes), "L", "L", true)
