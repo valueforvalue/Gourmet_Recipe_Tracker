@@ -13,15 +13,13 @@ func InitDB(filepath string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	// We make source_file the UNIQUE key now
 	query := `
 	CREATE TABLE IF NOT EXISTS recipes (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		source_file TEXT UNIQUE, 
-		title TEXT,
-		tags TEXT,
+		title TEXT UNIQUE,
 		ingredients TEXT,
 		instructions TEXT,
+		tags TEXT,
 		notes TEXT
 	);`
 
@@ -30,22 +28,20 @@ func InitDB(filepath string) (*sql.DB, error) {
 }
 
 func SaveRecipe(db *sql.DB, r Recipe) error {
-	ingreds := strings.Join(r.Ingredients, "|")
-	instruc := strings.Join(r.Instructions, "|")
-	tags := strings.Join(r.Tags, ",")
+	ingStr := strings.Join(r.Ingredients, "|")
+	insStr := strings.Join(r.Instructions, "|")
+	tagStr := strings.Join(r.Tags, ",")
 
-	// This logic says: "If the filename is the same, just update the details."
 	query := `
-	INSERT INTO recipes (source_file, title, tags, ingredients, instructions, notes) 
-	VALUES (?, ?, ?, ?, ?, ?)
-	ON CONFLICT(source_file) DO UPDATE SET
-		title=excluded.title,
-		tags=excluded.tags,
+	INSERT INTO recipes (title, ingredients, instructions, tags, notes)
+	VALUES (?, ?, ?, ?, ?)
+	ON CONFLICT(title) DO UPDATE SET
 		ingredients=excluded.ingredients,
 		instructions=excluded.instructions,
+		tags=excluded.tags,
 		notes=excluded.notes;`
 
-	_, err := db.Exec(query, r.SourceFile, r.Title, tags, ingreds, instruc, r.Notes)
+	_, err := db.Exec(query, r.Title, ingStr, insStr, tagStr, r.Notes)
 	return err
 }
 
@@ -56,4 +52,27 @@ func GetRecipeCount(db *sql.DB) int {
 		return 0
 	}
 	return count
+}
+
+// New function to fetch everything for the Master Cookbook
+func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
+	rows, err := db.Query("SELECT title, ingredients, instructions, tags, notes FROM recipes ORDER BY title ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var recipes []Recipe
+	for rows.Next() {
+		var r Recipe
+		var ingStr, insStr, tagStr string
+		err := rows.Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes)
+		if err == nil {
+			r.Ingredients = strings.Split(ingStr, "|")
+			r.Instructions = strings.Split(insStr, "|")
+			r.Tags = strings.Split(tagStr, ",")
+			recipes = append(recipes, r)
+		}
+	}
+	return recipes, nil
 }

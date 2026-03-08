@@ -17,7 +17,6 @@ func main() {
 	outputDir := "Printables"
 	dbFile := "recipes.db"
 
-	// These functions must be defined below or in another file
 	ensureDirExists(inputDir)
 	ensureDirExists(outputDir)
 
@@ -34,14 +33,15 @@ func main() {
 		count := GetRecipeCount(db)
 
 		fmt.Println("########################################################")
-		fmt.Println("#             GOURMET RECIPE TRACKER v2.1              #")
+		fmt.Println("#             GOURMET RECIPE TRACKER v2.2              #")
 		fmt.Printf("#          Library Size: %d Recipes Saved               #\n", count)
 		fmt.Println("########################################################")
 		fmt.Println("#                                                      #")
-		fmt.Println("#  [1] SYNC: Standard (Full Page)                      #")
-		fmt.Println("#  [2] SYNC: Booklet (Half-Page / Book Size)           #")
+		fmt.Println("#  [1] SYNC: Standard (Letter Size)                    #")
+		fmt.Println("#  [2] SYNC: Booklet (Half-Letter Size)                #")
 		fmt.Println("#  [3] OPEN: View 'Printables' Folder                  #")
-		fmt.Println("#  [4] CLEAN: Re-create Template.txt                   #")
+		fmt.Println("#  [4] MASTER: Export Full Cookbook (Booklet)          #")
+		fmt.Println("#  [5] CLEAN: Re-create Template.txt                   #")
 		fmt.Println("#                                                      #")
 		fmt.Println("#  [Q] QUIT                                            #")
 		fmt.Println("########################################################")
@@ -60,6 +60,16 @@ func main() {
 		case "3":
 			openFolder(outputDir)
 		case "4":
+			recipes, err := GetAllRecipes(db)
+			if err != nil || len(recipes) == 0 {
+				fmt.Println("\nNo recipes found in database to export!")
+			} else {
+				fmt.Println("\nGenerating Master Cookbook...")
+				ExportMasterCookbook(recipes)
+				fmt.Println("Done! Saved as 'Master_Cookbook.pdf'")
+			}
+			pause(reader)
+		case "5":
 			setupTemplateFile(filepath.Join(inputDir, "Template.txt"))
 			fmt.Println("\nTemplate refreshed!")
 			pause(reader)
@@ -86,13 +96,9 @@ func runFullSync(db *sql.DB, inputDir string, isBooklet bool) {
 	}
 }
 
-// FIX: Added the missing ensureDirExists function
 func ensureDirExists(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.Mkdir(path, 0755)
-		if err != nil {
-			log.Fatalf("Could not create folder %s: %v", path, err)
-		}
+		os.Mkdir(path, 0755)
 	}
 }
 
