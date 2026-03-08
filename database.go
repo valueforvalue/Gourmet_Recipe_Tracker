@@ -54,7 +54,6 @@ func GetRecipeCount(db *sql.DB) int {
 	return count
 }
 
-// New function to fetch everything for the Master Cookbook
 func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 	rows, err := db.Query("SELECT title, ingredients, instructions, tags, notes FROM recipes ORDER BY title ASC")
 	if err != nil {
@@ -72,7 +71,23 @@ func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 			r.Instructions = strings.Split(insStr, "|")
 			r.Tags = strings.Split(tagStr, ",")
 			recipes = append(recipes, r)
+			recipes[len(recipes)-1].Title = strings.TrimSpace(r.Title)
 		}
 	}
 	return recipes, nil
+}
+
+// Added for the Selection Config logic
+func GetRecipeByTitle(db *sql.DB, title string) (Recipe, error) {
+	var r Recipe
+	var ingStr, insStr, tagStr string
+	query := "SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE title = ?"
+	err := db.QueryRow(query, title).Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes)
+	if err != nil {
+		return r, err
+	}
+	r.Ingredients = strings.Split(ingStr, "|")
+	r.Instructions = strings.Split(insStr, "|")
+	r.Tags = strings.Split(tagStr, ",")
+	return r, nil
 }

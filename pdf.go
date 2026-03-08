@@ -8,20 +8,21 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// ExportMasterCookbook generates one PDF containing all recipes with a Table of Contents
-func ExportMasterCookbook(recipes []Recipe) error {
+func ExportMasterCookbook(recipes []Recipe, isBooklet bool) error {
 	outputDir := "Printables"
-	pdf := gofpdf.NewCustom(&gofpdf.InitType{
-		UnitStr: "in",
-		Size:    gofpdf.SizeType{Wd: 5.5, Ht: 8.5},
-	})
+	var pdf *gofpdf.Fpdf
 
-	// Set 0.75" Left margin for binding/punching holes
-	pdf.SetMargins(0.75, 0.5, 0.5)
+	if isBooklet {
+		pdf = gofpdf.NewCustom(&gofpdf.InitType{UnitStr: "in", Size: gofpdf.SizeType{Wd: 5.5, Ht: 8.5}})
+		pdf.SetMargins(0.75, 0.5, 0.5)
+	} else {
+		pdf = gofpdf.New("P", "in", "Letter", "")
+		pdf.SetMargins(0.75, 0.75, 0.75)
+	}
+
 	pdf.SetAutoPageBreak(true, 0.75)
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
-	// 1. Footer with Page Numbers
 	pdf.SetFooterFunc(func() {
 		pdf.SetY(-0.5)
 		pdf.SetFont("Arial", "I", 8)
@@ -29,52 +30,71 @@ func ExportMasterCookbook(recipes []Recipe) error {
 		pdf.CellFormat(0, 0.4, tr(fmt.Sprintf("Page %d", pdf.PageNo())), "", 0, "C", false, 0, "")
 	})
 
+	// 1. Create Internal Links
+	links := make(map[string]int)
+	for _, r := range recipes {
+		links[r.Title] = pdf.AddLink()
+	}
+
 	// 2. Table of Contents
 	pdf.AddPage()
-	pdf.SetFont("Times", "B", 24)
-	pdf.CellFormat(0, 1, tr("Our Family Cookbook"), "", 1, "C", false, 0, "")
-	pdf.Ln(0.5)
-	pdf.SetFont("Arial", "B", 12)
+	titleFS, tocHeaderFS, tocItemFS := 30.0, 14.0, 12.0
+	if isBooklet {
+		titleFS, tocHeaderFS, tocItemFS = 20.0, 11.0, 9.0
+	}
+
+	pdf.SetFont("Times", "B", titleFS)
+	pdf.CellFormat(0, 1.0, tr("Family Recipe Collection"), "", 1, "C", false, 0, "")
+	pdf.Ln(0.2)
+	pdf.SetFont("Arial", "B", tocHeaderFS)
+	pdf.SetTextColor(80, 20, 20)
 	pdf.Cell(0, 0.4, tr("Table of Contents"))
-	pdf.Ln(0.4)
-	pdf.SetFont("Arial", "", 10)
+	pdf.Ln(0.3)
 
-	// Create the TOC entries
+	pdf.SetFont("Arial", "", tocItemFS)
+	pdf.SetTextColor(0, 0, 255)
 	for _, r := range recipes {
-		pdf.CellFormat(0, 0.25, tr(r.Title), "B", 1, "L", false, 0, "")
+		pdf.WriteLinkID(0.3, tr("• "+r.Title), links[r.Title])
+		if isBooklet {
+			pdf.Ln(0.25)
+		} else {
+			pdf.Ln(0.3)
+		}
+	}
+	pdf.SetTextColor(0, 0, 0)
+
+	// 3. Add Recipe Pages
+	for _, r := range recipes {
+		pdf.SetLink(links[r.Title], 0, -1)
+		drawRecipePage(pdf, r, isBooklet, tr)
 	}
 
-	// 3. Add each recipe
-	for _, r := range recipes {
-		addRecipeToPDF(pdf, r, true, tr)
+	fileName := "Master_Cookbook_Full.pdf"
+	if isBooklet {
+		fileName = "Master_Cookbook_Booklet.pdf"
 	}
-
-	return pdf.OutputFileAndClose(filepath.Join(outputDir, "Master_Cookbook.pdf"))
+	return pdf.OutputFileAndClose(filepath.Join(outputDir, fileName))
 }
 
-// ExportToPDF remains for single file exports
 func ExportToPDF(r Recipe, isBooklet bool) error {
 	outputDir := "Printables"
 	var pdf *gofpdf.Fpdf
 	if isBooklet {
 		pdf = gofpdf.NewCustom(&gofpdf.InitType{UnitStr: "in", Size: gofpdf.SizeType{Wd: 5.5, Ht: 8.5}})
 		pdf.SetMargins(0.75, 0.5, 0.5)
-		pdf.SetAutoPageBreak(true, 0.75)
 	} else {
 		pdf = gofpdf.New("P", "in", "Letter", "")
 		pdf.SetMargins(0.75, 0.75, 0.75)
-		pdf.SetAutoPageBreak(true, 0.75)
 	}
-
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	pdf.SetAutoPageBreak(true, 0.75)
 	pdf.SetFooterFunc(func() {
 		pdf.SetY(-0.5)
 		pdf.SetFont("Arial", "I", 8)
 		pdf.CellFormat(0, 0.4, tr(fmt.Sprintf("Page %d", pdf.PageNo())), "", 0, "C", false, 0, "")
 	})
-
-	addRecipeToPDF(pdf, r, isBooklet, tr)
-
+	pdf.AddPage()
+	drawRecipePage(pdf, r, isBooklet, tr)
 	suffix := ""
 	if isBooklet {
 		suffix = "_Booklet"
@@ -82,43 +102,20 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 	return pdf.OutputFileAndClose(filepath.Join(outputDir, r.Title+suffix+".pdf"))
 }
 
-// Shared logic for drawing the actual recipe content
-func addRecipeToPDF(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) string) {
-	pdf.AddPage()
-
-	// Constants - Initialized with Standard Letter defaults
-	startX := 1.0
-	titleSize := 32.0
-	bodySize := 11.0
-	headerSize := 13.0
-	accentWidth := 0.4
-	rowH := 0.5
-	sidebarW := 2.2
-	contentW := 4.5
-	gutter := 0.3
-
-	// Override if Booklet mode
+func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) string) {
+	startX, titleSize, rowH, sidebarW, contentW, gutter := 1.0, 32.0, 0.5, 2.2, 4.5, 0.3
+	accentW, bodySize, headerSize := 0.4, 11.0, 13.0
 	if isBooklet {
-		startX = 0.75
-		titleSize = 20.0
-		bodySize = 9.0
-		headerSize = 11.0
-		accentWidth = 0.2
-		rowH = 0.35
-		sidebarW = 1.4
-		contentW = 2.6
+		startX, titleSize, rowH, sidebarW, contentW, gutter = 0.75, 20.0, 0.35, 1.4, 2.6, 0.2
+		accentW, bodySize, headerSize = 0.2, 9.0, 11.0
 	}
 
-	// Accent Bar
 	pdf.SetFillColor(60, 60, 60)
-	pdf.Rect(0, 0, accentWidth, 11, "F")
-
-	// Header
+	pdf.Rect(0, 0, accentW, 12, "F")
 	pdf.SetX(startX)
 	pdf.SetFont("Times", "B", titleSize)
 	pdf.SetTextColor(40, 40, 40)
 	pdf.MultiCell(0, rowH, tr(r.Title), "", "L", false)
-
 	pdf.SetX(startX)
 	pdf.SetFont("Arial", "I", bodySize-1)
 	pdf.SetTextColor(100, 100, 100)
@@ -126,8 +123,6 @@ func addRecipeToPDF(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) 
 	pdf.Ln(0.2)
 
 	colY := pdf.GetY()
-
-	// Ingredients
 	pdf.SetX(startX)
 	pdf.SetFont("Arial", "B", headerSize)
 	pdf.SetTextColor(80, 20, 20)
@@ -137,11 +132,10 @@ func addRecipeToPDF(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) 
 	pdf.SetTextColor(0, 0, 0)
 	for _, ing := range r.Ingredients {
 		pdf.SetX(startX)
-		pdf.MultiCell(sidebarW, 0.2, tr("• "+ing), "", "L", false)
+		pdf.MultiCell(sidebarW, 0.22, tr("• "+ing), "", "L", false)
 		pdf.Ln(0.05)
 	}
 
-	// Preparation
 	pdf.SetY(colY)
 	pdf.SetX(startX + sidebarW + gutter)
 	pdf.SetFont("Arial", "B", headerSize)
@@ -159,12 +153,11 @@ func addRecipeToPDF(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) 
 		pdf.Ln(0.12)
 	}
 
-	// Notes
 	if r.Notes != "" {
 		pdf.Ln(0.2)
 		pdf.SetX(startX + sidebarW + gutter)
 		pdf.SetFillColor(255, 255, 240)
 		pdf.SetFont("Arial", "I", bodySize)
-		pdf.MultiCell(contentW, 0.2, tr("Cook's Note: "+r.Notes), "L", "L", true)
+		pdf.MultiCell(contentW, 0.22, tr("Cook's Note: "+r.Notes), "L", "L", true)
 	}
 }
