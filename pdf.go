@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -13,14 +15,12 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 	var pdf *gofpdf.Fpdf
 
 	if isBooklet {
-		// Half-Letter / Booklet Size (5.5 x 8.5)
 		pdf = gofpdf.NewCustom(&gofpdf.InitType{
 			UnitStr: "in",
 			Size:    gofpdf.SizeType{Wd: 5.5, Ht: 8.5},
 		})
 		pdf.SetMargins(0.5, 0.5, 0.5)
 	} else {
-		// Standard US Letter (8.5 x 11)
 		pdf = gofpdf.New("P", "in", "Letter", "")
 		pdf.SetMargins(0.75, 0.75, 0.75)
 	}
@@ -28,7 +28,6 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	pdf.SetAutoPageBreak(true, 0.75)
 
-	// Footer: Page Numbering
 	pdf.SetFooterFunc(func() {
 		pdf.SetY(-0.5)
 		pdf.SetFont("Arial", "I", 8)
@@ -38,7 +37,6 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 	pdf.AddPage()
 	drawRecipePage(pdf, r, isBooklet, tr)
 
-	// SYNCED FILENAME LOGIC: Matches main.go exactly
 	suffix := "_Letter.pdf"
 	if isBooklet {
 		suffix = "_Booklet.pdf"
@@ -89,10 +87,9 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) 
 	// Tags
 	pdf.SetFont("Arial", "I", 10)
 	pdf.SetTextColor(100, 100, 100)
-	pdf.CellFormat(0, 0.3, tr(fmt.Sprintf("Tags: %v", r.Tags)), "", 1, "L", false, 0, "")
+	pdf.CellFormat(0, 0.3, tr(fmt.Sprintf("Tags: %v", strings.Join(r.Tags, ", "))), "", 1, "L", false, 0, "")
 	pdf.Ln(0.2)
 
-	// Reset Text Color
 	pdf.SetTextColor(0, 0, 0)
 
 	// Ingredients Section
@@ -105,13 +102,20 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) 
 	}
 	pdf.Ln(0.3)
 
-	// Instructions Section
+	// Instructions Section (With Number Scrubbing)
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(0, 0.3, tr("Instructions"))
 	pdf.Ln(0.3)
 	pdf.SetFont("Arial", "", 11)
+
+	// This Regex looks for leading digits followed by a period or closing parenthesis and a space
+	re := regexp.MustCompile(`^\d+[\.\)]\s*`)
+
 	for i, step := range r.Instructions {
-		pdf.MultiCell(0, 0.2, tr(fmt.Sprintf("%d. %s", i+1, step)), "", "L", false)
+		// Clean the step by removing existing numbers if they exist
+		cleanStep := re.ReplaceAllString(strings.TrimSpace(step), "")
+
+		pdf.MultiCell(0, 0.2, tr(fmt.Sprintf("%d. %s", i+1, cleanStep)), "", "L", false)
 		pdf.Ln(0.1)
 	}
 

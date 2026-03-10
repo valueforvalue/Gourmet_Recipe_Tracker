@@ -7,6 +7,7 @@ import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode
 import Json.Encode as Encode
+import Regex
 
 
 
@@ -168,18 +169,12 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ style "background-color" "#FDF5E6", style "min-height" "100vh", style "font-family" "serif" ]
-        [ -- Fixed Navigation Bar with Balanced Centering
-          div [ style "background" "#6B705C", style "padding" "10px", style "display" "flex", style "align-items" "center", style "position" "sticky", style "top" "0", style "z-index" "10", style "box-shadow" "0 2px 5px rgba(0,0,0,0.2)" ]
-            [ -- Left Placeholder (to balance the right text)
-              div [ style "flex" "1" ] []
-
-            -- Center Section (Buttons)
+        [ div [ style "background" "#6B705C", style "padding" "10px", style "display" "flex", style "align-items" "center", style "position" "sticky", style "top" "0", style "z-index" "10", style "box-shadow" "0 2px 5px rgba(0,0,0,0.2)" ]
+            [ div [ style "flex" "1" ] []
             , div [ style "display" "flex", style "gap" "20px" ]
                 [ button (onClick (SetView EntryView) :: navStyle) [ text "Add" ]
                 , button (onClick (SetView ListView) :: navStyle) [ text "Recipe Box" ]
                 ]
-
-            -- Right Section (Branding)
             , div [ style "flex" "1", style "text-align" "right", style "padding-right" "15px" ]
                 [ span [ style "color" "#fff", style "font-style" "italic", style "font-size" "14px", style "opacity" "0.8" ] [ text "Morris Family" ] ]
             ]
@@ -293,7 +288,7 @@ viewReader recipe =
             (List.map (\ing -> li [] [ text ing ]) recipe.ingredients)
         , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px", style "margin-top" "30px" ] [ text "Instructions" ]
         , ol [ style "line-height" "1.6", style "font-size" "18px" ]
-            (List.map (\inst -> li [ style "margin-bottom" "15px" ] [ text inst ]) recipe.instructions)
+            (List.map (\inst -> li [ style "margin-bottom" "15px" ] [ text (cleanInstruction inst) ]) recipe.instructions)
         , if String.isEmpty recipe.notes then
             text ""
 
@@ -311,6 +306,20 @@ viewReader recipe =
             ]
         , button [ onClick (SetView ListView), style "margin-top" "20px", style "width" "100%", style "padding" "15px", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Done Reading" ]
         ]
+
+
+
+-- Helper to remove leading numbers from instructions (e.g. "1. Mix" -> "Mix")
+
+
+cleanInstruction : String -> String
+cleanInstruction inst =
+    let
+        userRegex =
+            Regex.fromString "^\\d+[\\.\\)]\\s*"
+                |> Maybe.withDefault Regex.never
+    in
+    Regex.replace userRegex (\_ -> "") (String.trim inst)
 
 
 renderTextWithLinks : String -> List (Html Msg)
