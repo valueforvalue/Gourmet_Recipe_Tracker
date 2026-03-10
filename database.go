@@ -14,7 +14,6 @@ func InitDB(filepath string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	query := `
 	CREATE TABLE IF NOT EXISTS recipes (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,7 +24,6 @@ func InitDB(filepath string) (*sql.DB, error) {
 		notes TEXT,
 		is_deleted BOOLEAN DEFAULT 0
 	);`
-
 	_, err = db.Exec(query)
 	return db, err
 }
@@ -49,7 +47,6 @@ func SaveRecipe(db *sql.DB, r Recipe) error {
 	if err != nil {
 		return err
 	}
-
 	return SyncSidecar(r)
 }
 
@@ -87,6 +84,11 @@ func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 		}
 	}
 	return recipes, nil
+}
+
+func DeleteRecipe(db *sql.DB, title string) error {
+	_, err := db.Exec("UPDATE recipes SET is_deleted = 1 WHERE title = ?", title)
+	return err
 }
 
 func SyncSidecar(r Recipe) error {

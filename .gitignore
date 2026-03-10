@@ -1,15 +1,29 @@
-# Executables
+# --- Executables ---
 *.exe
-RecipeTracker
+*.exe~
+*.dll
+*.so
+*.dylib
+recipe-tracker
 
-# Local Database
-recipes.db
+# --- Go specific ---
+vendor/
+go.sum
 
-# Output Folders
-Printables/
-recipes_to_import/
-backups/
+# --- Elm specific ---
+elm-stuff/
+# We usually keep js/elm.js because it's required for the Go binary to run
+# but we ignore the build artifacts
+index.html.js
 
-# OS specific
+# --- Project Specific Data ---
+# If you want to keep your recipes private and NOT on GitHub:
+# recipes.db
+# Printables/
+# backups/
+
+# --- OS / IDE specific ---
 .DS_Store
-Thumbs.db
+.vscode/
+*.swp
+*.bak
