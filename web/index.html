@@ -1,20 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gourmet Tracker</title>
-</head>
+    <title>Morris Family Recipe Tracker</title>
+    <script src="js/elm.js"></script>
 </head>
 
 <body>
-    <div id="elm-app"></div>
-    <script src="/js/elm.js"></script>
+    <div id="elm-root"></div>
     <script>
-        var app = Elm.Main.init({
-            node: document.getElementById('elm-app')
-        });
+        Elm.Main.init({ node: document.getElementById('elm-root') });
     </script>
 </body>
 
