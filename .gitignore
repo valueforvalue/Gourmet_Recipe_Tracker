@@ -8,6 +8,7 @@ recipes.db
 # Output Folders
 Printables/
 recipes_to_import/
+backups/
 
 # OS specific
 .DS_Store
