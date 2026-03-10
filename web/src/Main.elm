@@ -28,6 +28,7 @@ type alias Model =
     { currentView : View
     , recipes : List Recipe
     , filterText : String
+    , scrapeUrl : String
     , title : String
     , tags : String
     , ingredients : String
@@ -43,6 +44,7 @@ initialModel =
     { currentView = EntryView
     , recipes = []
     , filterText = ""
+    , scrapeUrl = ""
     , title = ""
     , tags = ""
     , ingredients = ""
@@ -60,6 +62,10 @@ initialModel =
 type Msg
     = SetView View
     | UpdateFilter String
+    | UpdateScrapeUrl String
+    | RunScrape
+    | ScrapeResult (Result Http.Error Recipe)
+    | ClearForm
     | UpdateTitle String
     | UpdateTags String
     | UpdateIngredients String
@@ -93,6 +99,31 @@ update msg model =
         UpdateFilter val ->
             ( { model | filterText = val }, Cmd.none )
 
+        UpdateScrapeUrl val ->
+            ( { model | scrapeUrl = val }, Cmd.none )
+
+        RunScrape ->
+            ( { model | status = "Scraping recipe data..." }, scrapeRecipe model.scrapeUrl )
+
+        ScrapeResult res ->
+            case res of
+                Ok r ->
+                    ( { model
+                        | title = r.title
+                        , ingredients = String.join "\n" r.ingredients
+                        , instructions = String.join "\n" r.instructions
+                        , notes = r.notes
+                        , status = "Imported! Please review."
+                      }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( { model | status = "Failed to scrape URL." }, Cmd.none )
+
+        ClearForm ->
+            ( { initialModel | currentView = EntryView, status = "Form Cleared." }, Cmd.none )
+
         UpdateTitle val ->
             ( { model | title = val }, Cmd.none )
 
@@ -109,12 +140,12 @@ update msg model =
             ( { model | notes = val }, Cmd.none )
 
         SaveRecipe ->
-            ( { model | status = "Saving to records..." }, postRecipe model )
+            ( { model | status = "Saving..." }, postRecipe model )
 
         RecipeSaved res ->
             case res of
                 Ok _ ->
-                    ( { initialModel | status = "Saved Successfully!", currentView = ListView }, fetchRecipes )
+                    ( { initialModel | status = "Saved!", currentView = ListView }, fetchRecipes )
 
                 Err _ ->
                     ( { model | status = "Error saving." }, Cmd.none )
@@ -199,28 +230,40 @@ navStyle =
 
 viewEntryForm : Model -> Html Msg
 viewEntryForm model =
-    div [ style "background" "white", style "padding" "20px", style "border-radius" "8px", style "box-shadow" "0 2px 10px rgba(0,0,0,0.1)" ]
-        [ h2 [ style "color" "#6B705C" ]
-            [ text
-                (if String.startsWith "Editing" model.status then
-                    "Edit Recipe"
-
-                 else
-                    "Morris Recipe Entry"
-                )
+    div []
+        [ div [ style "background" "#f0f0e0", style "padding" "15px", style "border-radius" "8px", style "margin-bottom" "20px", style "border" "1px dashed #6B705C" ]
+            [ h4 [ style "margin-top" "0", style "color" "#6B705C" ] [ text "✨ Import from Web" ]
+            , div [ style "display" "flex", style "gap" "10px" ]
+                [ input [ placeholder "Paste recipe URL here...", value model.scrapeUrl, onInput UpdateScrapeUrl, style "flex" "3", style "padding" "10px", style "border-radius" "4px", style "border" "1px solid #ccc" ] []
+                , button [ onClick RunScrape, style "flex" "1", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Import" ]
+                ]
             ]
-        , input (placeholder "Title" :: value model.title :: onInput UpdateTitle :: inputStyle) []
-        , input (placeholder "Tags" :: value model.tags :: onInput UpdateTags :: inputStyle) []
-        , textarea (placeholder "Ingredients" :: rows 6 :: value model.ingredients :: onInput UpdateIngredients :: inputStyle) []
-        , textarea (placeholder "Instructions" :: rows 6 :: value model.instructions :: onInput UpdateInstructions :: inputStyle) []
-        , input (placeholder "Notes (Links starting with http will be clickable)" :: value model.notes :: onInput UpdateNotes :: inputStyle) []
-        , div [ style "display" "flex", style "gap" "10px" ]
-            [ button [ onClick SaveRecipe, style "background" "#A5A58D", style "color" "white", style "padding" "15px", style "flex" "2", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Save Recipe" ]
-            , if String.startsWith "Editing" model.status then
-                button [ onClick CancelEdit, style "background" "#e5e5e5", style "color" "#555", style "padding" "15px", style "flex" "1", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Cancel" ]
+        , div [ style "background" "white", style "padding" "20px", style "border-radius" "8px", style "box-shadow" "0 2px 10px rgba(0,0,0,0.1)" ]
+            [ div [ style "display" "flex", style "justify-content" "space-between", style "align-items" "center" ]
+                [ h2 [ style "color" "#6B705C" ]
+                    [ text
+                        (if String.startsWith "Editing" model.status then
+                            "Edit Recipe"
 
-              else
-                text ""
+                         else
+                            "Morris Recipe Entry"
+                        )
+                    ]
+                , button [ onClick ClearForm, style "background" "none", style "border" "none", style "color" "#a00", style "text-decoration" "underline", style "cursor" "pointer", style "font-size" "12px" ] [ text "Clear All" ]
+                ]
+            , input (placeholder "Title" :: value model.title :: onInput UpdateTitle :: inputStyle) []
+            , input (placeholder "Tags" :: value model.tags :: onInput UpdateTags :: inputStyle) []
+            , textarea (placeholder "Ingredients (One per line)" :: rows 6 :: value model.ingredients :: onInput UpdateIngredients :: inputStyle) []
+            , textarea (placeholder "Instructions (One per line)" :: rows 6 :: value model.instructions :: onInput UpdateInstructions :: inputStyle) []
+            , input (placeholder "Notes" :: value model.notes :: onInput UpdateNotes :: inputStyle) []
+            , div [ style "display" "flex", style "gap" "10px" ]
+                [ button [ onClick SaveRecipe, style "background" "#A5A58D", style "color" "white", style "padding" "15px", style "flex" "2", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Save Recipe" ]
+                , if String.startsWith "Editing" model.status then
+                    button [ onClick CancelEdit, style "background" "#e5e5e5", style "color" "#555", style "padding" "15px", style "flex" "1", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Cancel" ]
+
+                  else
+                    text ""
+                ]
             ]
         ]
 
@@ -233,7 +276,7 @@ viewRecipeList model =
     in
     div []
         [ h2 [ style "color" "#6B705C" ] [ text "Morris Family Recipe Box" ]
-        , input (placeholder "Search your recipes..." :: value model.filterText :: onInput UpdateFilter :: inputStyle) []
+        , input (placeholder "Search..." :: value model.filterText :: onInput UpdateFilter :: inputStyle) []
         , div [ style "margin-bottom" "20px", style "display" "flex", style "gap" "10px" ]
             [ a (href "/api/export/cookbook?booklet=false" :: target "_blank" :: masterBtnStyle "#6B705C") [ text "Letter Cookbook" ]
             , a (href "/api/export/cookbook?booklet=true" :: target "_blank" :: masterBtnStyle "#A5A58D") [ text "Booklet Cookbook" ]
@@ -249,22 +292,14 @@ viewRecipeCard deletingTitle recipe =
             deletingTitle == Just recipe.title
     in
     div [ style "background" "white", style "padding" "15px", style "margin-bottom" "15px", style "border-left" "6px solid #6B705C", style "border-radius" "4px", style "box-shadow" "0 1px 3px rgba(0,0,0,0.1)" ]
-        [ strong
-            [ style "font-size" "20px"
-            , style "display" "block"
-            , style "cursor" "pointer"
-            , style "color" "#6B705C"
-            , style "text-decoration" "underline"
-            , onClick (OpenReader recipe)
-            ]
-            [ text recipe.title ]
+        [ strong [ style "font-size" "20px", style "display" "block", style "cursor" "pointer", style "color" "#6B705C", style "text-decoration" "underline", onClick (OpenReader recipe) ] [ text recipe.title ]
         , p [ style "font-size" "13px", style "color" "#777", style "margin" "5px 0" ] [ text (String.join ",  " recipe.tags) ]
         , if isDeleting then
             div [ style "background" "#fff0f0", style "padding" "10px", style "border-radius" "4px", style "margin-top" "10px", style "display" "flex", style "align-items" "center", style "justify-content" "space-between" ]
-                [ span [ style "color" "#a00", style "font-size" "14px" ] [ text "Delete this recipe?" ]
+                [ span [ style "color" "#a00" ] [ text "Delete this recipe?" ]
                 , div [ style "display" "flex", style "gap" "10px" ]
                     [ button [ onClick (ExecuteDelete recipe.title), style "background" "#a00", style "color" "white", style "border" "none", style "padding" "5px 15px", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Yes" ]
-                    , button [ onClick CancelDelete, style "background" "#ccc", style "color" "black", style "border" "none", style "padding" "5px 15px", style "border-radius" "4px", style "cursor" "pointer" ] [ text "No" ]
+                    , button [ onClick CancelDelete, style "background" "#ccc", style "border" "none", style "padding" "5px 15px", style "border-radius" "4px", style "cursor" "pointer" ] [ text "No" ]
                     ]
                 ]
 
@@ -283,20 +318,15 @@ viewReader recipe =
     div [ style "background" "white", style "padding" "30px", style "border-radius" "8px", style "box-shadow" "0 4px 20px rgba(0,0,0,0.1)" ]
         [ h1 [ style "color" "#6B705C", style "margin-bottom" "10px" ] [ text recipe.title ]
         , div [ style "font-style" "italic", style "color" "#888", style "margin-bottom" "20px" ] [ text (String.join ",  " recipe.tags) ]
-        , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px" ] [ text "Ingredients" ]
-        , ul [ style "line-height" "1.8", style "font-size" "18px" ]
-            (List.map (\ing -> li [] [ text ing ]) recipe.ingredients)
-        , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px", style "margin-top" "30px" ] [ text "Instructions" ]
-        , ol [ style "line-height" "1.6", style "font-size" "18px" ]
-            (List.map (\inst -> li [ style "margin-bottom" "15px" ] [ text (cleanInstruction inst) ]) recipe.instructions)
+        , h3 [ style "border-bottom" "2px solid #A5A58D" ] [ text "Ingredients" ]
+        , ul [ style "line-height" "1.8", style "font-size" "18px" ] (List.map (\ing -> li [] [ text ing ]) recipe.ingredients)
+        , h3 [ style "border-bottom" "2px solid #A5A58D", style "margin-top" "30px" ] [ text "Instructions" ]
+        , ol [ style "line-height" "1.6", style "font-size" "18px" ] (List.map (\inst -> li [ style "margin-bottom" "15px" ] [ text (cleanInstruction inst) ]) recipe.instructions)
         , if String.isEmpty recipe.notes then
             text ""
 
           else
-            div [ style "margin-top" "30px", style "padding" "15px", style "background" "#f9f9f9", style "border-radius" "4px" ]
-                [ h4 [ style "margin-top" "0" ] [ text "Notes" ]
-                , p [ style "font-size" "16px", style "line-height" "1.5" ] (renderTextWithLinks recipe.notes)
-                ]
+            div [ style "margin-top" "30px", style "padding" "15px", style "background" "#f9f9f9" ] [ h4 [] [ text "Notes" ], p [] (renderTextWithLinks recipe.notes) ]
         , div [ style "margin-top" "40px", style "padding-top" "20px", style "border-top" "1px dashed #ccc" ]
             [ p [ style "font-size" "14px", style "color" "#666", style "margin-bottom" "10px" ] [ text "Export as PDF:" ]
             , div [ style "display" "flex", style "gap" "10px" ]
@@ -304,38 +334,63 @@ viewReader recipe =
                 , a (href ("/api/export/pdf?title=" ++ recipe.title ++ "&booklet=true") :: target "_blank" :: actionBtnStyle "#A5A58D") [ text "Booklet PDF" ]
                 ]
             ]
-        , button [ onClick (SetView ListView), style "margin-top" "20px", style "width" "100%", style "padding" "15px", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Done Reading" ]
+        , button [ onClick (SetView ListView), style "margin-top" "20px", style "width" "100%", style "padding" "15px", style "background" "#6B705C", style "color" "white", style "border" "none", style "cursor" "pointer" ] [ text "Done Reading" ]
         ]
 
 
 
--- Helper to remove leading numbers from instructions (e.g. "1. Mix" -> "Mix")
+-- Utils
 
 
 cleanInstruction : String -> String
 cleanInstruction inst =
     let
-        userRegex =
-            Regex.fromString "^\\d+[\\.\\)]\\s*"
-                |> Maybe.withDefault Regex.never
+        re =
+            Regex.fromString "^\\d+[\\.\\)]\\s*" |> Maybe.withDefault Regex.never
     in
-    Regex.replace userRegex (\_ -> "") (String.trim inst)
+    Regex.replace re (\_ -> "") (String.trim inst)
 
 
 renderTextWithLinks : String -> List (Html Msg)
 renderTextWithLinks content =
-    let
-        words =
-            String.split " " content
+    String.split " " content
+        |> List.map
+            (\w ->
+                if String.startsWith "http" w then
+                    a [ href w, target "_blank", style "color" "#A5A58D", style "text-decoration" "underline" ] [ text (w ++ " ") ]
 
-        toNode word =
-            if String.startsWith "http" word then
-                a [ href word, target "_blank", style "color" "#A5A58D", style "text-decoration" "underline" ] [ text word, text " " ]
+                else
+                    text (w ++ " ")
+            )
 
-            else
-                text (word ++ " ")
-    in
-    List.map toNode words
+
+
+-- HTTP
+
+
+scrapeRecipe : String -> Cmd Msg
+scrapeRecipe url =
+    Http.get { url = "/api/scrape?url=" ++ url, expect = Http.expectJson ScrapeResult recipeDecoder }
+
+
+fetchRecipes : Cmd Msg
+fetchRecipes =
+    Http.get { url = "/api/recipes", expect = Http.expectJson RecipesFetched (Decode.list recipeDecoder) }
+
+
+recipeDecoder : Decode.Decoder Recipe
+recipeDecoder =
+    Decode.map5 Recipe (Decode.field "title" Decode.string) (Decode.field "tags" (Decode.list Decode.string)) (Decode.field "ingredients" (Decode.list Decode.string)) (Decode.field "instructions" (Decode.list Decode.string)) (Decode.field "notes" Decode.string)
+
+
+postRecipe : Model -> Cmd Msg
+postRecipe model =
+    Http.post { url = "/api/save", body = Http.jsonBody (Encode.object [ ( "title", Encode.string model.title ), ( "tags", Encode.list Encode.string (String.split "," model.tags |> List.map String.trim |> List.filter (not << String.isEmpty)) ), ( "ingredients", Encode.list Encode.string (String.split "\n" model.ingredients |> List.map String.trim |> List.filter (not << String.isEmpty)) ), ( "instructions", Encode.list Encode.string (String.split "\n" model.instructions |> List.map String.trim |> List.filter (not << String.isEmpty)) ), ( "notes", Encode.string model.notes ) ]), expect = Http.expectWhatever RecipeSaved }
+
+
+deleteRequest : String -> Cmd Msg
+deleteRequest title =
+    Http.post { url = "/api/delete?title=" ++ title, body = Http.emptyBody, expect = Http.expectWhatever Deleted }
 
 
 masterBtnStyle c =
@@ -351,30 +406,14 @@ inputStyle =
 
 
 
--- 4. HTTP / DECODERS
-
-
-fetchRecipes =
-    Http.get { url = "/api/recipes", expect = Http.expectJson RecipesFetched (Decode.list recipeDecoder) }
-
-
-recipeDecoder =
-    Decode.map5 Recipe
-        (Decode.field "title" Decode.string)
-        (Decode.field "tags" (Decode.list Decode.string))
-        (Decode.field "ingredients" (Decode.list Decode.string))
-        (Decode.field "instructions" (Decode.list Decode.string))
-        (Decode.field "notes" Decode.string)
-
-
-postRecipe model =
-    Http.post { url = "/api/save", body = Http.jsonBody (Encode.object [ ( "title", Encode.string model.title ), ( "tags", Encode.list Encode.string (String.split "," model.tags |> List.map String.trim |> List.filter (not << String.isEmpty)) ), ( "ingredients", Encode.list Encode.string (String.split "\n" model.ingredients |> List.map String.trim |> List.filter (not << String.isEmpty)) ), ( "instructions", Encode.list Encode.string (String.split "\n" model.instructions |> List.map String.trim |> List.filter (not << String.isEmpty)) ), ( "notes", Encode.string model.notes ) ]), expect = Http.expectWhatever RecipeSaved }
-
-
-deleteRequest title =
-    Http.post { url = "/api/delete?title=" ++ title, body = Http.emptyBody, expect = Http.expectWhatever Deleted }
+-- 5. MAIN
 
 
 main : Program () Model Msg
 main =
-    Browser.element { init = \_ -> ( initialModel, Cmd.none ), view = view, update = update, subscriptions = \_ -> Sub.none }
+    Browser.element
+        { init = \() -> ( initialModel, Cmd.none )
+        , view = view
+        , update = update
+        , subscriptions = \_ -> Sub.none
+        }
