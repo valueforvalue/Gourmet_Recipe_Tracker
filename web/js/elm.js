@@ -6369,18 +6369,6 @@ var $author$project$Main$postRecipe = function (model) {
 							'title',
 							$elm$json$Json$Encode$string(model.title)),
 							_Utils_Tuple2(
-							'tags',
-							A2(
-								$elm$json$Json$Encode$list,
-								$elm$json$Json$Encode$string,
-								A2(
-									$elm$core$List$filter,
-									A2($elm$core$Basics$composeL, $elm$core$Basics$not, $elm$core$String$isEmpty),
-									A2(
-										$elm$core$List$map,
-										$elm$core$String$trim,
-										A2($elm$core$String$split, ',', model.tags))))),
-							_Utils_Tuple2(
 							'ingredients',
 							A2(
 								$elm$json$Json$Encode$list,
@@ -6404,6 +6392,18 @@ var $author$project$Main$postRecipe = function (model) {
 										$elm$core$List$map,
 										$elm$core$String$trim,
 										A2($elm$core$String$split, '\n', model.instructions))))),
+							_Utils_Tuple2(
+							'tags',
+							A2(
+								$elm$json$Json$Encode$list,
+								$elm$json$Json$Encode$string,
+								A2(
+									$elm$core$List$filter,
+									A2($elm$core$Basics$composeL, $elm$core$Basics$not, $elm$core$String$isEmpty),
+									A2(
+										$elm$core$List$map,
+										$elm$core$String$trim,
+										A2($elm$core$String$split, ',', model.tags))))),
 							_Utils_Tuple2(
 							'notes',
 							$elm$json$Json$Encode$string(model.notes))
@@ -6477,8 +6477,8 @@ var $author$project$Main$update = F2(
 			case 'ClearForm':
 				return _Utils_Tuple2(
 					_Utils_update(
-						$author$project$Main$initialModel,
-						{currentView: $author$project$Main$EntryView, status: 'Form Cleared.'}),
+						model,
+						{ingredients: '', instructions: '', notes: '', scrapeUrl: '', status: 'Form Cleared.', tags: '', title: ''}),
 					$elm$core$Platform$Cmd$none);
 			case 'UpdateTitle':
 				var val = msg.a;
@@ -6519,7 +6519,7 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{status: 'Saving...'}),
+						{status: 'Saving to records...'}),
 					$author$project$Main$postRecipe(model));
 			case 'RecipeSaved':
 				var res = msg.a;
@@ -6527,7 +6527,7 @@ var $author$project$Main$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							$author$project$Main$initialModel,
-							{currentView: $author$project$Main$ListView, status: 'Saved!'}),
+							{currentView: $author$project$Main$ListView, status: 'Saved Successfully!'}),
 						$author$project$Main$fetchRecipes);
 				} else {
 					return _Utils_Tuple2(
@@ -6668,9 +6668,9 @@ var $elm$html$Html$input = _VirtualDom_node('input');
 var $author$project$Main$inputStyle = _List_fromArray(
 	[
 		A2($elm$html$Html$Attributes$style, 'width', '100%'),
-		A2($elm$html$Html$Attributes$style, 'margin-bottom', '10px'),
-		A2($elm$html$Html$Attributes$style, 'padding', '12px'),
-		A2($elm$html$Html$Attributes$style, 'border', '1px solid #DDD'),
+		A2($elm$html$Html$Attributes$style, 'margin-bottom', '12px'),
+		A2($elm$html$Html$Attributes$style, 'padding', '10px'),
+		A2($elm$html$Html$Attributes$style, 'border', '1px solid #ccc'),
 		A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
 		A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box')
 	]);
@@ -6856,7 +6856,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 						$elm$html$Html$input,
 						A2(
 							$elm$core$List$cons,
-							$elm$html$Html$Attributes$placeholder('Tags'),
+							$elm$html$Html$Attributes$placeholder('Tags (e.g. Dinner, Beef, Slow Cooker)'),
 							A2(
 								$elm$core$List$cons,
 								$elm$html$Html$Attributes$value(model.tags),
@@ -6957,22 +6957,6 @@ var $author$project$Main$viewEntryForm = function (model) {
 					]))
 			]));
 };
-var $elm$html$Html$a = _VirtualDom_node('a');
-var $author$project$Main$actionBtnStyle = function (c) {
-	return _List_fromArray(
-		[
-			A2($elm$html$Html$Attributes$style, 'background', c),
-			A2($elm$html$Html$Attributes$style, 'color', 'white'),
-			A2($elm$html$Html$Attributes$style, 'text-decoration', 'none'),
-			A2($elm$html$Html$Attributes$style, 'padding', '8px'),
-			A2($elm$html$Html$Attributes$style, 'flex', '1'),
-			A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
-			A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-			A2($elm$html$Html$Attributes$style, 'font-size', '12px'),
-			A2($elm$html$Html$Attributes$style, 'border', 'none'),
-			A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
-		]);
-};
 var $elm$regex$Regex$Match = F4(
 	function (match, index, number, submatches) {
 		return {index: index, match: match, number: number, submatches: submatches};
@@ -7010,35 +6994,8 @@ var $author$project$Main$cleanInstruction = function (inst) {
 };
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$h3 = _VirtualDom_node('h3');
-var $elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
 var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$html$Html$ol = _VirtualDom_node('ol');
-var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
-var $author$project$Main$renderTextWithLinks = function (content) {
-	return A2(
-		$elm$core$List$map,
-		function (w) {
-			return A2($elm$core$String$startsWith, 'http', w) ? A2(
-				$elm$html$Html$a,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$href(w),
-						$elm$html$Html$Attributes$target('_blank'),
-						A2($elm$html$Html$Attributes$style, 'color', '#A5A58D'),
-						A2($elm$html$Html$Attributes$style, 'text-decoration', 'underline')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text(w + ' ')
-					])) : $elm$html$Html$text(w + ' ');
-		},
-		A2($elm$core$String$split, ' ', content));
-};
 var $elm$html$Html$ul = _VirtualDom_node('ul');
 var $author$project$Main$viewReader = function (recipe) {
 	return A2(
@@ -7080,7 +7037,8 @@ var $author$project$Main$viewReader = function (recipe) {
 				$elm$html$Html$h3,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'border-bottom', '2px solid #A5A58D')
+						A2($elm$html$Html$Attributes$style, 'border-bottom', '2px solid #A5A58D'),
+						A2($elm$html$Html$Attributes$style, 'padding-bottom', '5px')
 					]),
 				_List_fromArray(
 					[
@@ -7110,6 +7068,7 @@ var $author$project$Main$viewReader = function (recipe) {
 				_List_fromArray(
 					[
 						A2($elm$html$Html$Attributes$style, 'border-bottom', '2px solid #A5A58D'),
+						A2($elm$html$Html$Attributes$style, 'padding-bottom', '5px'),
 						A2($elm$html$Html$Attributes$style, 'margin-top', '30px')
 					]),
 				_List_fromArray(
@@ -7145,13 +7104,17 @@ var $author$project$Main$viewReader = function (recipe) {
 					[
 						A2($elm$html$Html$Attributes$style, 'margin-top', '30px'),
 						A2($elm$html$Html$Attributes$style, 'padding', '15px'),
-						A2($elm$html$Html$Attributes$style, 'background', '#f9f9f9')
+						A2($elm$html$Html$Attributes$style, 'background', '#f9f9f9'),
+						A2($elm$html$Html$Attributes$style, 'border-radius', '4px')
 					]),
 				_List_fromArray(
 					[
 						A2(
 						$elm$html$Html$h4,
-						_List_Nil,
+						_List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'margin', '0 0 10px 0')
+							]),
 						_List_fromArray(
 							[
 								$elm$html$Html$text('Notes')
@@ -7159,65 +7122,9 @@ var $author$project$Main$viewReader = function (recipe) {
 						A2(
 						$elm$html$Html$p,
 						_List_Nil,
-						$author$project$Main$renderTextWithLinks(recipe.notes))
-					])),
-				A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						A2($elm$html$Html$Attributes$style, 'margin-top', '40px'),
-						A2($elm$html$Html$Attributes$style, 'padding-top', '20px'),
-						A2($elm$html$Html$Attributes$style, 'border-top', '1px dashed #ccc')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$p,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
-								A2($elm$html$Html$Attributes$style, 'color', '#666'),
-								A2($elm$html$Html$Attributes$style, 'margin-bottom', '10px')
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Export as PDF:')
-							])),
-						A2(
-						$elm$html$Html$div,
-						_List_fromArray(
-							[
-								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-								A2($elm$html$Html$Attributes$style, 'gap', '10px')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$a,
-								A2(
-									$elm$core$List$cons,
-									$elm$html$Html$Attributes$href('/api/export/pdf?title=' + (recipe.title + '&booklet=false')),
-									A2(
-										$elm$core$List$cons,
-										$elm$html$Html$Attributes$target('_blank'),
-										$author$project$Main$actionBtnStyle('#6B705C'))),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Letter PDF')
-									])),
-								A2(
-								$elm$html$Html$a,
-								A2(
-									$elm$core$List$cons,
-									$elm$html$Html$Attributes$href('/api/export/pdf?title=' + (recipe.title + '&booklet=true')),
-									A2(
-										$elm$core$List$cons,
-										$elm$html$Html$Attributes$target('_blank'),
-										$author$project$Main$actionBtnStyle('#A5A58D'))),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Booklet PDF')
-									]))
+								$elm$html$Html$text(recipe.notes)
 							]))
 					])),
 				A2(
@@ -7226,12 +7133,13 @@ var $author$project$Main$viewReader = function (recipe) {
 					[
 						$elm$html$Html$Events$onClick(
 						$author$project$Main$SetView($author$project$Main$ListView)),
-						A2($elm$html$Html$Attributes$style, 'margin-top', '20px'),
+						A2($elm$html$Html$Attributes$style, 'margin-top', '30px'),
 						A2($elm$html$Html$Attributes$style, 'width', '100%'),
 						A2($elm$html$Html$Attributes$style, 'padding', '15px'),
 						A2($elm$html$Html$Attributes$style, 'background', '#6B705C'),
 						A2($elm$html$Html$Attributes$style, 'color', 'white'),
 						A2($elm$html$Html$Attributes$style, 'border', 'none'),
+						A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
 						A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
 					]),
 				_List_fromArray(
@@ -7242,6 +7150,86 @@ var $author$project$Main$viewReader = function (recipe) {
 };
 var $author$project$Main$UpdateFilter = function (a) {
 	return {$: 'UpdateFilter', a: a};
+};
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var $author$project$Main$bibleVerses = _List_fromArray(
+	[
+		{ref: 'Ecclesiastes 9:7', text: 'Go, eat your bread with joy, and drink your wine with a merry heart, for God has already approved what you do.'},
+		{ref: '1 Corinthians 10:31', text: 'Whether you eat or drink, or whatever you do, do all to the glory of God.'},
+		{ref: 'Psalm 103:5', text: 'He fills your soul with good things.'},
+		{ref: 'Proverbs 15:17', text: 'Better is a dinner of herbs where love is than a fattened ox and hatred with it.'},
+		{ref: 'Matthew 6:11', text: 'Give us this day our daily bread.'},
+		{ref: 'Psalm 34:8', text: 'Taste and see that the Lord is good.'}
+	]);
+var $elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $elm$core$Basics$modBy = _Basics_modBy;
+var $author$project$Main$getDailyVerse = function (model) {
+	var seed = $elm$core$String$length(model.filterText) + $elm$core$List$length(model.recipes);
+	var index = A2(
+		$elm$core$Basics$modBy,
+		$elm$core$List$length($author$project$Main$bibleVerses),
+		seed);
+	return A2(
+		$elm$core$Maybe$withDefault,
+		{ref: '', text: ''},
+		$elm$core$List$head(
+			A2($elm$core$List$drop, index, $author$project$Main$bibleVerses)));
+};
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
 };
 var $author$project$Main$masterBtnStyle = function (c) {
 	return _List_fromArray(
@@ -7256,6 +7244,7 @@ var $author$project$Main$masterBtnStyle = function (c) {
 			A2($elm$html$Html$Attributes$style, 'font-size', '11px')
 		]);
 };
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $elm$core$String$toLower = _String_toLower;
 var $author$project$Main$CancelDelete = {$: 'CancelDelete'};
 var $author$project$Main$ConfirmDelete = function (a) {
@@ -7269,6 +7258,20 @@ var $author$project$Main$ExecuteDelete = function (a) {
 };
 var $author$project$Main$OpenReader = function (a) {
 	return {$: 'OpenReader', a: a};
+};
+var $author$project$Main$actionBtnStyle = function (c) {
+	return _List_fromArray(
+		[
+			A2($elm$html$Html$Attributes$style, 'background', c),
+			A2($elm$html$Html$Attributes$style, 'border', 'none'),
+			A2($elm$html$Html$Attributes$style, 'padding', '8px 15px'),
+			A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
+			A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
+			A2($elm$html$Html$Attributes$style, 'color', 'white'),
+			A2($elm$html$Html$Attributes$style, 'text-decoration', 'none'),
+			A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
+			A2($elm$html$Html$Attributes$style, 'font-size', '12px')
+		]);
 };
 var $elm$html$Html$strong = _VirtualDom_node('strong');
 var $author$project$Main$viewRecipeCard = F2(
@@ -7340,7 +7343,7 @@ var $author$project$Main$viewRecipeCard = F2(
 								]),
 							_List_fromArray(
 								[
-									$elm$html$Html$text('Delete this recipe?')
+									$elm$html$Html$text('Delete?')
 								])),
 							A2(
 							$elm$html$Html$div,
@@ -7452,13 +7455,23 @@ var $author$project$Main$viewRecipeCard = F2(
 				]));
 	});
 var $author$project$Main$viewRecipeList = function (model) {
+	var verse = $author$project$Main$getDailyVerse(model);
+	var searchLower = $elm$core$String$toLower(model.filterText);
 	var filteredRecipes = A2(
 		$elm$core$List$filter,
 		function (r) {
 			return A2(
 				$elm$core$String$contains,
-				$elm$core$String$toLower(model.filterText),
-				$elm$core$String$toLower(r.title));
+				searchLower,
+				$elm$core$String$toLower(r.title)) || A2(
+				$elm$core$List$any,
+				function (ing) {
+					return A2(
+						$elm$core$String$contains,
+						searchLower,
+						$elm$core$String$toLower(ing));
+				},
+				r.ingredients);
 		},
 		model.recipes);
 	return A2(
@@ -7470,17 +7483,60 @@ var $author$project$Main$viewRecipeList = function (model) {
 				$elm$html$Html$h2,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
+						A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
+						A2($elm$html$Html$Attributes$style, 'margin-bottom', '5px')
 					]),
 				_List_fromArray(
 					[
 						$elm$html$Html$text('Morris Family Recipe Box')
 					])),
 				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'margin-bottom', '25px'),
+						A2($elm$html$Html$Attributes$style, 'padding', '20px'),
+						A2($elm$html$Html$Attributes$style, 'background', '#fdfaf0'),
+						A2($elm$html$Html$Attributes$style, 'border-radius', '12px'),
+						A2($elm$html$Html$Attributes$style, 'border', '1px solid #e9e2d0'),
+						A2($elm$html$Html$Attributes$style, 'box-shadow', '0 2px 4px rgba(0,0,0,0.05)')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$p,
+						_List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'font-style', 'italic'),
+								A2($elm$html$Html$Attributes$style, 'margin', '0'),
+								A2($elm$html$Html$Attributes$style, 'color', '#4a4a4a'),
+								A2($elm$html$Html$Attributes$style, 'line-height', '1.5'),
+								A2($elm$html$Html$Attributes$style, 'font-size', '16px')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('\"' + (verse.text + '\"'))
+							])),
+						A2(
+						$elm$html$Html$p,
+						_List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'font-size', '13px'),
+								A2($elm$html$Html$Attributes$style, 'text-align', 'right'),
+								A2($elm$html$Html$Attributes$style, 'margin', '10px 0 0 0'),
+								A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
+								A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(verse.ref)
+							]))
+					])),
+				A2(
 				$elm$html$Html$input,
 				A2(
 					$elm$core$List$cons,
-					$elm$html$Html$Attributes$placeholder('Search...'),
+					$elm$html$Html$Attributes$placeholder('Search title or ingredient...'),
 					A2(
 						$elm$core$List$cons,
 						$elm$html$Html$Attributes$value(model.filterText),

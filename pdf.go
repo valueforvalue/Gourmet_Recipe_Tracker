@@ -28,14 +28,16 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	pdf.SetAutoPageBreak(true, 0.75)
 
+	// Footer with Page Numbers
 	pdf.SetFooterFunc(func() {
 		pdf.SetY(-0.5)
-		pdf.SetFont("Arial", "I", 8)
-		pdf.CellFormat(0, 0.4, tr(fmt.Sprintf("Page %d", pdf.PageNo())), "", 0, "C", false, 0, "")
+		pdf.SetFont("Times", "I", 8)
+		pdf.SetTextColor(150, 150, 150)
+		pdf.CellFormat(0, 0.4, tr(fmt.Sprintf("Morris Family Recipe Box - Page %d", pdf.PageNo())), "", 0, "C", false, 0, "")
 	})
 
 	pdf.AddPage()
-	drawRecipePage(pdf, r, isBooklet, tr)
+	drawRecipePage(pdf, r, tr)
 
 	suffix := "_Letter.pdf"
 	if isBooklet {
@@ -46,7 +48,7 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 	return pdf.OutputFileAndClose(outputPath)
 }
 
-// ExportMasterCookbook loops through all recipes and compiles them into one giant PDF.
+// ExportMasterCookbook compiles all recipes into one giant PDF.
 func ExportMasterCookbook(recipes []Recipe, isBooklet bool) error {
 	outputDir := "Printables"
 	var pdf *gofpdf.Fpdf
@@ -65,9 +67,18 @@ func ExportMasterCookbook(recipes []Recipe, isBooklet bool) error {
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	pdf.SetAutoPageBreak(true, 0.75)
 
+	// Cover Page
+	pdf.AddPage()
+	pdf.SetY(3.0)
+	pdf.SetFont("Times", "B", 36)
+	pdf.SetTextColor(107, 112, 92) // Sage Green
+	pdf.CellFormat(0, 1.0, tr("Morris Family"), "", 1, "C", false, 0, "")
+	pdf.SetFont("Times", "I", 24)
+	pdf.CellFormat(0, 0.5, tr("Master Cookbook"), "", 1, "C", false, 0, "")
+
 	for _, r := range recipes {
 		pdf.AddPage()
-		drawRecipePage(pdf, r, isBooklet, tr)
+		drawRecipePage(pdf, r, tr)
 	}
 
 	fileName := "Master_Cookbook_Full.pdf"
@@ -78,51 +89,55 @@ func ExportMasterCookbook(recipes []Recipe, isBooklet bool) error {
 	return pdf.OutputFileAndClose(filepath.Join(outputDir, fileName))
 }
 
-// drawRecipePage is the internal layout engine for the PDF content.
-func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, isBooklet bool, tr func(string) string) {
-	// Title
-	pdf.SetFont("Arial", "B", 16)
-	pdf.CellFormat(0, 0.4, tr(r.Title), "", 1, "L", false, 0, "")
+// drawRecipePage handles the visual layout logic.
+func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
+	// Title - Sage Green (#6B705C)
+	pdf.SetFont("Times", "B", 22)
+	pdf.SetTextColor(107, 112, 92)
+	pdf.CellFormat(0, 0.6, tr(r.Title), "", 1, "L", false, 0, "")
 
 	// Tags
-	pdf.SetFont("Arial", "I", 10)
-	pdf.SetTextColor(100, 100, 100)
-	pdf.CellFormat(0, 0.3, tr(fmt.Sprintf("Tags: %v", strings.Join(r.Tags, ", "))), "", 1, "L", false, 0, "")
+	pdf.SetFont("Times", "I", 10)
+	pdf.SetTextColor(128, 128, 128)
+	pdf.CellFormat(0, 0.3, tr(strings.Join(r.Tags, "  •  ")), "", 1, "L", false, 0, "")
 	pdf.Ln(0.2)
 
 	pdf.SetTextColor(0, 0, 0)
 
 	// Ingredients Section
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(0, 0.3, tr("Ingredients"))
-	pdf.Ln(0.3)
-	pdf.SetFont("Arial", "", 11)
+	pdf.SetFont("Times", "B", 14)
+	pdf.CellFormat(0, 0.4, tr("INGREDIENTS"), "B", 1, "L", false, 0, "")
+	pdf.Ln(0.1)
+
+	pdf.SetFont("Times", "", 12)
 	for _, ing := range r.Ingredients {
-		pdf.CellFormat(0, 0.2, tr("- "+ing), "", 1, "L", false, 0, "")
+		if strings.TrimSpace(ing) != "" {
+			pdf.CellFormat(0, 0.25, tr(" • "+ing), "", 1, "L", false, 0, "")
+		}
 	}
 	pdf.Ln(0.3)
 
-	// Instructions Section (With Number Scrubbing)
-	pdf.SetFont("Arial", "B", 12)
-	pdf.Cell(0, 0.3, tr("Instructions"))
-	pdf.Ln(0.3)
-	pdf.SetFont("Arial", "", 11)
+	// Preparation Section
+	pdf.SetFont("Times", "B", 14)
+	pdf.CellFormat(0, 0.4, tr("PREPARATION"), "B", 1, "L", false, 0, "")
+	pdf.Ln(0.1)
 
-	// This Regex looks for leading digits followed by a period or closing parenthesis and a space
+	pdf.SetFont("Times", "", 12)
 	re := regexp.MustCompile(`^\d+[\.\)]\s*`)
 
 	for i, step := range r.Instructions {
-		// Clean the step by removing existing numbers if they exist
-		cleanStep := re.ReplaceAllString(strings.TrimSpace(step), "")
-
-		pdf.MultiCell(0, 0.2, tr(fmt.Sprintf("%d. %s", i+1, cleanStep)), "", "L", false)
-		pdf.Ln(0.1)
+		if strings.TrimSpace(step) != "" {
+			cleanStep := re.ReplaceAllString(strings.TrimSpace(step), "")
+			pdf.MultiCell(0, 0.25, tr(fmt.Sprintf("%d. %s", i+1, cleanStep)), "", "L", false)
+			pdf.Ln(0.1)
+		}
 	}
 
 	// Notes Section
 	if r.Notes != "" {
 		pdf.Ln(0.2)
-		pdf.SetFont("Arial", "I", 10)
-		pdf.MultiCell(0, 0.2, tr("Notes: "+r.Notes), "1", "L", false)
+		pdf.SetFont("Times", "I", 10)
+		pdf.SetTextColor(80, 80, 80)
+		pdf.MultiCell(0, 0.2, tr("Notes: "+r.Notes), "T", "L", false)
 	}
 }

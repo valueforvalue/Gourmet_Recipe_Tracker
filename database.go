@@ -4,13 +4,20 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
-	// This underscore is critical! It registers the sqlite driver.
 	_ "modernc.org/sqlite"
 )
 
-// InitDB sets up the SQLite file and ensures the schema exists.
+// --- CONFIGURATION ---
+// Set enableGitSync to true to auto-push to GitHub.
+// Ensure backupRepoPath is a folder initialized with 'git init' and a remote.
+var enableGitSync = false
+var backupRepoPath = `C:\Development\morris_recipe_backups`
+
+// InitDB sets up the SQLite connection and schema.
 func InitDB(filepath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", filepath)
 	if err != nil {
@@ -32,14 +39,11 @@ func InitDB(filepath string) (*sql.DB, error) {
 	return db, err
 }
 
-// SaveRecipe handles both new entries and updates (UPSERT logic).
+// SaveRecipe handles the database UPSERT and triggers the file sync.
 func SaveRecipe(db *sql.DB, r Recipe) error {
-	// Join slices into strings for storage
-	// We use the pipe (|) because ingredients often contain commas
 	ingStr := strings.Join(r.Ingredients, "|")
 	insStr := strings.Join(r.Instructions, "|")
 
-	// Clean up tags to ensure no empty trailing tags
 	var cleanTags []string
 	for _, t := range r.Tags {
 		trimmed := strings.TrimSpace(t)
@@ -61,33 +65,68 @@ func SaveRecipe(db *sql.DB, r Recipe) error {
 
 	_, err := db.Exec(query, r.Title, ingStr, insStr, tagStr, r.Notes)
 	if err != nil {
-		// Log to the terminal so we can catch "buggy" scrapes
-		fmt.Printf("--- DATABASE SAVE ERROR ---\nRecipe: %s\nError: %v\n---------------------------\n", r.Title, err)
+		fmt.Printf(" [DB Error]: %v\n", err)
 		return err
 	}
 
-	// Always sync to a human-readable text file for safety
 	return SyncSidecar(r)
 }
 
-// GetRecipeByTitle fetches a single active recipe.
-func GetRecipeByTitle(db *sql.DB, title string) (Recipe, error) {
-	var r Recipe
-	var ingStr, insStr, tagStr string
-	query := `SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE title = ? AND is_deleted = 0`
+// SyncSidecar handles the "Daily Bread" text backup and GitHub sync.
+func SyncSidecar(r Recipe) error {
+	// Create local program backup folder if missing
+	_ = os.Mkdir("backups", 0755)
 
-	err := db.QueryRow(query, title).Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes)
-	if err != nil {
-		return r, err
+	// Sanitize title for filename
+	safeTitle := strings.ReplaceAll(r.Title, "/", "-")
+	safeTitle = strings.ReplaceAll(safeTitle, "\\", "-")
+	fileName := safeTitle + ".txt"
+
+	// Prepare text content
+	content := fmt.Sprintf("RECIPE: %s\nTAGS: %s\n\nINGREDIENTS\n- %s\n\nINSTRUCTIONS\n%s\n\nNOTES: %s",
+		r.Title,
+		strings.Join(r.Tags, ", "),
+		strings.Join(r.Ingredients, "\n- "),
+		strings.Join(r.Instructions, "\n"),
+		r.Notes)
+
+	// Save to the local program backups folder
+	os.WriteFile(filepath.Join("backups", fileName), []byte(content), 0644)
+
+	if enableGitSync {
+		// Run Git operations in a background thread
+		go func(title string, fileContent string) {
+			// 1. Teleport file to the Vault folder
+			destPath := filepath.Join(backupRepoPath, fileName)
+			err := os.WriteFile(destPath, []byte(fileContent), 0644)
+			if err != nil {
+				fmt.Printf(" [Sync Error]: Could not write to backup path: %v\n", err)
+				return
+			}
+
+			// 2. Execute Git commands using the -C flag (Target Directory)
+			// Add
+			exec.Command("git", "-C", backupRepoPath, "add", ".").Run()
+
+			// Commit
+			commitMsg := fmt.Sprintf("Update %s", title)
+			exec.Command("git", "-C", backupRepoPath, "commit", "-m", commitMsg).Run()
+
+			// Push to origin master
+			out, err := exec.Command("git", "-C", backupRepoPath, "push", "origin", "master").CombinedOutput()
+
+			if err != nil {
+				fmt.Printf(" [Git Error]: %s\n", string(out))
+			} else {
+				fmt.Printf(" [Git Success]: %s successfully vaulted to GitHub.\n", title)
+			}
+		}(r.Title, content)
 	}
 
-	r.Ingredients = strings.Split(ingStr, "|")
-	r.Instructions = strings.Split(insStr, "|")
-	r.Tags = strings.Split(tagStr, ",")
-	return r, nil
+	return nil
 }
 
-// GetAllRecipes fetches all non-deleted recipes for the Recipe Box.
+// GetAllRecipes retrieves active recipes for the web view.
 func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 	query := `SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE is_deleted = 0 ORDER BY title ASC`
 	rows, err := db.Query(query)
@@ -100,7 +139,8 @@ func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 	for rows.Next() {
 		var r Recipe
 		var ingStr, insStr, tagStr string
-		if err := rows.Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes); err == nil {
+		err = rows.Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes)
+		if err == nil {
 			r.Ingredients = strings.Split(ingStr, "|")
 			r.Instructions = strings.Split(insStr, "|")
 			r.Tags = strings.Split(tagStr, ",")
@@ -110,27 +150,25 @@ func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 	return recipes, nil
 }
 
-// DeleteRecipe performs a "Soft Delete" by flagging a recipe instead of removing it.
+// GetRecipeByTitle retrieves a specific recipe for PDF generation.
+func GetRecipeByTitle(db *sql.DB, title string) (Recipe, error) {
+	var r Recipe
+	var ingStr, insStr, tagStr string
+	query := `SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE title = ?`
+
+	err := db.QueryRow(query, title).Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes)
+	if err != nil {
+		return r, err
+	}
+
+	r.Ingredients = strings.Split(ingStr, "|")
+	r.Instructions = strings.Split(insStr, "|")
+	r.Tags = strings.Split(tagStr, ",")
+	return r, nil
+}
+
+// DeleteRecipe flags a recipe as deleted (Soft Delete).
 func DeleteRecipe(db *sql.DB, title string) error {
 	_, err := db.Exec("UPDATE recipes SET is_deleted = 1 WHERE title = ?", title)
 	return err
-}
-
-// SyncSidecar creates a human-readable backup of the recipe in the /backups folder.
-func SyncSidecar(r Recipe) error {
-	_ = os.Mkdir("backups", 0755)
-
-	// Ensure filename is safe for Windows/Linux
-	safeTitle := strings.ReplaceAll(r.Title, "/", "-")
-	safeTitle = strings.ReplaceAll(safeTitle, "\\", "-")
-	path := fmt.Sprintf("backups/%s.txt", safeTitle)
-
-	content := fmt.Sprintf("RECIPE: %s\nTAGS: %s\n\nINGREDIENTS\n- %s\n\nINSTRUCTIONS\n%s\n\nNOTES: %s",
-		r.Title,
-		strings.Join(r.Tags, ", "),
-		strings.Join(r.Ingredients, "\n- "),
-		strings.Join(r.Instructions, "\n"),
-		r.Notes)
-
-	return os.WriteFile(path, []byte(content), 0644)
 }

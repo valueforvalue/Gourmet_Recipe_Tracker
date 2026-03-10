@@ -21,7 +21,12 @@ type View
 
 
 type alias Recipe =
-    { title : String, tags : List String, ingredients : List String, instructions : List String, notes : String }
+    { title : String
+    , tags : List String
+    , ingredients : List String
+    , instructions : List String
+    , notes : String
+    }
 
 
 type alias Model =
@@ -122,7 +127,17 @@ update msg model =
                     ( { model | status = "Failed to scrape URL." }, Cmd.none )
 
         ClearForm ->
-            ( { initialModel | currentView = EntryView, status = "Form Cleared." }, Cmd.none )
+            ( { model
+                | title = ""
+                , tags = ""
+                , ingredients = ""
+                , instructions = ""
+                , notes = ""
+                , scrapeUrl = ""
+                , status = "Form Cleared."
+              }
+            , Cmd.none
+            )
 
         UpdateTitle val ->
             ( { model | title = val }, Cmd.none )
@@ -140,12 +155,12 @@ update msg model =
             ( { model | notes = val }, Cmd.none )
 
         SaveRecipe ->
-            ( { model | status = "Saving..." }, postRecipe model )
+            ( { model | status = "Saving to records..." }, postRecipe model )
 
         RecipeSaved res ->
             case res of
                 Ok _ ->
-                    ( { initialModel | status = "Saved!", currentView = ListView }, fetchRecipes )
+                    ( { initialModel | status = "Saved Successfully!", currentView = ListView }, fetchRecipes )
 
                 Err _ ->
                     ( { model | status = "Error saving." }, Cmd.none )
@@ -200,7 +215,8 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ style "background-color" "#FDF5E6", style "min-height" "100vh", style "font-family" "serif" ]
-        [ div [ style "background" "#6B705C", style "padding" "10px", style "display" "flex", style "align-items" "center", style "position" "sticky", style "top" "0", style "z-index" "10", style "box-shadow" "0 2px 5px rgba(0,0,0,0.2)" ]
+        [ -- NAVIGATION BAR
+          div [ style "background" "#6B705C", style "padding" "10px", style "display" "flex", style "align-items" "center", style "position" "sticky", style "top" "0", style "z-index" "10", style "box-shadow" "0 2px 5px rgba(0,0,0,0.2)" ]
             [ div [ style "flex" "1" ] []
             , div [ style "display" "flex", style "gap" "20px" ]
                 [ button (onClick (SetView EntryView) :: navStyle) [ text "Add" ]
@@ -224,21 +240,19 @@ view model =
         ]
 
 
-navStyle =
-    [ style "background" "none", style "border" "none", style "color" "white", style "font-size" "18px", style "cursor" "pointer", style "font-weight" "bold" ]
-
-
 viewEntryForm : Model -> Html Msg
 viewEntryForm model =
     div []
-        [ div [ style "background" "#f0f0e0", style "padding" "15px", style "border-radius" "8px", style "margin-bottom" "20px", style "border" "1px dashed #6B705C" ]
+        [ -- SCRAPER SECTION
+          div [ style "background" "#f0f0e0", style "padding" "15px", style "border-radius" "8px", style "margin-bottom" "20px", style "border" "1px dashed #6B705C" ]
             [ h4 [ style "margin-top" "0", style "color" "#6B705C" ] [ text "✨ Import from Web" ]
             , div [ style "display" "flex", style "gap" "10px" ]
                 [ input [ placeholder "Paste recipe URL here...", value model.scrapeUrl, onInput UpdateScrapeUrl, style "flex" "3", style "padding" "10px", style "border-radius" "4px", style "border" "1px solid #ccc" ] []
                 , button [ onClick RunScrape, style "flex" "1", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Import" ]
                 ]
             ]
-        , div [ style "background" "white", style "padding" "20px", style "border-radius" "8px", style "box-shadow" "0 2px 10px rgba(0,0,0,0.1)" ]
+        , -- MANUAL ENTRY SECTION
+          div [ style "background" "white", style "padding" "20px", style "border-radius" "8px", style "box-shadow" "0 2px 10px rgba(0,0,0,0.1)" ]
             [ div [ style "display" "flex", style "justify-content" "space-between", style "align-items" "center" ]
                 [ h2 [ style "color" "#6B705C" ]
                     [ text
@@ -252,7 +266,7 @@ viewEntryForm model =
                 , button [ onClick ClearForm, style "background" "none", style "border" "none", style "color" "#a00", style "text-decoration" "underline", style "cursor" "pointer", style "font-size" "12px" ] [ text "Clear All" ]
                 ]
             , input (placeholder "Title" :: value model.title :: onInput UpdateTitle :: inputStyle) []
-            , input (placeholder "Tags" :: value model.tags :: onInput UpdateTags :: inputStyle) []
+            , input (placeholder "Tags (e.g. Dinner, Beef, Slow Cooker)" :: value model.tags :: onInput UpdateTags :: inputStyle) []
             , textarea (placeholder "Ingredients (One per line)" :: rows 6 :: value model.ingredients :: onInput UpdateIngredients :: inputStyle) []
             , textarea (placeholder "Instructions (One per line)" :: rows 6 :: value model.instructions :: onInput UpdateInstructions :: inputStyle) []
             , input (placeholder "Notes" :: value model.notes :: onInput UpdateNotes :: inputStyle) []
@@ -271,13 +285,30 @@ viewEntryForm model =
 viewRecipeList : Model -> Html Msg
 viewRecipeList model =
     let
+        searchLower =
+            String.toLower model.filterText
+
         filteredRecipes =
-            List.filter (\r -> String.contains (String.toLower model.filterText) (String.toLower r.title)) model.recipes
+            List.filter
+                (\r ->
+                    String.contains searchLower (String.toLower r.title)
+                        || List.any (\ing -> String.contains searchLower (String.toLower ing)) r.ingredients
+                )
+                model.recipes
+
+        verse =
+            getDailyVerse model
     in
     div []
-        [ h2 [ style "color" "#6B705C" ] [ text "Morris Family Recipe Box" ]
-        , input (placeholder "Search..." :: value model.filterText :: onInput UpdateFilter :: inputStyle) []
-        , div [ style "margin-bottom" "20px", style "display" "flex", style "gap" "10px" ]
+        [ h2 [ style "color" "#6B705C", style "margin-bottom" "5px" ] [ text "Morris Family Recipe Box" ]
+        , -- SCRIPTURE CARD
+          div [ style "margin-bottom" "25px", style "padding" "20px", style "background" "#fdfaf0", style "border-radius" "12px", style "border" "1px solid #e9e2d0", style "box-shadow" "0 2px 4px rgba(0,0,0,0.05)" ]
+            [ p [ style "font-style" "italic", style "margin" "0", style "color" "#4a4a4a", style "line-height" "1.5", style "font-size" "16px" ] [ text ("\"" ++ verse.text ++ "\"") ]
+            , p [ style "font-size" "13px", style "text-align" "right", style "margin" "10px 0 0 0", style "font-weight" "bold", style "color" "#6B705C" ] [ text verse.ref ]
+            ]
+        , input (placeholder "Search title or ingredient..." :: value model.filterText :: onInput UpdateFilter :: inputStyle) []
+        , -- MASTER COOKBOOK BUTTONS
+          div [ style "margin-bottom" "20px", style "display" "flex", style "gap" "10px" ]
             [ a (href "/api/export/cookbook?booklet=false" :: target "_blank" :: masterBtnStyle "#6B705C") [ text "Letter Cookbook" ]
             , a (href "/api/export/cookbook?booklet=true" :: target "_blank" :: masterBtnStyle "#A5A58D") [ text "Booklet Cookbook" ]
             ]
@@ -296,7 +327,7 @@ viewRecipeCard deletingTitle recipe =
         , p [ style "font-size" "13px", style "color" "#777", style "margin" "5px 0" ] [ text (String.join ",  " recipe.tags) ]
         , if isDeleting then
             div [ style "background" "#fff0f0", style "padding" "10px", style "border-radius" "4px", style "margin-top" "10px", style "display" "flex", style "align-items" "center", style "justify-content" "space-between" ]
-                [ span [ style "color" "#a00" ] [ text "Delete this recipe?" ]
+                [ span [ style "color" "#a00" ] [ text "Delete?" ]
                 , div [ style "display" "flex", style "gap" "10px" ]
                     [ button [ onClick (ExecuteDelete recipe.title), style "background" "#a00", style "color" "white", style "border" "none", style "padding" "5px 15px", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Yes" ]
                     , button [ onClick CancelDelete, style "background" "#ccc", style "border" "none", style "padding" "5px 15px", style "border-radius" "4px", style "cursor" "pointer" ] [ text "No" ]
@@ -318,28 +349,45 @@ viewReader recipe =
     div [ style "background" "white", style "padding" "30px", style "border-radius" "8px", style "box-shadow" "0 4px 20px rgba(0,0,0,0.1)" ]
         [ h1 [ style "color" "#6B705C", style "margin-bottom" "10px" ] [ text recipe.title ]
         , div [ style "font-style" "italic", style "color" "#888", style "margin-bottom" "20px" ] [ text (String.join ",  " recipe.tags) ]
-        , h3 [ style "border-bottom" "2px solid #A5A58D" ] [ text "Ingredients" ]
+        , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px" ] [ text "Ingredients" ]
         , ul [ style "line-height" "1.8", style "font-size" "18px" ] (List.map (\ing -> li [] [ text ing ]) recipe.ingredients)
-        , h3 [ style "border-bottom" "2px solid #A5A58D", style "margin-top" "30px" ] [ text "Instructions" ]
+        , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px", style "margin-top" "30px" ] [ text "Instructions" ]
         , ol [ style "line-height" "1.6", style "font-size" "18px" ] (List.map (\inst -> li [ style "margin-bottom" "15px" ] [ text (cleanInstruction inst) ]) recipe.instructions)
         , if String.isEmpty recipe.notes then
             text ""
 
           else
-            div [ style "margin-top" "30px", style "padding" "15px", style "background" "#f9f9f9" ] [ h4 [] [ text "Notes" ], p [] (renderTextWithLinks recipe.notes) ]
-        , div [ style "margin-top" "40px", style "padding-top" "20px", style "border-top" "1px dashed #ccc" ]
-            [ p [ style "font-size" "14px", style "color" "#666", style "margin-bottom" "10px" ] [ text "Export as PDF:" ]
-            , div [ style "display" "flex", style "gap" "10px" ]
-                [ a (href ("/api/export/pdf?title=" ++ recipe.title ++ "&booklet=false") :: target "_blank" :: actionBtnStyle "#6B705C") [ text "Letter PDF" ]
-                , a (href ("/api/export/pdf?title=" ++ recipe.title ++ "&booklet=true") :: target "_blank" :: actionBtnStyle "#A5A58D") [ text "Booklet PDF" ]
-                ]
-            ]
-        , button [ onClick (SetView ListView), style "margin-top" "20px", style "width" "100%", style "padding" "15px", style "background" "#6B705C", style "color" "white", style "border" "none", style "cursor" "pointer" ] [ text "Done Reading" ]
+            div [ style "margin-top" "30px", style "padding" "15px", style "background" "#f9f9f9", style "border-radius" "4px" ]
+                [ h4 [ style "margin" "0 0 10px 0" ] [ text "Notes" ], p [] [ text recipe.notes ] ]
+        , button [ onClick (SetView ListView), style "margin-top" "30px", style "width" "100%", style "padding" "15px", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Done Reading" ]
         ]
 
 
 
--- Utils
+-- 4. UTILS & SCRIPTURE
+
+
+bibleVerses : List { text : String, ref : String }
+bibleVerses =
+    [ { text = "Go, eat your bread with joy, and drink your wine with a merry heart, for God has already approved what you do.", ref = "Ecclesiastes 9:7" }
+    , { text = "Whether you eat or drink, or whatever you do, do all to the glory of God.", ref = "1 Corinthians 10:31" }
+    , { text = "He fills your soul with good things.", ref = "Psalm 103:5" }
+    , { text = "Better is a dinner of herbs where love is than a fattened ox and hatred with it.", ref = "Proverbs 15:17" }
+    , { text = "Give us this day our daily bread.", ref = "Matthew 6:11" }
+    , { text = "Taste and see that the Lord is good.", ref = "Psalm 34:8" }
+    ]
+
+
+getDailyVerse : Model -> { text : String, ref : String }
+getDailyVerse model =
+    let
+        seed =
+            String.length model.filterText + List.length model.recipes
+
+        index =
+            modBy (List.length bibleVerses) seed
+    in
+    bibleVerses |> List.drop index |> List.head |> Maybe.withDefault { text = "", ref = "" }
 
 
 cleanInstruction : String -> String
@@ -351,21 +399,8 @@ cleanInstruction inst =
     Regex.replace re (\_ -> "") (String.trim inst)
 
 
-renderTextWithLinks : String -> List (Html Msg)
-renderTextWithLinks content =
-    String.split " " content
-        |> List.map
-            (\w ->
-                if String.startsWith "http" w then
-                    a [ href w, target "_blank", style "color" "#A5A58D", style "text-decoration" "underline" ] [ text (w ++ " ") ]
 
-                else
-                    text (w ++ " ")
-            )
-
-
-
--- HTTP
+-- 5. HTTP & JSON
 
 
 scrapeRecipe : String -> Cmd Msg
@@ -385,7 +420,20 @@ recipeDecoder =
 
 postRecipe : Model -> Cmd Msg
 postRecipe model =
-    Http.post { url = "/api/save", body = Http.jsonBody (Encode.object [ ( "title", Encode.string model.title ), ( "tags", Encode.list Encode.string (String.split "," model.tags |> List.map String.trim |> List.filter (not << String.isEmpty)) ), ( "ingredients", Encode.list Encode.string (String.split "\n" model.ingredients |> List.map String.trim |> List.filter (not << String.isEmpty)) ), ( "instructions", Encode.list Encode.string (String.split "\n" model.instructions |> List.map String.trim |> List.filter (not << String.isEmpty)) ), ( "notes", Encode.string model.notes ) ]), expect = Http.expectWhatever RecipeSaved }
+    Http.post
+        { url = "/api/save"
+        , body =
+            Http.jsonBody
+                (Encode.object
+                    [ ( "title", Encode.string model.title )
+                    , ( "ingredients", Encode.list Encode.string (String.split "\n" model.ingredients |> List.map String.trim |> List.filter (not << String.isEmpty)) )
+                    , ( "instructions", Encode.list Encode.string (String.split "\n" model.instructions |> List.map String.trim |> List.filter (not << String.isEmpty)) )
+                    , ( "tags", Encode.list Encode.string (String.split "," model.tags |> List.map String.trim |> List.filter (not << String.isEmpty)) )
+                    , ( "notes", Encode.string model.notes )
+                    ]
+                )
+        , expect = Http.expectWhatever RecipeSaved
+        }
 
 
 deleteRequest : String -> Cmd Msg
@@ -393,20 +441,28 @@ deleteRequest title =
     Http.post { url = "/api/delete?title=" ++ title, body = Http.emptyBody, expect = Http.expectWhatever Deleted }
 
 
+
+-- STYLES
+
+
+inputStyle =
+    [ style "width" "100%", style "margin-bottom" "12px", style "padding" "10px", style "border" "1px solid #ccc", style "border-radius" "4px", style "box-sizing" "border-box" ]
+
+
+actionBtnStyle c =
+    [ style "background" c, style "border" "none", style "padding" "8px 15px", style "border-radius" "4px", style "cursor" "pointer", style "color" "white", style "text-decoration" "none", style "text-align" "center", style "font-size" "12px" ]
+
+
 masterBtnStyle c =
     [ style "background" c, style "color" "white", style "text-decoration" "none", style "padding" "10px", style "flex" "1", style "text-align" "center", style "border-radius" "4px", style "font-size" "11px" ]
 
 
-actionBtnStyle c =
-    [ style "background" c, style "color" "white", style "text-decoration" "none", style "padding" "8px", style "flex" "1", style "text-align" "center", style "border-radius" "4px", style "font-size" "12px", style "border" "none", style "cursor" "pointer" ]
-
-
-inputStyle =
-    [ style "width" "100%", style "margin-bottom" "10px", style "padding" "12px", style "border" "1px solid #DDD", style "border-radius" "4px", style "box-sizing" "border-box" ]
+navStyle =
+    [ style "background" "none", style "border" "none", style "color" "white", style "font-size" "18px", style "cursor" "pointer", style "font-weight" "bold" ]
 
 
 
--- 5. MAIN
+-- 6. MAIN
 
 
 main : Program () Model Msg
