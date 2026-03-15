@@ -1,9 +1,11 @@
+// File: pdf.go
 package main
 
 import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/jung-kurt/gofpdf"
@@ -48,7 +50,7 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 	return pdf.OutputFileAndClose(outputPath)
 }
 
-// ExportMasterCookbook compiles all recipes into one giant PDF.
+// ExportMasterCookbook compiles all recipes into one giant PDF, grouped by tags.
 func ExportMasterCookbook(recipes []Recipe, isBooklet bool) error {
 	outputDir := "Printables"
 	var pdf *gofpdf.Fpdf
@@ -67,7 +69,7 @@ func ExportMasterCookbook(recipes []Recipe, isBooklet bool) error {
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	pdf.SetAutoPageBreak(true, 0.75)
 
-	// Cover Page
+	// --- 1. Cover Page ---
 	pdf.AddPage()
 	pdf.SetY(3.0)
 	pdf.SetFont("Times", "B", 36)
@@ -76,9 +78,62 @@ func ExportMasterCookbook(recipes []Recipe, isBooklet bool) error {
 	pdf.SetFont("Times", "I", 24)
 	pdf.CellFormat(0, 0.5, tr("Master Cookbook"), "", 1, "C", false, 0, "")
 
+	// --- 2. Group recipes by tags ---
+	groupedRecipes := make(map[string][]Recipe)
 	for _, r := range recipes {
+		if len(r.Tags) == 0 {
+			groupedRecipes["Miscellaneous"] = append(groupedRecipes["Miscellaneous"], r)
+		} else {
+			for _, tag := range r.Tags {
+				cleanTag := strings.TrimSpace(tag)
+				if cleanTag != "" {
+					groupedRecipes[cleanTag] = append(groupedRecipes[cleanTag], r)
+				}
+			}
+		}
+	}
+
+	// --- 3. Get sorted list of chapters ---
+	var chapters []string
+	for tag := range groupedRecipes {
+		chapters = append(chapters, tag)
+	}
+	sort.Strings(chapters)
+
+	// --- 4. Table of Contents Page ---
+	pdf.AddPage()
+	pdf.SetY(1.0)
+	pdf.SetFont("Times", "B", 24)
+	pdf.SetTextColor(107, 112, 92)
+	pdf.CellFormat(0, 0.8, tr("Table of Contents"), "B", 1, "C", false, 0, "")
+	pdf.Ln(0.5)
+
+	pdf.SetFont("Times", "", 16)
+	pdf.SetTextColor(0, 0, 0)
+	for _, chapter := range chapters {
+		pdf.CellFormat(0, 0.35, tr(chapter), "", 1, "C", false, 0, "")
+		pdf.Ln(0.1)
+	}
+
+	// --- 5. Generate Chapter Pages and Recipes ---
+	for _, chapter := range chapters {
+		// Chapter Divider Page
 		pdf.AddPage()
-		drawRecipePage(pdf, r, tr)
+		if isBooklet {
+			pdf.SetY(3.5)
+		} else {
+			pdf.SetY(4.5)
+		}
+		pdf.SetFont("Times", "B", 28)
+		pdf.SetTextColor(107, 112, 92) // Sage Green
+		pdf.CellFormat(0, 1.0, tr(chapter), "", 1, "C", false, 0, "")
+
+		// Recipe Pages for this chapter
+		pdf.SetTextColor(0, 0, 0) // Reset to black
+		for _, r := range groupedRecipes[chapter] {
+			pdf.AddPage()
+			drawRecipePage(pdf, r, tr)
+		}
 	}
 
 	fileName := "Master_Cookbook_Full.pdf"
@@ -94,14 +149,12 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
 	// Title - Sage Green (#6B705C)
 	pdf.SetFont("Times", "B", 22)
 	pdf.SetTextColor(107, 112, 92)
-	// CHANGED: MultiCell handles title wrapping.
 	pdf.MultiCell(0, 0.35, tr(r.Title), "", "L", false)
 	pdf.Ln(0.1)
 
 	// Tags
 	pdf.SetFont("Times", "I", 10)
 	pdf.SetTextColor(128, 128, 128)
-	// CHANGED: MultiCell handles long tag lists wrapping.
 	pdf.MultiCell(0, 0.15, tr(strings.Join(r.Tags, "  •  ")), "", "L", false)
 	pdf.Ln(0.25)
 
@@ -115,9 +168,8 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
 	pdf.SetFont("Times", "", 12)
 	for _, ing := range r.Ingredients {
 		if strings.TrimSpace(ing) != "" {
-			// CHANGED: MultiCell prevents long ingredients from being chopped off.
 			pdf.MultiCell(0, 0.2, tr(" • "+ing), "", "L", false)
-			pdf.Ln(0.05) // Small pad between ingredients
+			pdf.Ln(0.05)
 		}
 	}
 	pdf.Ln(0.2)
@@ -133,7 +185,6 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
 	for i, step := range r.Instructions {
 		if strings.TrimSpace(step) != "" {
 			cleanStep := re.ReplaceAllString(strings.TrimSpace(step), "")
-			// Already correct: MultiCell used here
 			pdf.MultiCell(0, 0.25, tr(fmt.Sprintf("%d. %s", i+1, cleanStep)), "", "L", false)
 			pdf.Ln(0.1)
 		}
@@ -144,7 +195,6 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
 		pdf.Ln(0.2)
 		pdf.SetFont("Times", "I", 10)
 		pdf.SetTextColor(80, 80, 80)
-		// Already correct: MultiCell used here
 		pdf.MultiCell(0, 0.2, tr("Notes: "+r.Notes), "T", "L", false)
 	}
 }

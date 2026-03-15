@@ -1,3 +1,4 @@
+// File: models.go
 package main
 
 type Recipe struct {
@@ -6,5 +7,4 @@ type Recipe struct {
 	Ingredients  []string `json:"ingredients"`
 	Instructions []string `json:"instructions"`
 	Notes        string   `json:"notes"`
-	SourceFile   string   `json:"source_file"`
 }

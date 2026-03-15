@@ -1,3 +1,4 @@
+// File: database.go
 package main
 
 import (
@@ -44,6 +45,7 @@ func SaveRecipe(db *sql.DB, r Recipe) error {
 	ingStr := strings.Join(r.Ingredients, "|")
 	insStr := strings.Join(r.Instructions, "|")
 
+	// Clean tags before saving
 	var cleanTags []string
 	for _, t := range r.Tags {
 		trimmed := strings.TrimSpace(t)
@@ -105,14 +107,11 @@ func SyncSidecar(r Recipe) error {
 			}
 
 			// 2. Execute Git commands using the -C flag (Target Directory)
-			// Add
 			exec.Command("git", "-C", backupRepoPath, "add", ".").Run()
 
-			// Commit
 			commitMsg := fmt.Sprintf("Update %s", title)
 			exec.Command("git", "-C", backupRepoPath, "commit", "-m", commitMsg).Run()
 
-			// Push to origin master
 			out, err := exec.Command("git", "-C", backupRepoPath, "push", "origin", "master").CombinedOutput()
 
 			if err != nil {
@@ -124,6 +123,21 @@ func SyncSidecar(r Recipe) error {
 	}
 
 	return nil
+}
+
+// safeSplit prevents empty strings from becoming blank array items
+func safeSplit(data string, separator string) []string {
+	if data == "" {
+		return []string{}
+	}
+	var result []string
+	for _, item := range strings.Split(data, separator) {
+		trimmed := strings.TrimSpace(item)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }
 
 // GetAllRecipes retrieves active recipes for the web view.
@@ -141,9 +155,9 @@ func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 		var ingStr, insStr, tagStr string
 		err = rows.Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes)
 		if err == nil {
-			r.Ingredients = strings.Split(ingStr, "|")
-			r.Instructions = strings.Split(insStr, "|")
-			r.Tags = strings.Split(tagStr, ",")
+			r.Ingredients = safeSplit(ingStr, "|")
+			r.Instructions = safeSplit(insStr, "|")
+			r.Tags = safeSplit(tagStr, ",")
 			recipes = append(recipes, r)
 		}
 	}
@@ -154,16 +168,16 @@ func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 func GetRecipeByTitle(db *sql.DB, title string) (Recipe, error) {
 	var r Recipe
 	var ingStr, insStr, tagStr string
-	query := `SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE title = ?`
+	query := `SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE title = ? AND is_deleted = 0`
 
 	err := db.QueryRow(query, title).Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes)
 	if err != nil {
 		return r, err
 	}
 
-	r.Ingredients = strings.Split(ingStr, "|")
-	r.Instructions = strings.Split(insStr, "|")
-	r.Tags = strings.Split(tagStr, ",")
+	r.Ingredients = safeSplit(ingStr, "|")
+	r.Instructions = safeSplit(insStr, "|")
+	r.Tags = safeSplit(tagStr, ",")
 	return r, nil
 }
 

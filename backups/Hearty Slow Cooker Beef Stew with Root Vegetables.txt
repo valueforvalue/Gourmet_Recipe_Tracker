@@ -1,5 +1,5 @@
 RECIPE: Hearty Slow Cooker Beef Stew with Root Vegetables
-TAGS: 
+TAGS: Soup
 
 INGREDIENTS
 - 1/4 cup all-purpose flour

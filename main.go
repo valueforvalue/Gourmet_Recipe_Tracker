@@ -15,7 +15,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-var Version = "3.8-PrettyPDF"
+var Version = "4.0-MasterCookbook"
 
 //go:embed web/index.html web/js/elm.js
 var frontendFiles embed.FS
@@ -69,29 +69,61 @@ func main() {
 		targetURL := r.URL.Query().Get("url")
 		resp, err := http.Get(targetURL)
 		if err != nil {
+			// FIXED: Return a real error to the frontend instead of silently failing
+			http.Error(w, "Failed to fetch URL", http.StatusInternalServerError)
 			return
 		}
 		defer resp.Body.Close()
-		doc, _ := goquery.NewDocumentFromReader(resp.Body)
+
+		if resp.StatusCode != 200 {
+			http.Error(w, fmt.Sprintf("Website returned status code: %d", resp.StatusCode), http.StatusBadRequest)
+			return
+		}
+
+		doc, err := goquery.NewDocumentFromReader(resp.Body)
+		if err != nil {
+			http.Error(w, "Failed to parse HTML", http.StatusInternalServerError)
+			return
+		}
 
 		var extracted Recipe
 		extracted.Title = strings.TrimSpace(doc.Find("h1").First().Text())
 		extracted.Notes = "Source: " + targetURL
 		extracted.Tags = []string{"Imported"}
 
+		// FIXED INGREDIENT SCRAPER: Target CSS classes instead of specific measurement words
 		doc.Find("li").Each(func(i int, s *goquery.Selection) {
-			txt := strings.TrimSpace(s.Text())
-			tLower := strings.ToLower(txt)
-			if strings.Contains(tLower, " cup ") || strings.Contains(tLower, " tsp ") || strings.Contains(tLower, " tbsp ") {
-				extracted.Ingredients = append(extracted.Ingredients, txt)
+			itemClass, _ := s.Attr("class")
+			parentClass, _ := s.Parent().Attr("class")
+			grandparentClass, _ := s.Parent().Parent().Attr("class")
+
+			combinedClasses := strings.ToLower(itemClass + " " + parentClass + " " + grandparentClass)
+
+			if strings.Contains(combinedClasses, "ingredient") {
+				// strings.Fields cleans up messy spacing and newlines from nested HTML tags
+				txt := strings.Join(strings.Fields(s.Text()), " ")
+				if txt != "" {
+					extracted.Ingredients = append(extracted.Ingredients, txt)
+				}
 			}
 		})
+
+		// FIXED INSTRUCTION SCRAPER: Broaden search to include directions and steps
 		doc.Find("li").Each(func(i int, s *goquery.Selection) {
-			parent, _ := s.Parent().Attr("class")
-			if strings.Contains(strings.ToLower(parent), "instruction") {
-				extracted.Instructions = append(extracted.Instructions, strings.TrimSpace(s.Text()))
+			itemClass, _ := s.Attr("class")
+			parentClass, _ := s.Parent().Attr("class")
+			grandparentClass, _ := s.Parent().Parent().Attr("class")
+
+			combinedClasses := strings.ToLower(itemClass + " " + parentClass + " " + grandparentClass)
+
+			if strings.Contains(combinedClasses, "instruction") || strings.Contains(combinedClasses, "direction") || strings.Contains(combinedClasses, "step") {
+				txt := strings.Join(strings.Fields(s.Text()), " ")
+				if txt != "" {
+					extracted.Instructions = append(extracted.Instructions, txt)
+				}
 			}
 		})
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(extracted)
 	})
@@ -101,27 +133,37 @@ func main() {
 		isBooklet := r.URL.Query().Get("booklet") == "true"
 		recipe, _ := GetRecipeByTitle(db, title)
 
-		ExportToPDF(recipe, isBooklet) // Call fixed in signature
+		ExportToPDF(recipe, isBooklet)
 
 		suffix := "_Letter.pdf"
 		if isBooklet {
 			suffix = "_Booklet.pdf"
 		}
+
+		fileName := title + suffix
+
 		w.Header().Set("Content-Type", "application/pdf")
-		http.ServeFile(w, r, filepath.Join("Printables", title+suffix))
+		// FIXED: Tell the browser to download as an attachment with the correct filename
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+
+		http.ServeFile(w, r, filepath.Join("Printables", fileName))
 	})
 
 	http.HandleFunc("/api/export/cookbook", func(w http.ResponseWriter, r *http.Request) {
 		isBooklet := r.URL.Query().Get("booklet") == "true"
 		recipes, _ := GetAllRecipes(db)
 
-		ExportMasterCookbook(recipes, isBooklet) // Call fixed in signature
+		ExportMasterCookbook(recipes, isBooklet)
 
 		fileName := "Master_Cookbook_Full.pdf"
 		if isBooklet {
 			fileName = "Master_Cookbook_Booklet.pdf"
 		}
+
 		w.Header().Set("Content-Type", "application/pdf")
+		// FIXED: Tell the browser to download as an attachment with the correct filename
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+
 		http.ServeFile(w, r, filepath.Join("Printables", fileName))
 	})
 
@@ -139,7 +181,6 @@ func getLocalIP() string {
 
 	for _, address := range addrs {
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			// Check if it's IPv4 AND explicitly ensure it is not a 169.254.x.x address
 			if ipnet.IP.To4() != nil && !ipnet.IP.IsLinkLocalUnicast() {
 				return ipnet.IP.String()
 			}

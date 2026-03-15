@@ -1,3 +1,4 @@
+// File: parser.go
 package main
 
 import (
@@ -15,7 +16,7 @@ func ParseRecipeFile(filename string) (Recipe, error) {
 	defer file.Close()
 
 	var r Recipe
-	r.SourceFile = filename // Track the origin file
+	// The legacy SourceFile field has been removed to match models.go
 
 	scanner := bufio.NewScanner(file)
 	var currentSection string
@@ -37,7 +38,10 @@ func ParseRecipeFile(filename string) (Recipe, error) {
 			tagList := strings.TrimPrefix(line, "TAGS:")
 			parts := strings.Split(tagList, ",")
 			for _, p := range parts {
-				r.Tags = append(r.Tags, strings.TrimSpace(p))
+				cleanTag := strings.TrimSpace(p)
+				if cleanTag != "" { // Prevents empty tags from trailing commas
+					r.Tags = append(r.Tags, cleanTag)
+				}
 			}
 			continue
 		}
