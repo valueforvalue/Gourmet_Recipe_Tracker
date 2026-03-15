@@ -1,36 +1,51 @@
-# Gourmet Recipe Tracker v2.4
+# Morris Family Recipe Tracker v4.0
 
-An interactive Go-based utility for managing a digital recipe library and generating professional North American Letter and Booklet-style PDFs.
+A self-hosted, web-based application built in Go for managing a digital recipe library, scraping recipes from the web, and generating professional, auto-categorized PDF cookbooks.
 
 ## Core Features
-- **Interactive ASCII Menu**: Manage your library, sync files, and generate cookbooks from a single console.
-- **Dual-Mode Sync**: Generate individual recipes in **Standard Letter (8.5" x 11")** or **Booklet (5.5" x 8.5")**.
-- **Master Cookbook Generation**: Compiles selected recipes into a single, indexed PDF with a clickable Table of Contents.
-- **Config-Based Selection**: Automatically generates `cookbook_config.txt` to let you choose exactly which recipes to include in a master export.
-- **SQLite Backend**: Maintains a persistent database of all recipes to prevent duplicates and allow for quick searching.
+* **Web-Based UI**: Manage your entire library from your browser or mobile device via a responsive frontend.
+* **Smart Web Scraper**: Paste a URL to automatically extract recipe titles, ingredients, and instructions directly from food blogs.
+* **Automated Master Cookbook**: Instantly compile your entire library into a single PDF with a generated Table of Contents, automatically grouped and alphabetized by recipe tags (e.g., "Dinner", "Dessert").
+* **Dual PDF Modes**: Export individual recipes or the Master Cookbook in **Standard Letter (8.5" x 11")** or **Booklet (5.5" x 8.5")** sizes with perfect text-wrapping.
+* **"Daily Bread" Git Sync**: Automatically saves plain-text copies of every recipe and pushes them to a local or remote Git repository for future-proof backup.
+* **SQLite Backend**: Maintains a robust, searchable database to prevent duplicates and safely handle soft-deletes.
 
 ## Usage Instructions
 
-### 1. Adding Recipes
-Place your recipe `.txt` files in the `recipes_to_import/` folder. Use the provided `Template.txt` for consistent formatting.
+### 1. Running the Server
+Run the application from your terminal:
+`go run .`
 
-### 2. Running the Program
-Run `RecipeTracker.exe` and select from the following options:
-- **[1] & [2]**: Syncs the folder to the database and generates individual PDFs.
-- **[4] Master Cookbook**: Generates a list of all recipes. You can delete the ones you don't want, then the program builds a single Master PDF.
+The console will display your local IP address. Open your web browser and navigate to:
+* **Desktop:** `http://localhost:8080`
+* **Mobile:** `http://<YOUR_LOCAL_IP>:8080`
 
-### 3. Printing for Physical Use (The "2-Up" Method)
-To print Booklet-sized pages (5.5" x 8.5") efficiently onto standard paper:
-- Open the PDF and select **Print**.
-- Set Orientation to **Landscape**.
-- Set **Multiple Pages per Sheet** to **2**.
-- The **0.75" Left Margin** ensures space for hole-punching after you cut the sheet in half at the 5.5" mark.
+### 2. Adding Recipes
+* **Web Import:** Use the built-in scraper to paste a URL from a recipe site. The app will automatically extract and format the ingredients and steps.
+* **Manual Entry:** Use the web interface to type out recipes, tag them, and save them directly to the database.
+
+### 3. Backups & Git Sync
+Text file backups are automatically generated in the `/backups` folder. If `enableGitSync` is set to `true` in `database.go`, these text files are instantly vaulted and pushed to your configured GitHub repository whenever a recipe is saved.
+
+### 4. Printing for Physical Use (The "2-Up" Method)
+To print Booklet-sized PDFs (5.5" x 8.5") efficiently onto standard paper to build a physical recipe box or binder:
+1. Open the generated PDF and select **Print**.
+2. Set Orientation to **Landscape**.
+3. Set **Multiple Pages per Sheet** to **2**.
+4. Cut the printed 8.5" x 11" sheets in half. The generated margins ensure enough space for standard hole-punching.
 
 ## Build Information
 
 ### Prerequisites
-- [Go](https://go.dev/dl/) (v1.21+)
-- Dependencies:
-  ```bash
-  go get modernc.org/sqlite
-  go get [github.com/jung-kurt/gofpdf](https://github.com/jung-kurt/gofpdf)
+* [Go](https://go.dev/dl/) (v1.21+)
+* Git (if using the auto-sync feature)
+
+### Dependencies
+Install the required Go modules before building:
+`go get modernc.org/sqlite`
+`go get github.com/jung-kurt/gofpdf`
+`go get github.com/PuerkitoBio/goquery`
+
+### Compiling
+To build a standalone executable that you can run without the Go toolchain:
+`go build -o RecipeTracker.exe .`
