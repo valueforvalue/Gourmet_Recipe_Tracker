@@ -14,7 +14,7 @@ import (
 // --- CONFIGURATION ---
 // Set enableGitSync to true to auto-push to GitHub.
 // Ensure backupRepoPath is a folder initialized with 'git init' and a remote.
-var enableGitSync = false
+var enableGitSync = true
 var backupRepoPath = `C:\Development\morris_recipe_backups`
 
 // InitDB sets up the SQLite connection and schema.

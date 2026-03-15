@@ -132,10 +132,15 @@ func main() {
 }
 
 func getLocalIP() string {
-	addrs, _ := net.InterfaceAddrs()
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "127.0.0.1"
+	}
+
 	for _, address := range addrs {
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
+			// Check if it's IPv4 AND explicitly ensure it is not a 169.254.x.x address
+			if ipnet.IP.To4() != nil && !ipnet.IP.IsLinkLocalUnicast() {
 				return ipnet.IP.String()
 			}
 		}

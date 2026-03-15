@@ -94,13 +94,16 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
 	// Title - Sage Green (#6B705C)
 	pdf.SetFont("Times", "B", 22)
 	pdf.SetTextColor(107, 112, 92)
-	pdf.CellFormat(0, 0.6, tr(r.Title), "", 1, "L", false, 0, "")
+	// CHANGED: MultiCell handles title wrapping.
+	pdf.MultiCell(0, 0.35, tr(r.Title), "", "L", false)
+	pdf.Ln(0.1)
 
 	// Tags
 	pdf.SetFont("Times", "I", 10)
 	pdf.SetTextColor(128, 128, 128)
-	pdf.CellFormat(0, 0.3, tr(strings.Join(r.Tags, "  •  ")), "", 1, "L", false, 0, "")
-	pdf.Ln(0.2)
+	// CHANGED: MultiCell handles long tag lists wrapping.
+	pdf.MultiCell(0, 0.15, tr(strings.Join(r.Tags, "  •  ")), "", "L", false)
+	pdf.Ln(0.25)
 
 	pdf.SetTextColor(0, 0, 0)
 
@@ -112,10 +115,12 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
 	pdf.SetFont("Times", "", 12)
 	for _, ing := range r.Ingredients {
 		if strings.TrimSpace(ing) != "" {
-			pdf.CellFormat(0, 0.25, tr(" • "+ing), "", 1, "L", false, 0, "")
+			// CHANGED: MultiCell prevents long ingredients from being chopped off.
+			pdf.MultiCell(0, 0.2, tr(" • "+ing), "", "L", false)
+			pdf.Ln(0.05) // Small pad between ingredients
 		}
 	}
-	pdf.Ln(0.3)
+	pdf.Ln(0.2)
 
 	// Preparation Section
 	pdf.SetFont("Times", "B", 14)
@@ -128,6 +133,7 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
 	for i, step := range r.Instructions {
 		if strings.TrimSpace(step) != "" {
 			cleanStep := re.ReplaceAllString(strings.TrimSpace(step), "")
+			// Already correct: MultiCell used here
 			pdf.MultiCell(0, 0.25, tr(fmt.Sprintf("%d. %s", i+1, cleanStep)), "", "L", false)
 			pdf.Ln(0.1)
 		}
@@ -138,6 +144,7 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
 		pdf.Ln(0.2)
 		pdf.SetFont("Times", "I", 10)
 		pdf.SetTextColor(80, 80, 80)
+		// Already correct: MultiCell used here
 		pdf.MultiCell(0, 0.2, tr("Notes: "+r.Notes), "T", "L", false)
 	}
 }
