@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/fs"
@@ -16,12 +17,20 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-var Version = "4.0-MasterCookbook"
+var Version = "4.1-SystemOverhaul"
 
 //go:embed web/index.html web/js/elm.js
 var frontendFiles embed.FS
 
 func main() {
+	versionFlag := flag.Bool("version", false, "print version and exit")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("Morris Family Recipe Tracker v%s\n", Version)
+		return
+	}
+
 	// Initialize Logging
 	logFile, err := os.OpenFile("tracker.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
