@@ -1,70 +1,80 @@
+// File: parser.go
 package main
 
 import (
 	"bufio"
 	"os"
-	"path/filepath"
-	"regexp"
 	"strings"
 )
 
-func ParseFile(path string) (Recipe, error) {
-	file, err := os.Open(path)
+// ParseRecipeFile reads a standard Gourmet Tracker text file and converts it into a Recipe struct.
+func ParseRecipeFile(filename string) (Recipe, error) {
+	file, err := os.Open(filename)
 	if err != nil {
 		return Recipe{}, err
 	}
 	defer file.Close()
 
-	recipe := Recipe{SourceFile: filepath.Base(path)}
+	var r Recipe
+	// The legacy SourceFile field has been removed to match models.go
+
 	scanner := bufio.NewScanner(file)
-	currentSection := ""
+	var currentSection string
 
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" {
+		line := scanner.Text()
+		lineTrim := strings.TrimSpace(line)
+
+		if lineTrim == "" {
 			continue
 		}
 
-		upperLine := strings.ToUpper(line)
-
-		if strings.HasPrefix(upperLine, "RECIPE:") {
-			recipe.Title = strings.TrimSpace(line[7:])
+		// Detect Section Headers
+		if strings.HasPrefix(line, "RECIPE:") {
+			r.Title = strings.TrimSpace(strings.TrimPrefix(line, "RECIPE:"))
 			continue
-		} else if strings.HasPrefix(upperLine, "TAGS:") {
-			tagString := strings.TrimSpace(line[5:])
-			recipe.Tags = strings.Split(tagString, ",")
-			continue
-		} else if strings.Contains(upperLine, "INGREDIENTS") {
-			currentSection = "INGREDIENTS"
-			continue
-		} else if strings.Contains(upperLine, "INSTRUCTIONS") {
-			currentSection = "INSTRUCTIONS"
-			continue
-		} else if strings.HasPrefix(upperLine, "NOTES:") {
-			recipe.Notes = strings.TrimSpace(line[6:])
-			currentSection = "NOTES"
+		}
+		if strings.HasPrefix(line, "TAGS:") {
+			tagList := strings.TrimPrefix(line, "TAGS:")
+			parts := strings.Split(tagList, ",")
+			for _, p := range parts {
+				cleanTag := strings.TrimSpace(p)
+				if cleanTag != "" { // Prevents empty tags from trailing commas
+					r.Tags = append(r.Tags, cleanTag)
+				}
+			}
 			continue
 		}
 
+		// Section Switching
+		if lineTrim == "INGREDIENTS" {
+			currentSection = "ingredients"
+			continue
+		}
+		if lineTrim == "INSTRUCTIONS" {
+			currentSection = "instructions"
+			continue
+		}
+		if strings.HasPrefix(line, "NOTES:") {
+			r.Notes = strings.TrimSpace(strings.TrimPrefix(line, "NOTES:"))
+			currentSection = ""
+			continue
+		}
+
+		// Append data based on current section
 		switch currentSection {
-		case "INGREDIENTS":
-			// Clean up leading dashes or bullet points
-			item := strings.TrimPrefix(line, "- ")
-			recipe.Ingredients = append(recipe.Ingredients, item)
-		case "INSTRUCTIONS":
-			// Strip existing numbers like "1." or "1. 1." before saving
-			cleaned := cleanInstructionLine(line)
-			recipe.Instructions = append(recipe.Instructions, cleaned)
+		case "ingredients":
+			// Strip leading dashes or bullets if present
+			item := strings.TrimPrefix(lineTrim, "-")
+			r.Ingredients = append(r.Ingredients, strings.TrimSpace(item))
+		case "instructions":
+			r.Instructions = append(r.Instructions, lineTrim)
 		}
 	}
 
-	return recipe, scanner.Err()
-}
+	if err := scanner.Err(); err != nil {
+		return Recipe{}, err
+	}
 
-// cleanInstructionLine uses a Regular Expression to remove leading numbers and periods
-func cleanInstructionLine(line string) string {
-	// This regex looks for digits followed by a period and a space at the start of a line
-	// It will catch "1. ", "10. ", or even duplicated "1. 1. "
-	re := regexp.MustCompile(`^(\d+\.\s*)+`)
-	return strings.TrimSpace(re.ReplaceAllString(line, ""))
+	return r, nil
 }

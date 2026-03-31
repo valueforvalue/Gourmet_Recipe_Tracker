@@ -1,27 +1,56 @@
 package main
 
 import (
-	"bufio"
-	"database/sql"
+	"embed"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/fs"
 	"log"
+	"net"
+	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
-var Version = "development"
+var Version = "4.0-MasterCookbook"
+
+//go:embed web/index.html web/js/elm.js
+var frontendFiles embed.FS
 
 func main() {
-	inputDir := "recipes_to_import"
-	outputDir := "Printables"
-	dbFile := "recipes.db"
-	configFile := "cookbook_config.txt"
+	// Initialize Logging
+	logFile, err := os.OpenFile("tracker.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Printf(" [!] Warning: Could not create log file: %v\n", err)
+	} else {
+		multi := io.MultiWriter(os.Stdout, logFile)
+		log.SetOutput(multi)
+		log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	}
 
-	ensureDirExists(inputDir)
-	ensureDirExists(outputDir)
+	LoadConfig()
+	InitConfig()
+
+	dbFile := GlobalConfig.DBFile
+	ensureDirExists("Printables")
+	ensureDirExists("backups")
+
+	// Start the background Git sync worker
+	if GlobalConfig.GitSync {
+		go StartSyncWorker()
+	}
+
+	log.Println("-----------------------------------------------")
+	log.Printf(" Morris Family Recipe Tracker v%s", Version)
+	if GlobalConfig.GitSync {
+		log.Printf(" [!] GIT SYNC: ENABLED (Target: %s)", GlobalConfig.BackupPath)
+	} else {
+		log.Println(" [ ] GIT SYNC: DISABLED (Local only mode)")
+	}
 
 	db, err := InitDB(dbFile)
 	if err != nil {
@@ -29,173 +58,175 @@ func main() {
 	}
 	defer db.Close()
 
-	reader := bufio.NewReader(os.Stdin)
+	webFiles, _ := fs.Sub(frontendFiles, "web")
+	http.Handle("/", http.FileServer(http.FS(webFiles)))
 
-	for {
-		clearScreen()
-		count := GetRecipeCount(db)
+	// API ROUTES
+	http.HandleFunc("/api/recipes", func(w http.ResponseWriter, r *http.Request) {
+		log.Println(" [API] GET /api/recipes")
+		recipes, err := GetAllRecipes(db)
+		if err != nil {
+			log.Printf(" [Error] GetAllRecipes: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(recipes)
+	})
 
-		fmt.Println("########################################################")
-		fmt.Printf("#             GOURMET RECIPE TRACKER %s              #\n", Version)
-		fmt.Printf("#          Library Size: %d Recipes Saved               #\n", count)
-		fmt.Println("########################################################")
-		fmt.Println("#                                                      #")
-		fmt.Println("#  [1] SYNC: Individual Letter PDFs                    #")
-		fmt.Println("#  [2] SYNC: Individual Booklet PDFs                   #")
-		fmt.Println("#  [3] OPEN: View 'Printables' Folder                  #")
-		fmt.Println("#  [4] MASTER: Generate Custom Cookbook (Full/Booklet) #")
-		fmt.Println("#  [5] CLEAN: Re-create Template.txt                   #")
-		fmt.Println("#                                                      #")
-		fmt.Println("#  [Q] QUIT                                            #")
-		fmt.Println("########################################################")
-		fmt.Print("\n > Selection: ")
-
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(strings.ToUpper(input))
-
-		switch input {
-		case "1":
-			runFullSync(db, inputDir, false)
-			pause(reader)
-		case "2":
-			runFullSync(db, inputDir, true)
-			pause(reader)
-		case "3":
-			openFolder(outputDir)
-		case "4":
-			handleMasterCookbook(db, configFile, reader)
-		case "5":
-			setupTemplateFile(filepath.Join(inputDir, "Template.txt"))
-			fmt.Println("\nTemplate refreshed!")
-			pause(reader)
-		case "Q":
+	http.HandleFunc("/api/save", func(w http.ResponseWriter, r *http.Request) {
+		var rcp Recipe
+		if err := json.NewDecoder(r.Body).Decode(&rcp); err != nil {
+			log.Printf(" [Error] POST /api/save (Decode): %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-	}
+		log.Printf(" [API] POST /api/save: %s", rcp.Title)
+		err := SaveRecipe(db, rcp)
+		if err != nil {
+			log.Printf(" [Error] SaveRecipe: %v", err)
+			http.Error(w, "Failed to save recipe", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	http.HandleFunc("/api/delete", func(w http.ResponseWriter, r *http.Request) {
+		title := r.URL.Query().Get("title")
+		log.Printf(" [API] POST /api/delete: %s", title)
+		err := DeleteRecipe(db, title)
+		if err != nil {
+			log.Printf(" [Error] DeleteRecipe: %v", err)
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	http.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
+		targetURL := r.URL.Query().Get("url")
+		log.Printf(" [API] GET /api/scrape: %s", targetURL)
+		resp, err := http.Get(targetURL)
+		if err != nil {
+			log.Printf(" [Error] Scrape Fetch: %v", err)
+			http.Error(w, "Failed to fetch URL", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			log.Printf(" [Error] Scrape Status: %d", resp.StatusCode)
+			http.Error(w, fmt.Sprintf("Website returned status code: %d", resp.StatusCode), http.StatusBadRequest)
+			return
+		}
+
+		doc, err := goquery.NewDocumentFromReader(resp.Body)
+		if err != nil {
+			log.Printf(" [Error] Scrape Parse: %v", err)
+			http.Error(w, "Failed to parse HTML", http.StatusInternalServerError)
+			return
+		}
+
+		var extracted Recipe
+		extracted.Title = strings.Join(strings.Fields(doc.Find("h1").First().Text()), " ")
+		extracted.Notes = "Source: " + targetURL
+		extracted.Tags = []string{"Imported"}
+
+		// FIXED INGREDIENT SCRAPER: Target CSS classes instead of specific measurement words
+		doc.Find("li").Each(func(i int, s *goquery.Selection) {
+			itemClass, _ := s.Attr("class")
+			parentClass, _ := s.Parent().Attr("class")
+			grandparentClass, _ := s.Parent().Parent().Attr("class")
+
+			combinedClasses := strings.ToLower(itemClass + " " + parentClass + " " + grandparentClass)
+
+			if strings.Contains(combinedClasses, "ingredient") {
+				txt := strings.Join(strings.Fields(s.Text()), " ")
+				if txt != "" {
+					extracted.Ingredients = append(extracted.Ingredients, txt)
+				}
+			}
+		})
+
+		// FIXED INSTRUCTION SCRAPER: Broaden search to include directions and steps
+		doc.Find("li").Each(func(i int, s *goquery.Selection) {
+			itemClass, _ := s.Attr("class")
+			parentClass, _ := s.Parent().Attr("class")
+			grandparentClass, _ := s.Parent().Parent().Attr("class")
+
+			combinedClasses := strings.ToLower(itemClass + " " + parentClass + " " + grandparentClass)
+
+			if strings.Contains(combinedClasses, "instruction") || strings.Contains(combinedClasses, "direction") || strings.Contains(combinedClasses, "step") {
+				txt := strings.Join(strings.Fields(s.Text()), " ")
+				if txt != "" {
+					extracted.Instructions = append(extracted.Instructions, txt)
+				}
+			}
+		})
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(extracted)
+	})
+
+	http.HandleFunc("/api/export/pdf", func(w http.ResponseWriter, r *http.Request) {
+		title := r.URL.Query().Get("title")
+		log.Printf(" [API] GET /api/export/pdf: %s", title)
+		isBooklet := r.URL.Query().Get("booklet") == "true"
+		recipe, _ := GetRecipeByTitle(db, title)
+
+		ExportToPDF(recipe, isBooklet)
+
+		suffix := "_Letter.pdf"
+		if isBooklet {
+			suffix = "_Booklet.pdf"
+		}
+
+		fileName := title + suffix
+
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+
+		http.ServeFile(w, r, filepath.Join("Printables", fileName))
+	})
+
+	http.HandleFunc("/api/export/cookbook", func(w http.ResponseWriter, r *http.Request) {
+		log.Println(" [API] GET /api/export/cookbook")
+		isBooklet := r.URL.Query().Get("booklet") == "true"
+		recipes, _ := GetAllRecipes(db)
+
+		ExportMasterCookbook(recipes, isBooklet)
+
+		fileName := "Master_Cookbook_Full.pdf"
+		if isBooklet {
+			fileName = "Master_Cookbook_Booklet.pdf"
+		}
+
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
+
+		http.ServeFile(w, r, filepath.Join("Printables", fileName))
+	})
+
+	localIP := getLocalIP()
+	log.Printf(" [Mobile Access]: http://%s:%s", localIP, GlobalConfig.Port)
+	log.Println("-----------------------------------------------")
+	log.Fatal(http.ListenAndServe(":"+GlobalConfig.Port, nil))
 }
 
-func handleMasterCookbook(db *sql.DB, configFile string, reader *bufio.Reader) {
-	allRecipes, err := GetAllRecipes(db)
-	if err != nil || len(allRecipes) == 0 {
-		fmt.Println("\nNo recipes found in the database.")
-		pause(reader)
-		return
+func getLocalIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "127.0.0.1"
 	}
 
-	// 1. Generate/Refresh the config file
-	var titles []string
-	for _, r := range allRecipes {
-		titles = append(titles, r.Title)
-	}
-	os.WriteFile(configFile, []byte(strings.Join(titles, "\n")), 0644)
-
-	fmt.Println("\n--- CUSTOM COOKBOOK GENERATION ---")
-	fmt.Printf("I have updated '%s' with all recipe names.\n", configFile)
-
-	fmt.Print("Would you like to open it now to remove recipes? (Y/N): ")
-	openChoice, _ := reader.ReadString('\n')
-	if strings.TrimSpace(strings.ToUpper(openChoice)) == "Y" {
-		var cmd *exec.Cmd
-		if runtime.GOOS == "windows" {
-			cmd = exec.Command("notepad.exe", configFile)
-		} else if runtime.GOOS == "darwin" {
-			cmd = exec.Command("open", "-e", configFile)
-		}
-		if cmd != nil {
-			fmt.Println("Opening editor... please save and close when finished.")
-			cmd.Run()
-		}
-	}
-
-	// Ask for format
-	fmt.Println("\nWhich format would you like for this cookbook?")
-	fmt.Println("[1] Full Letter (Digital/Standard Printing)")
-	fmt.Println("[2] Booklet (Half-Page/For Cutting & Binding)")
-	fmt.Print("Selection: ")
-	formatChoice, _ := reader.ReadString('\n')
-	isBooklet := strings.TrimSpace(formatChoice) == "2"
-
-	fmt.Print("\nPress Enter when you are ready to generate the PDF...")
-	reader.ReadString('\n')
-
-	// 2. Read back the edited file
-	content, _ := os.ReadFile(configFile)
-	var selectedRecipes []Recipe
-	lines := strings.Split(string(content), "\n")
-	for _, line := range lines {
-		title := strings.TrimSpace(line)
-		if title == "" {
-			continue
-		}
-		recipe, err := GetRecipeByTitle(db, title)
-		if err == nil {
-			selectedRecipes = append(selectedRecipes, recipe)
-		}
-	}
-
-	if len(selectedRecipes) > 0 {
-		fmt.Printf("Generating Master Cookbook (Booklet: %v)...\n", isBooklet)
-		ExportMasterCookbook(selectedRecipes, isBooklet)
-		fmt.Println("Success! Check your 'Printables' folder.")
-	} else {
-		fmt.Println("No valid recipes found in the config.")
-	}
-	pause(reader)
-}
-
-func runFullSync(db *sql.DB, inputDir string, isBooklet bool) {
-	fmt.Printf("\nScanning for updates (Booklet: %v)...\n", isBooklet)
-	files, _ := os.ReadDir(inputDir)
-	for _, file := range files {
-		if !file.IsDir() && strings.HasSuffix(strings.ToLower(file.Name()), ".txt") {
-			if strings.EqualFold(file.Name(), "Template.txt") {
-				continue
-			}
-			recipe, err := ParseFile(filepath.Join(inputDir, file.Name()))
-			if err == nil {
-				SaveRecipe(db, recipe)
-				ExportToPDF(recipe, isBooklet)
-				fmt.Printf("[OK] %s\n", recipe.Title)
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil && !ipnet.IP.IsLinkLocalUnicast() {
+				return ipnet.IP.String()
 			}
 		}
 	}
+	return "127.0.0.1"
 }
 
 func ensureDirExists(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		os.Mkdir(path, 0755)
 	}
-}
-
-func pause(reader *bufio.Reader) {
-	fmt.Println("\nPress Enter to return to menu...")
-	reader.ReadString('\n')
-}
-
-func clearScreen() {
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cls")
-	} else {
-		cmd = exec.Command("clear")
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Run()
-}
-
-func openFolder(path string) {
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("explorer", path)
-	} else if runtime.GOOS == "darwin" {
-		cmd = exec.Command("open", path)
-	}
-	if cmd != nil {
-		cmd.Run()
-	}
-}
-
-func setupTemplateFile(path string) {
-	content := "RECIPE: \nTAGS: \n\n--- INGREDIENTS ---\n- \n\n--- INSTRUCTIONS ---\n1. \n\nNOTES: "
-	_ = os.WriteFile(path, []byte(content), 0644)
 }

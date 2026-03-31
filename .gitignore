@@ -1,14 +1,34 @@
-# Executables
+# --- Executables ---
 *.exe
-RecipeTracker
+*.exe~
+*.dll
+*.so
+*.dylib
+recipe-tracker
 
-# Local Database
+# --- Go specific ---
+vendor/
+# we keep go.sum for reproducible builds
+
+# --- Elm specific ---
+**/elm-stuff/
+# We keep js/elm.js because Go embeds it, but exclude other temporary artifacts
+index.html.js
+
+# --- Project Specific Data ---
+# We ignore the local database, logs, and user configuration
 recipes.db
+test_recipes.db
+tracker.log
+config.json
 
-# Output Folders
+# Ignore generated output folders
 Printables/
-recipes_to_import/
+backups/
 
-# OS specific
+# --- OS / IDE specific ---
 .DS_Store
-Thumbs.db
+.vscode/
+*.swp
+*.bak
+*.log
