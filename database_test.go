@@ -61,3 +61,27 @@ func TestDatabaseOperations(t *testing.T) {
 		t.Errorf("Expected 0 recipes, got %d", len(recipes))
 	}
 }
+
+func TestSanitizeFilename(t *testing.T) {
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{"Simple Recipe", "Simple Recipe"},
+		// Path separators are replaced with dashes; the result stays within the
+		// target directory (no traversal) because no slashes remain.
+		{"../../../etc/passwd", "..-..-..-etc-passwd"},
+		{"recipe/with/slashes", "recipe-with-slashes"},
+		{"recipe\\with\\backslashes", "recipe-with-backslashes"},
+		{"  spaces  ", "spaces"},
+		{"", "unnamed"},
+		{".", "unnamed"},
+	}
+
+	for _, c := range cases {
+		got := sanitizeFilename(c.input)
+		if got != c.expected {
+			t.Errorf("sanitizeFilename(%q) = %q, want %q", c.input, got, c.expected)
+		}
+	}
+}

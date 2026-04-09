@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,6 +28,7 @@ func main() {
 	if err != nil {
 		fmt.Printf(" [!] Warning: Could not create log file: %v\n", err)
 	} else {
+		defer logFile.Close()
 		multi := io.MultiWriter(os.Stdout, logFile)
 		log.SetOutput(multi)
 		log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -58,7 +60,10 @@ func main() {
 	}
 	defer db.Close()
 
-	webFiles, _ := fs.Sub(frontendFiles, "web")
+	webFiles, err := fs.Sub(frontendFiles, "web")
+	if err != nil {
+		log.Fatalf("Critical Error: Could not load embedded web files: %v", err)
+	}
 	http.Handle("/", http.FileServer(http.FS(webFiles)))
 
 	// API ROUTES
@@ -67,6 +72,8 @@ func main() {
 		recipes, err := GetAllRecipes(db)
 		if err != nil {
 			log.Printf(" [Error] GetAllRecipes: %v", err)
+			http.Error(w, "Failed to retrieve recipes", http.StatusInternalServerError)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(recipes)
@@ -95,6 +102,8 @@ func main() {
 		err := DeleteRecipe(db, title)
 		if err != nil {
 			log.Printf(" [Error] DeleteRecipe: %v", err)
+			http.Error(w, "Failed to delete recipe", http.StatusInternalServerError)
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 	})
@@ -102,6 +111,11 @@ func main() {
 	http.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
 		targetURL := r.URL.Query().Get("url")
 		log.Printf(" [API] GET /api/scrape: %s", targetURL)
+		if !isSafeURL(targetURL) {
+			log.Printf(" [Error] Scrape blocked unsafe URL: %s", targetURL)
+			http.Error(w, "Invalid or disallowed URL", http.StatusBadRequest)
+			return
+		}
 		resp, err := http.Get(targetURL)
 		if err != nil {
 			log.Printf(" [Error] Scrape Fetch: %v", err)
@@ -168,16 +182,25 @@ func main() {
 		title := r.URL.Query().Get("title")
 		log.Printf(" [API] GET /api/export/pdf: %s", title)
 		isBooklet := r.URL.Query().Get("booklet") == "true"
-		recipe, _ := GetRecipeByTitle(db, title)
+		recipe, err := GetRecipeByTitle(db, title)
+		if err != nil {
+			log.Printf(" [Error] GetRecipeByTitle: %v", err)
+			http.Error(w, "Recipe not found", http.StatusNotFound)
+			return
+		}
 
-		ExportToPDF(recipe, isBooklet)
+		if err := ExportToPDF(recipe, isBooklet); err != nil {
+			log.Printf(" [Error] ExportToPDF: %v", err)
+			http.Error(w, "Failed to generate PDF", http.StatusInternalServerError)
+			return
+		}
 
 		suffix := "_Letter.pdf"
 		if isBooklet {
 			suffix = "_Booklet.pdf"
 		}
 
-		fileName := title + suffix
+		fileName := sanitizeFilename(title) + suffix
 
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
@@ -188,9 +211,18 @@ func main() {
 	http.HandleFunc("/api/export/cookbook", func(w http.ResponseWriter, r *http.Request) {
 		log.Println(" [API] GET /api/export/cookbook")
 		isBooklet := r.URL.Query().Get("booklet") == "true"
-		recipes, _ := GetAllRecipes(db)
+		recipes, err := GetAllRecipes(db)
+		if err != nil {
+			log.Printf(" [Error] GetAllRecipes (cookbook): %v", err)
+			http.Error(w, "Failed to retrieve recipes", http.StatusInternalServerError)
+			return
+		}
 
-		ExportMasterCookbook(recipes, isBooklet)
+		if err := ExportMasterCookbook(recipes, isBooklet); err != nil {
+			log.Printf(" [Error] ExportMasterCookbook: %v", err)
+			http.Error(w, "Failed to generate cookbook PDF", http.StatusInternalServerError)
+			return
+		}
 
 		fileName := "Master_Cookbook_Full.pdf"
 		if isBooklet {
@@ -227,6 +259,41 @@ func getLocalIP() string {
 
 func ensureDirExists(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.Mkdir(path, 0755)
+		if err := os.Mkdir(path, 0755); err != nil {
+			log.Printf(" [!] Warning: Could not create directory %s: %v", path, err)
+		}
 	}
+}
+
+// isSafeURL validates that a URL uses http/https and does not target
+// loopback, private, or link-local addresses to prevent SSRF attacks.
+// It also resolves hostnames to catch DNS rebinding attempts.
+func isSafeURL(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		return false
+	}
+	host := u.Hostname()
+	if host == "" || host == "localhost" {
+		return false
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return isSafeIP(ip)
+	}
+	// Resolve hostname and validate all resulting IPs to guard against DNS rebinding.
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		return false
+	}
+	for _, addr := range addrs {
+		if ip := net.ParseIP(addr); ip != nil && !isSafeIP(ip) {
+			return false
+		}
+	}
+	return true
+}
+
+// isSafeIP returns true when ip is a globally routable unicast address.
+func isSafeIP(ip net.IP) bool {
+	return !ip.IsLoopback() && !ip.IsPrivate() && !ip.IsLinkLocalUnicast() && !ip.IsUnspecified()
 }
