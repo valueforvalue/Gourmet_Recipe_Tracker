@@ -32,8 +32,11 @@ func LoadConfig() {
 	// Load from file if it exists
 	if _, err := os.Stat(configPath); err == nil {
 		file, _ := os.ReadFile(configPath)
-		json.Unmarshal(file, &GlobalConfig)
-		fmt.Println(" [Config]: Loaded settings from config.json")
+		if err := json.Unmarshal(file, &GlobalConfig); err != nil {
+			fmt.Printf(" [Config] Warning: Could not parse config.json: %v\n", err)
+		} else {
+			fmt.Println(" [Config]: Loaded settings from config.json")
+		}
 	} else {
 		// Create default config file if it doesn't exist
 		SaveConfig()

@@ -79,8 +79,8 @@ func StartSyncWorker() {
 }
 
 // InitDB sets up the SQLite connection and schema.
-func InitDB(filepath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", filepath)
+func InitDB(dbPath string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -160,8 +160,7 @@ func SyncSidecar(r Recipe) error {
 	_ = os.Mkdir("backups", 0755)
 
 	// Sanitize title for filename
-	safeTitle := strings.ReplaceAll(r.Title, "/", "-")
-	safeTitle = strings.ReplaceAll(safeTitle, "\\", "-")
+	safeTitle := sanitizeFilename(r.Title)
 	fileName := safeTitle + ".txt"
 
 	// Prepare text content
@@ -201,6 +200,19 @@ func safeSplit(data string, separator string) []string {
 	return result
 }
 
+// sanitizeFilename replaces path-separator characters and strips directory
+// components to prevent path traversal when using recipe titles as filenames.
+func sanitizeFilename(name string) string {
+	safe := strings.NewReplacer("/", "-", "\\", "-").Replace(name)
+	// filepath.Base strips any remaining directory components (e.g. "..")
+	safe = filepath.Base(safe)
+	safe = strings.TrimSpace(safe)
+	if safe == "" || safe == "." {
+		safe = "unnamed"
+	}
+	return safe
+}
+
 // GetAllRecipes retrieves active recipes for the web view.
 func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 	query := `SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE is_deleted = 0 ORDER BY title ASC`
@@ -221,6 +233,9 @@ func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 			r.Tags = safeSplit(tagStr, ",")
 			recipes = append(recipes, r)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return recipes, nil
 }
