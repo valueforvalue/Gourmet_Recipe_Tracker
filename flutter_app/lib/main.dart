@@ -8,6 +8,7 @@ import 'screens/recipe_list_screen.dart';
 import 'screens/cookbook_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const RecipeTrackerApp());
 }
 
