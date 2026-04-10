@@ -1,0 +1,4 @@
+.gradle/
+*.hprof
+gradle/wrapper/gradle-wrapper.jar
+local.properties
