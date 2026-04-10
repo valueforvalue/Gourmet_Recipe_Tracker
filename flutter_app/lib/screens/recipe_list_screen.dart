@@ -42,6 +42,15 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
       _loading = true;
       _error = null;
     });
+    // Don't attempt a network call if no server has been configured yet.
+    final url = await ApiService.getBaseUrl();
+    if (url == null) {
+      setState(() {
+        _loading = false;
+        _error = 'No server URL configured. Open Settings to set one.';
+      });
+      return;
+    }
     try {
       final recipes = await ApiService.getAllRecipes();
       setState(() {
@@ -162,15 +171,20 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   Widget _buildBody() {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
+      final isUnconfigured = _error!.contains('No server URL');
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.wifi_off, size: 64, color: Colors.grey),
+              Icon(isUnconfigured ? Icons.settings_ethernet : Icons.wifi_off,
+                  size: 64, color: Colors.grey),
               const SizedBox(height: 16),
-              Text('Could not reach server', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                isUnconfigured ? 'No server configured' : 'Could not reach server',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 8),
               Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
               const SizedBox(height: 24),
@@ -180,10 +194,12 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                   _loadRecipes();
                 },
                 icon: const Icon(Icons.settings),
-                label: const Text('Update Server URL'),
+                label: Text(isUnconfigured ? 'Set Server URL' : 'Update Server URL'),
               ),
-              const SizedBox(height: 8),
-              TextButton(onPressed: _loadRecipes, child: const Text('Retry')),
+              if (!isUnconfigured) ...[
+                const SizedBox(height: 8),
+                TextButton(onPressed: _loadRecipes, child: const Text('Retry')),
+              ],
             ],
           ),
         ),

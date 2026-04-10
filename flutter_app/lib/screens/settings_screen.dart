@@ -32,7 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadUrl() async {
     final url = await ApiService.getBaseUrl();
-    setState(() => _urlCtrl.text = url);
+    setState(() => _urlCtrl.text = url ?? '');
   }
 
   Future<void> _save() async {

@@ -10,13 +10,21 @@ import '../models/recipe.dart';
 
 class ApiService {
   static const String _baseUrlKey = 'server_base_url';
-  static const String _defaultBaseUrl = 'http://10.0.2.2:8080';
 
   // ── Settings ──────────────────────────────────────────────────────────────
 
-  static Future<String> getBaseUrl() async {
+  /// Returns the saved server URL, or null if none has been configured yet.
+  static Future<String?> getBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_baseUrlKey) ?? _defaultBaseUrl;
+    final v = prefs.getString(_baseUrlKey);
+    return (v == null || v.trim().isEmpty) ? null : v;
+  }
+
+  /// Convenience: throws a clear error when no URL is configured.
+  static Future<String> _requireBaseUrl() async {
+    final url = await getBaseUrl();
+    if (url == null) throw Exception('No server URL configured. Open Settings to set one.');
+    return url;
   }
 
   static Future<void> setBaseUrl(String url) async {
@@ -29,7 +37,7 @@ class ApiService {
 
   /// Returns every non-deleted recipe, sorted alphabetically.
   static Future<List<Recipe>> getAllRecipes() async {
-    final base = await getBaseUrl();
+    final base = await _requireBaseUrl();
     final response = await http
         .get(Uri.parse('$base/api/recipes'))
         .timeout(const Duration(seconds: 15));
@@ -42,7 +50,7 @@ class ApiService {
 
   /// Creates or updates a recipe (server performs an UPSERT on title).
   static Future<void> saveRecipe(Recipe recipe) async {
-    final base = await getBaseUrl();
+    final base = await _requireBaseUrl();
     final response = await http
         .post(
           Uri.parse('$base/api/save'),
@@ -57,7 +65,7 @@ class ApiService {
 
   /// Soft-deletes a recipe by title.
   static Future<void> deleteRecipe(String title) async {
-    final base = await getBaseUrl();
+    final base = await _requireBaseUrl();
     final response = await http
         .post(
           Uri.parse('$base/api/delete?title=${Uri.encodeComponent(title)}'),
@@ -72,7 +80,7 @@ class ApiService {
 
   /// Asks the server to scrape a recipe URL and returns a pre-filled Recipe.
   static Future<Recipe> scrapeUrl(String url) async {
-    final base = await getBaseUrl();
+    final base = await _requireBaseUrl();
     final response = await http
         .get(Uri.parse('$base/api/scrape?url=${Uri.encodeComponent(url)}'))
         .timeout(const Duration(seconds: 30));
@@ -86,13 +94,13 @@ class ApiService {
 
   /// Returns the URL to download a single-recipe PDF.
   static Future<String> getRecipePdfUrl(String title, {bool booklet = false}) async {
-    final base = await getBaseUrl();
+    final base = await _requireBaseUrl();
     return '$base/api/export/pdf?title=${Uri.encodeComponent(title)}&booklet=$booklet';
   }
 
   /// Returns the URL to download the master cookbook PDF.
   static Future<String> getCookbookPdfUrl({bool booklet = false}) async {
-    final base = await getBaseUrl();
+    final base = await _requireBaseUrl();
     return '$base/api/export/cookbook?booklet=$booklet';
   }
 
@@ -102,7 +110,7 @@ class ApiService {
   /// false and rethrows the underlying error so callers can surface a message.
   static Future<({bool ok, String error})> testConnection() async {
     try {
-      final base = await getBaseUrl();
+      final base = await _requireBaseUrl();
       final response = await http
           .get(Uri.parse('$base/api/recipes'))
           .timeout(const Duration(seconds: 5));
