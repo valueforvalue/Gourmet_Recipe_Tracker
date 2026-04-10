@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+*.apk
 recipe-tracker
 
 # --- Go specific ---
