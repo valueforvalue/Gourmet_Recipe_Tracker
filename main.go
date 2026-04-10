@@ -21,6 +21,25 @@ var Version = "4.0-MasterCookbook"
 //go:embed web/index.html web/js/elm.js
 var frontendFiles embed.FS
 
+// corsMiddleware wraps a handler and adds CORS headers so the Flutter
+// Android app (and any other cross-origin client) can reach the API.
+// The wildcard origin is intentional for a home-server deployment where
+// the server is only reachable inside the local network.  If you expose
+// this server to the internet, add a reverse-proxy (e.g. Caddy/nginx)
+// with HTTPS and authentication in front of it.
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	// Initialize Logging
 	logFile, err := os.OpenFile("tracker.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -58,11 +77,13 @@ func main() {
 	}
 	defer db.Close()
 
+	mux := http.NewServeMux()
+
 	webFiles, _ := fs.Sub(frontendFiles, "web")
-	http.Handle("/", http.FileServer(http.FS(webFiles)))
+	mux.Handle("/", http.FileServer(http.FS(webFiles)))
 
 	// API ROUTES
-	http.HandleFunc("/api/recipes", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/recipes", func(w http.ResponseWriter, r *http.Request) {
 		log.Println(" [API] GET /api/recipes")
 		recipes, err := GetAllRecipes(db)
 		if err != nil {
@@ -72,7 +93,7 @@ func main() {
 		json.NewEncoder(w).Encode(recipes)
 	})
 
-	http.HandleFunc("/api/save", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/save", func(w http.ResponseWriter, r *http.Request) {
 		var rcp Recipe
 		if err := json.NewDecoder(r.Body).Decode(&rcp); err != nil {
 			log.Printf(" [Error] POST /api/save (Decode): %v", err)
@@ -89,7 +110,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	http.HandleFunc("/api/delete", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/delete", func(w http.ResponseWriter, r *http.Request) {
 		title := r.URL.Query().Get("title")
 		log.Printf(" [API] POST /api/delete: %s", title)
 		err := DeleteRecipe(db, title)
@@ -99,7 +120,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	http.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
 		targetURL := r.URL.Query().Get("url")
 		log.Printf(" [API] GET /api/scrape: %s", targetURL)
 		resp, err := http.Get(targetURL)
@@ -164,7 +185,7 @@ func main() {
 		json.NewEncoder(w).Encode(extracted)
 	})
 
-	http.HandleFunc("/api/export/pdf", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/export/pdf", func(w http.ResponseWriter, r *http.Request) {
 		title := r.URL.Query().Get("title")
 		log.Printf(" [API] GET /api/export/pdf: %s", title)
 		isBooklet := r.URL.Query().Get("booklet") == "true"
@@ -185,7 +206,7 @@ func main() {
 		http.ServeFile(w, r, filepath.Join("Printables", fileName))
 	})
 
-	http.HandleFunc("/api/export/cookbook", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/export/cookbook", func(w http.ResponseWriter, r *http.Request) {
 		log.Println(" [API] GET /api/export/cookbook")
 		isBooklet := r.URL.Query().Get("booklet") == "true"
 		recipes, _ := GetAllRecipes(db)
@@ -206,7 +227,7 @@ func main() {
 	localIP := getLocalIP()
 	log.Printf(" [Mobile Access]: http://%s:%s", localIP, GlobalConfig.Port)
 	log.Println("-----------------------------------------------")
-	log.Fatal(http.ListenAndServe(":"+GlobalConfig.Port, nil))
+	log.Fatal(http.ListenAndServe(":"+GlobalConfig.Port, corsMiddleware(mux)))
 }
 
 func getLocalIP() string {
