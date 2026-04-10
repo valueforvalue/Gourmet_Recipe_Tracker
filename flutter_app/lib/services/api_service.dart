@@ -10,7 +10,7 @@ import '../models/recipe.dart';
 
 class ApiService {
   static const String _baseUrlKey = 'server_base_url';
-  static const String _defaultBaseUrl = 'http://localhost:8080';
+  static const String _defaultBaseUrl = 'http://10.0.2.2:8080';
 
   // ── Settings ──────────────────────────────────────────────────────────────
 
