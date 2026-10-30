@@ -75,6 +75,7 @@ func main() {
 	if err != nil {
 		fmt.Printf(" [!] Warning: Could not create log file: %v\n", err)
 	} else {
+		defer logFile.Close()
 		multi := io.MultiWriter(os.Stdout, logFile)
 		log.SetOutput(multi)
 		log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -122,7 +123,10 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	webFiles, _ := fs.Sub(frontendFiles, "web")
+	webFiles, err := fs.Sub(frontendFiles, "web")
+	if err != nil {
+		log.Fatalf("Critical Error: Could not load embedded web files: %v", err)
+	}
 	mux.Handle("/", http.FileServer(http.FS(webFiles)))
 
 	// API ROUTES
@@ -173,13 +177,12 @@ func main() {
 	mux.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
 		targetURL := r.URL.Query().Get("url")
 		log.Printf(" [API] GET /api/scrape: %s", targetURL)
-		parsed, err := url.Parse(targetURL)
-		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
-			log.Printf(" [Error] Scrape URL invalid: %s", targetURL)
-			http.Error(w, "Invalid URL (http/https only)", http.StatusBadRequest)
+		if !isSafeURL(targetURL) {
+			log.Printf(" [Error] Scrape blocked unsafe URL: %s", targetURL)
+			http.Error(w, "Invalid or disallowed URL", http.StatusBadRequest)
 			return
 		}
-		resp, err := scrapeClient.Get(parsed.String())
+		resp, err := scrapeClient.Get(targetURL)
 		if err != nil {
 			log.Printf(" [Error] Scrape Fetch: %v", err)
 			http.Error(w, "Failed to fetch URL", http.StatusInternalServerError)
@@ -263,7 +266,7 @@ func main() {
 			suffix = "_Booklet.pdf"
 		}
 
-		fileName := title + suffix
+		fileName := sanitizeFilename(title) + suffix
 
 		w.Header().Set("Content-Type", "application/pdf")
 		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", fileName))
@@ -321,6 +324,41 @@ func getLocalIP() string {
 
 func ensureDirExists(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		os.Mkdir(path, 0755)
+		if err := os.Mkdir(path, 0755); err != nil {
+			log.Printf(" [!] Warning: Could not create directory %s: %v", path, err)
+		}
 	}
+}
+
+// isSafeURL validates that a URL uses http/https and does not target
+// loopback, private, or link-local addresses to prevent SSRF attacks.
+// It also resolves hostnames to catch DNS rebinding attempts.
+func isSafeURL(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") {
+		return false
+	}
+	host := u.Hostname()
+	if host == "" || host == "localhost" {
+		return false
+	}
+	if ip := net.ParseIP(host); ip != nil {
+		return isSafeIP(ip)
+	}
+	// Resolve hostname and validate all resulting IPs to guard against DNS rebinding.
+	addrs, err := net.LookupHost(host)
+	if err != nil {
+		return false
+	}
+	for _, addr := range addrs {
+		if ip := net.ParseIP(addr); ip != nil && !isSafeIP(ip) {
+			return false
+		}
+	}
+	return true
+}
+
+// isSafeIP returns true when ip is a globally routable unicast address.
+func isSafeIP(ip net.IP) bool {
+	return !ip.IsLoopback() && !ip.IsPrivate() && !ip.IsLinkLocalUnicast() && !ip.IsUnspecified()
 }

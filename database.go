@@ -44,8 +44,8 @@ func InitConfig() {
 }
 
 // InitDB sets up the SQLite connection and schema.
-func InitDB(filepath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", filepath)
+func InitDB(dbPath string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, err
 	}
@@ -169,8 +169,7 @@ func sanitizeFilename(name string) string {
 	).Replace(name)
 	safe = filepath.Base(safe)
 	safe = strings.TrimSpace(safe)
-	safe = strings.Trim(safe, ".")
-	if safe == "" || safe == "." {
+	if safe == "" || safe == "." || safe == ".." {
 		safe = "unnamed"
 	}
 	return safe
@@ -196,6 +195,9 @@ func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
 			r.Tags = safeSplit(tagStr, ",")
 			recipes = append(recipes, r)
 		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return recipes, nil
 }

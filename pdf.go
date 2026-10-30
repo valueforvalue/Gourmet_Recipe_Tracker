@@ -46,7 +46,7 @@ func ExportToPDF(r Recipe, isBooklet bool) error {
 		suffix = "_Booklet.pdf"
 	}
 
-	outputPath := filepath.Join(outputDir, r.Title+suffix)
+	outputPath := filepath.Join(outputDir, sanitizeFilename(r.Title)+suffix)
 	return pdf.OutputFileAndClose(outputPath)
 }
 
