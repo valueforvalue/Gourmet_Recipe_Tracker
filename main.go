@@ -72,6 +72,8 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 func main() {
 	versionFlag := flag.Bool("version", false, "print version and exit")
+	restoreFlag := flag.Bool("restore", false, "restore the database from the vault and exit")
+	restoreDirFlag := flag.String("restore-dir", "", "vault directory to restore from (defaults to configured vault)")
 	flag.Parse()
 
 	if *versionFlag {
@@ -104,10 +106,10 @@ func main() {
 	defer db.Close()
 
 	// Restore mode: rebuild the SQLite database from the vault and exit.
-	if len(os.Args) > 1 && os.Args[1] == "-restore" {
-		dir := vaultDir()
-		if len(os.Args) > 2 {
-			dir = os.Args[2]
+	if *restoreFlag {
+		dir := *restoreDirFlag
+		if dir == "" {
+			dir = vaultDir()
 		}
 		n, err := RestoreFromVault(dir, db)
 		if err != nil {

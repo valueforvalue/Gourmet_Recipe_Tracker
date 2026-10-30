@@ -37,7 +37,7 @@ go run . -restore
 ```
 Or restore from a specific folder:
 ```
-go run . -restore /path/to/vault
+go run . -restore -restore-dir /path/to/vault
 ```
 
 Deleting a recipe also removes its vault file (Git history still keeps the old version).
