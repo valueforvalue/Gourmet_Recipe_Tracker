@@ -14,14 +14,6 @@ import (
 
 // --- CONFIGURATION ---
 
-type SyncTask struct {
-	Title    string
-	FileName string
-	Content  string
-}
-
-var syncQueue = make(chan SyncTask, 100)
-
 // InitConfig loads settings from GlobalConfig and handles Git syncing logic.
 func InitConfig() {
 	// Automatic Git Initialization & Linking
@@ -51,38 +43,27 @@ func InitConfig() {
 	}
 }
 
-// StartSyncWorker runs in the background and processes Git syncs one at a time.
-func StartSyncWorker() {
-	for task := range syncQueue {
-		// 1. Write file to the Vault folder
-		destPath := filepath.Join(GlobalConfig.BackupPath, task.FileName)
-		err := os.WriteFile(destPath, []byte(task.Content), 0644)
-		if err != nil {
-			fmt.Printf(" [Sync Error]: Could not write to backup path: %v\n", err)
-			continue
-		}
-
-		// 2. Execute Git commands sequentially
-		exec.Command("git", "-C", GlobalConfig.BackupPath, "add", ".").Run()
-
-		commitMsg := fmt.Sprintf("Update %s", task.Title)
-		exec.Command("git", "-C", GlobalConfig.BackupPath, "commit", "-m", commitMsg).Run()
-
-		out, err := exec.Command("git", "-C", GlobalConfig.BackupPath, "push", "origin", "master").CombinedOutput()
-
-		if err != nil {
-			fmt.Printf(" [Git Error]: %s\n", string(out))
-		} else {
-			fmt.Printf(" [Git Success]: %s successfully vaulted to GitHub.\n", task.Title)
-		}
-	}
-}
-
 // InitDB sets up the SQLite connection and schema.
 func InitDB(filepath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite", filepath)
 	if err != nil {
 		return nil, err
+	}
+
+	// SQLite allows a single writer at a time.  With the Flutter app, the web
+	// UI, and possibly multiple devices all hitting the server concurrently,
+	// the default settings cause "database is locked" errors.  Serialize writes
+	// through one connection and enable WAL so readers never block the writer.
+	db.SetMaxOpenConns(1)
+	for _, stmt := range []string{
+		"PRAGMA journal_mode = WAL",
+		"PRAGMA busy_timeout = 5000",
+		"PRAGMA synchronous = NORMAL",
+	} {
+		if _, err := db.Exec(stmt); err != nil {
+			db.Close()
+			return nil, fmt.Errorf("apply %q: %w", stmt, err)
+		}
 	}
 
 	query := `
@@ -119,8 +100,21 @@ func InitDB(filepath string) (*sql.DB, error) {
 	return db, nil
 }
 
-// SaveRecipe handles the database UPSERT and triggers the file sync.
+// SaveRecipe persists a recipe and mirrors it to the vault.
 func SaveRecipe(db *sql.DB, r Recipe) error {
+	if err := saveRecipeDB(db, r); err != nil {
+		fmt.Printf(" [DB Error]: %v\n", err)
+		return err
+	}
+	if err := SyncSidecar(r); err != nil {
+		fmt.Printf(" [Sync Error]: %v\n", err)
+	}
+	return nil
+}
+
+// saveRecipeDB performs the database UPSERT only (no vault sync).  It is used
+// by both the save handler and the restore tool.
+func saveRecipeDB(db *sql.DB, r Recipe) error {
 	r.Title = strings.Join(strings.Fields(r.Title), " ")
 	ingStr := strings.Join(r.Ingredients, "|")
 	insStr := strings.Join(r.Instructions, "|")
@@ -146,44 +140,7 @@ func SaveRecipe(db *sql.DB, r Recipe) error {
 		is_deleted=0;`
 
 	_, err := db.Exec(query, r.Title, ingStr, insStr, tagStr, r.Notes)
-	if err != nil {
-		fmt.Printf(" [DB Error]: %v\n", err)
-		return err
-	}
-
-	return SyncSidecar(r)
-}
-
-// SyncSidecar handles the "Daily Bread" text backup and GitHub sync.
-func SyncSidecar(r Recipe) error {
-	// Create local program backup folder if missing
-	_ = os.Mkdir("backups", 0755)
-
-	// Sanitize title for filename
-	safeTitle := strings.ReplaceAll(r.Title, "/", "-")
-	safeTitle = strings.ReplaceAll(safeTitle, "\\", "-")
-	fileName := safeTitle + ".txt"
-
-	// Prepare text content
-	content := fmt.Sprintf("RECIPE: %s\nTAGS: %s\n\nINGREDIENTS\n- %s\n\nINSTRUCTIONS\n%s\n\nNOTES: %s",
-		r.Title,
-		strings.Join(r.Tags, ", "),
-		strings.Join(r.Ingredients, "\n- "),
-		strings.Join(r.Instructions, "\n"),
-		r.Notes)
-
-	// Save to the local program backups folder
-	os.WriteFile(filepath.Join("backups", fileName), []byte(content), 0644)
-
-	if GlobalConfig.GitSync {
-		syncQueue <- SyncTask{
-			Title:    r.Title,
-			FileName: fileName,
-			Content:  content,
-		}
-	}
-
-	return nil
+	return err
 }
 
 // safeSplit prevents empty strings from becoming blank array items
@@ -199,6 +156,24 @@ func safeSplit(data string, separator string) []string {
 		}
 	}
 	return result
+}
+
+// sanitizeFilename converts a recipe title into a filesystem-safe base name.
+// It strips path separators and directory components (blocking path traversal)
+// and replaces Windows-reserved characters, so it is safe for both vault
+// sidecar files and generated PDFs.
+func sanitizeFilename(name string) string {
+	safe := strings.NewReplacer(
+		"/", "-", "\\", "-", ":", "-", "*", "-", "?", "-",
+		"\"", "-", "<", "-", ">", "-", "|", "-",
+	).Replace(name)
+	safe = filepath.Base(safe)
+	safe = strings.TrimSpace(safe)
+	safe = strings.Trim(safe, ".")
+	if safe == "" || safe == "." {
+		safe = "unnamed"
+	}
+	return safe
 }
 
 // GetAllRecipes retrieves active recipes for the web view.
@@ -242,8 +217,12 @@ func GetRecipeByTitle(db *sql.DB, title string) (Recipe, error) {
 	return r, nil
 }
 
-// DeleteRecipe flags a recipe as deleted (Soft Delete).
+// DeleteRecipe flags a recipe as deleted (Soft Delete) and removes its vault
+// file so the vault stays in sync with the active library.
 func DeleteRecipe(db *sql.DB, title string) error {
-	_, err := db.Exec("UPDATE recipes SET is_deleted = 1 WHERE title = ?", title)
-	return err
+	if _, err := db.Exec("UPDATE recipes SET is_deleted = 1 WHERE title = ?", title); err != nil {
+		return err
+	}
+	SyncVaultDelete(title)
+	return nil
 }

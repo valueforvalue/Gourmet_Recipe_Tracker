@@ -9,9 +9,11 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -20,6 +22,10 @@ var Version = "4.0-MasterCookbook"
 
 //go:embed web/index.html web/js/elm.js
 var frontendFiles embed.FS
+
+// scrapeClient bounds how long a recipe scrape may take so a slow site can't
+// tie up a server goroutine forever.
+var scrapeClient = &http.Client{Timeout: 30 * time.Second}
 
 // corsMiddleware wraps a handler and adds CORS headers so the Flutter
 // Android app (and any other cross-origin client) can reach the API.
@@ -37,6 +43,29 @@ func corsMiddleware(next http.Handler) http.Handler {
 			return
 		}
 		next.ServeHTTP(w, r)
+	})
+}
+
+// recoveryMiddleware prevents a panicking handler from crashing the whole
+// server.  It logs the panic and returns a 500 to the client.
+func recoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				log.Printf(" [Panic] %s %s: %v", r.Method, r.URL.Path, rec)
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
+// loggingMiddleware logs every request with its duration.
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		log.Printf(" [API] %s %s (%s)", r.Method, r.URL.Path, time.Since(start))
 	})
 }
 
@@ -58,6 +87,26 @@ func main() {
 	ensureDirExists("Printables")
 	ensureDirExists("backups")
 
+	db, err := InitDB(dbFile)
+	if err != nil {
+		log.Fatalf("Critical Error: %v", err)
+	}
+	defer db.Close()
+
+	// Restore mode: rebuild the SQLite database from the vault and exit.
+	if len(os.Args) > 1 && os.Args[1] == "-restore" {
+		dir := vaultDir()
+		if len(os.Args) > 2 {
+			dir = os.Args[2]
+		}
+		n, err := RestoreFromVault(dir, db)
+		if err != nil {
+			log.Fatalf("Restore failed: %v", err)
+		}
+		log.Printf("Restored %d recipe(s) from %s", n, dir)
+		return
+	}
+
 	// Start the background Git sync worker
 	if GlobalConfig.GitSync {
 		go StartSyncWorker()
@@ -71,12 +120,6 @@ func main() {
 		log.Println(" [ ] GIT SYNC: DISABLED (Local only mode)")
 	}
 
-	db, err := InitDB(dbFile)
-	if err != nil {
-		log.Fatalf("Critical Error: %v", err)
-	}
-	defer db.Close()
-
 	mux := http.NewServeMux()
 
 	webFiles, _ := fs.Sub(frontendFiles, "web")
@@ -84,10 +127,11 @@ func main() {
 
 	// API ROUTES
 	mux.HandleFunc("/api/recipes", func(w http.ResponseWriter, r *http.Request) {
-		log.Println(" [API] GET /api/recipes")
 		recipes, err := GetAllRecipes(db)
 		if err != nil {
 			log.Printf(" [Error] GetAllRecipes: %v", err)
+			http.Error(w, "Failed to load recipes", http.StatusInternalServerError)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(recipes)
@@ -98,6 +142,11 @@ func main() {
 		if err := json.NewDecoder(r.Body).Decode(&rcp); err != nil {
 			log.Printf(" [Error] POST /api/save (Decode): %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rcp.Title = strings.TrimSpace(rcp.Title)
+		if rcp.Title == "" {
+			http.Error(w, "Recipe title is required", http.StatusBadRequest)
 			return
 		}
 		log.Printf(" [API] POST /api/save: %s", rcp.Title)
@@ -113,9 +162,10 @@ func main() {
 	mux.HandleFunc("/api/delete", func(w http.ResponseWriter, r *http.Request) {
 		title := r.URL.Query().Get("title")
 		log.Printf(" [API] POST /api/delete: %s", title)
-		err := DeleteRecipe(db, title)
-		if err != nil {
+		if err := DeleteRecipe(db, title); err != nil {
 			log.Printf(" [Error] DeleteRecipe: %v", err)
+			http.Error(w, "Failed to delete recipe", http.StatusInternalServerError)
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 	})
@@ -123,7 +173,13 @@ func main() {
 	mux.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
 		targetURL := r.URL.Query().Get("url")
 		log.Printf(" [API] GET /api/scrape: %s", targetURL)
-		resp, err := http.Get(targetURL)
+		parsed, err := url.Parse(targetURL)
+		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+			log.Printf(" [Error] Scrape URL invalid: %s", targetURL)
+			http.Error(w, "Invalid URL (http/https only)", http.StatusBadRequest)
+			return
+		}
+		resp, err := scrapeClient.Get(parsed.String())
 		if err != nil {
 			log.Printf(" [Error] Scrape Fetch: %v", err)
 			http.Error(w, "Failed to fetch URL", http.StatusInternalServerError)
@@ -189,9 +245,18 @@ func main() {
 		title := r.URL.Query().Get("title")
 		log.Printf(" [API] GET /api/export/pdf: %s", title)
 		isBooklet := r.URL.Query().Get("booklet") == "true"
-		recipe, _ := GetRecipeByTitle(db, title)
+		recipe, err := GetRecipeByTitle(db, title)
+		if err != nil {
+			log.Printf(" [Error] GetRecipeByTitle: %v", err)
+			http.Error(w, "Recipe not found", http.StatusNotFound)
+			return
+		}
 
-		ExportToPDF(recipe, isBooklet)
+		if err := ExportToPDF(recipe, isBooklet); err != nil {
+			log.Printf(" [Error] ExportToPDF: %v", err)
+			http.Error(w, "Failed to export PDF", http.StatusInternalServerError)
+			return
+		}
 
 		suffix := "_Letter.pdf"
 		if isBooklet {
@@ -207,11 +272,19 @@ func main() {
 	})
 
 	mux.HandleFunc("/api/export/cookbook", func(w http.ResponseWriter, r *http.Request) {
-		log.Println(" [API] GET /api/export/cookbook")
 		isBooklet := r.URL.Query().Get("booklet") == "true"
-		recipes, _ := GetAllRecipes(db)
+		recipes, err := GetAllRecipes(db)
+		if err != nil {
+			log.Printf(" [Error] GetAllRecipes: %v", err)
+			http.Error(w, "Failed to load recipes", http.StatusInternalServerError)
+			return
+		}
 
-		ExportMasterCookbook(recipes, isBooklet)
+		if err := ExportMasterCookbook(recipes, isBooklet); err != nil {
+			log.Printf(" [Error] ExportMasterCookbook: %v", err)
+			http.Error(w, "Failed to export cookbook", http.StatusInternalServerError)
+			return
+		}
 
 		fileName := "Master_Cookbook_Full.pdf"
 		if isBooklet {
@@ -227,7 +300,7 @@ func main() {
 	localIP := getLocalIP()
 	log.Printf(" [Mobile Access]: http://%s:%s", localIP, GlobalConfig.Port)
 	log.Println("-----------------------------------------------")
-	log.Fatal(http.ListenAndServe(":"+GlobalConfig.Port, corsMiddleware(mux)))
+	log.Fatal(http.ListenAndServe(":"+GlobalConfig.Port, corsMiddleware(loggingMiddleware(recoveryMiddleware(mux)))))
 }
 
 func getLocalIP() string {
