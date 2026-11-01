@@ -18,6 +18,7 @@
   --banner-text: #a05a00;
   --danger: #a00;
   --danger-bg: #fff0f0;
+  --texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E");
 }
 
 .page[data-theme="spring"] {
@@ -30,6 +31,7 @@
   --scripture-border: #e2ecd8;
   --banner-bg: #fdeef4;
   --banner-text: #b23a6b;
+  --texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Ccircle cx='24' cy='30' r='2.5' fill='%23cf6f9b' opacity='0.28'/%3E%3Ccircle cx='96' cy='18' r='1.8' fill='%237f9d5a' opacity='0.3'/%3E%3Ccircle cx='62' cy='66' r='2.2' fill='%23cf6f9b' opacity='0.22'/%3E%3Ccircle cx='118' cy='96' r='1.8' fill='%237f9d5a' opacity='0.26'/%3E%3Ccircle cx='34' cy='112' r='2' fill='%23cf6f9b' opacity='0.2'/%3E%3Ccircle cx='78' cy='128' r='1.6' fill='%237f9d5a' opacity='0.24'/%3E%3C/svg%3E");
 }
 
 .page[data-theme="summer"] {
@@ -42,6 +44,7 @@
   --scripture-border: #d9efec;
   --banner-bg: #fdf6e0;
   --banner-text: #a06a00;
+  --texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cline x1='0' y1='90' x2='90' y2='0' stroke='%23d9a13c' stroke-width='2' opacity='0.16'/%3E%3Cline x1='30' y1='90' x2='90' y2='30' stroke='%232fa8a0' stroke-width='1.5' opacity='0.13'/%3E%3Cline x1='60' y1='90' x2='90' y2='60' stroke='%23d9a13c' stroke-width='1' opacity='0.12'/%3E%3C/svg%3E");
 }
 
 .page[data-theme="autumn"] {
@@ -54,6 +57,7 @@
   --scripture-border: #f0e0cd;
   --banner-bg: #fdeedf;
   --banner-text: #9c4a1f;
+  --texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Crect x='30' y='20' width='7' height='7' fill='%23d97a38' opacity='0.3' transform='rotate(45 33 23)'/%3E%3Crect x='95' y='55' width='6' height='6' fill='%23b0763b' opacity='0.26' transform='rotate(45 98 58)'/%3E%3Crect x='50' y='100' width='7' height='7' fill='%23d97a38' opacity='0.24' transform='rotate(45 53 103)'/%3E%3Crect x='15' y='75' width='5' height='5' fill='%23b0763b' opacity='0.2' transform='rotate(45 17 77)'/%3E%3C/svg%3E");
 }
 
 .page[data-theme="winter"] {
@@ -66,6 +70,7 @@
   --scripture-border: #e0e8f2;
   --banner-bg: #e9f0f8;
   --banner-text: #2c4a6e;
+  --texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cg stroke='%235a7d9e' stroke-width='1.5' fill='none'%3E%3Cpath d='M30 25 h9 M34.5 20.5 v9' opacity='0.3'/%3E%3Cpath d='M95 60 h9 M99.5 55.5 v9' opacity='0.24'/%3E%3Cpath d='M55 105 h9 M59.5 100.5 v9' opacity='0.27'/%3E%3Cpath d='M110 118 h9 M114.5 113.5 v9' opacity='0.2'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* ---------- Layout ---------- */
@@ -777,10 +782,10 @@ h1, h2, h3, h4 {
   letter-spacing: -0.01em;
 }
 
-/* Aurora glow + paper grain behind the content (theme-aware) */
+/* Aurora glow + seasonal texture behind the content (theme-aware) */
 .page {
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.3'/%3E%3C/svg%3E"),
+    var(--texture),
     radial-gradient(60% 45% at 95% -5%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%),
     radial-gradient(55% 50% at -5% 10%, color-mix(in srgb, var(--secondary) 32%, transparent), transparent 72%),
     radial-gradient(50% 40% at 100% 55%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%),

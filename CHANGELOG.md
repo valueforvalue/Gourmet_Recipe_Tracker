@@ -83,6 +83,9 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Web UI "eye candy" pass: glassmorphism app bar, gradient headings and
   buttons, pill shapes, colored hover glow, and gradient card surfaces
   (CSS-only, theme-aware via CSS variables).
+- Seasonal background textures: each theme gets a unique motif — spring
+  blossoms (dots), summer sun rays, autumn leaves (diamonds), winter snow
+  (crosses) — layered over the aurora glow.
 
 ### Fixed
 - Config load/save now return real errors, validate port / db_file /
