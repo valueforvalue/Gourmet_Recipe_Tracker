@@ -27,6 +27,10 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   backup_path / git_remote_url, parse `RECIPE_GIT_SYNC` strictly via
   `strconv.ParseBool`, and write files with `0600` permissions.
   (Regression: `TestConfigValidate`, `TestLoadConfig*`, `TestSaveConfigPermissions`)
+- `/api/save` and `/api/delete` now reject non-POST requests with `405`;
+  scrape redirects are re-validated so a safe URL cannot bounce to an
+  internal address. (Regression: `TestMutatingRoutesRequirePost`,
+  `TestCheckScrapeRedirect`)
 
 ### Maintenance
 - Adopted the agent-stack framework: `core/` rule docs under `docs/agents/`,

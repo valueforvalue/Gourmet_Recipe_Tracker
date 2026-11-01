@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -29,8 +30,12 @@ var Version = "4.1-SystemOverhaul"
 var frontendFiles embed.FS
 
 // scrapeClient bounds how long a recipe scrape may take so a slow site can't
-// tie up a server goroutine forever.
-var scrapeClient = &http.Client{Timeout: 30 * time.Second}
+// tie up a server goroutine forever. Its redirect policy re-validates every
+// hop so a safe URL cannot bounce to an internal address.
+var scrapeClient = &http.Client{
+	Timeout:       30 * time.Second,
+	CheckRedirect: checkScrapeRedirect,
+}
 
 // corsMiddleware wraps a handler and adds CORS headers so the Flutter
 // Android app (and any other cross-origin client) can reach the API.
@@ -158,38 +163,9 @@ func main() {
 		json.NewEncoder(w).Encode(recipes)
 	})
 
-	mux.HandleFunc("/api/save", func(w http.ResponseWriter, r *http.Request) {
-		var rcp Recipe
-		if err := json.NewDecoder(r.Body).Decode(&rcp); err != nil {
-			log.Printf(" [Error] POST /api/save (Decode): %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		rcp.Title = strings.TrimSpace(rcp.Title)
-		if rcp.Title == "" {
-			http.Error(w, "Recipe title is required", http.StatusBadRequest)
-			return
-		}
-		log.Printf(" [API] POST /api/save: %s", rcp.Title)
-		err := SaveRecipe(db, rcp)
-		if err != nil {
-			log.Printf(" [Error] SaveRecipe: %v", err)
-			http.Error(w, "Failed to save recipe", http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	})
+	mux.HandleFunc("/api/save", handleSaveRecipe(db))
 
-	mux.HandleFunc("/api/delete", func(w http.ResponseWriter, r *http.Request) {
-		title := r.URL.Query().Get("title")
-		log.Printf(" [API] POST /api/delete: %s", title)
-		if err := DeleteRecipe(db, title); err != nil {
-			log.Printf(" [Error] DeleteRecipe: %v", err)
-			http.Error(w, "Failed to delete recipe", http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	})
+	mux.HandleFunc("/api/delete", handleDeleteRecipe(db))
 
 	mux.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
 		targetURL := r.URL.Query().Get("url")
@@ -413,6 +389,67 @@ func runSupervised(ctx context.Context, addr string, handler http.Handler) error
 			return ctx.Err()
 		}
 		backoff = nextBackoff(backoff)
+	}
+}
+
+// checkScrapeRedirect is the redirect policy for scrapeClient. It blocks any
+// hop that isSafeURL rejects and caps the chain length, closing the SSRF gap
+// where a safe first URL redirects to a loopback/private address.
+func checkScrapeRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= 10 {
+		return errors.New("stopped after 10 redirects")
+	}
+	if !isSafeURL(req.URL.String()) {
+		return fmt.Errorf("redirect to unsafe URL blocked: %s", req.URL.String())
+	}
+	return nil
+}
+
+// handleSaveRecipe is the POST /api/save handler. It rejects non-POST methods
+// and persists a recipe (DB + vault mirror).
+func handleSaveRecipe(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		var rcp Recipe
+		if err := json.NewDecoder(r.Body).Decode(&rcp); err != nil {
+			log.Printf(" [Error] POST /api/save (Decode): %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rcp.Title = strings.TrimSpace(rcp.Title)
+		if rcp.Title == "" {
+			http.Error(w, "Recipe title is required", http.StatusBadRequest)
+			return
+		}
+		log.Printf(" [API] POST /api/save: %s", rcp.Title)
+		if err := SaveRecipe(db, rcp); err != nil {
+			log.Printf(" [Error] SaveRecipe: %v", err)
+			http.Error(w, "Failed to save recipe", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// handleDeleteRecipe is the POST /api/delete handler. It rejects non-POST
+// methods and soft-deletes the recipe named by ?title=.
+func handleDeleteRecipe(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		title := r.URL.Query().Get("title")
+		log.Printf(" [API] POST /api/delete: %s", title)
+		if err := DeleteRecipe(db, title); err != nil {
+			log.Printf(" [Error] DeleteRecipe: %v", err)
+			http.Error(w, "Failed to delete recipe", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
