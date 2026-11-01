@@ -50,6 +50,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Applied the 6-axis label taxonomy to the GitHub repository.
 - Untracked `web/elm-stuff/` build cache (was committed; already gitignored,
   now removed from the index so `elm make` no longer dirties the tree).
+- Added a `Justfile` for build tasks (`build`, `test`, `web`, `run`,
+  `flutter-test`, `flutter-run`, `check`).
 
 <!--
   Conventions:
