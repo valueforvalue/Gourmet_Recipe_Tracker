@@ -21,6 +21,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   (domain glossary, file map, hard rules).
 - Web recipe list gains clickable category (tag) filter chips — matching the
   Flutter app — plus a "No recipes found." empty state.
+- Web recipe list shows a total recipe count and per-tag counts on the
+  filter chips.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

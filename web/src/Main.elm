@@ -317,11 +317,26 @@ viewRecipeList model =
                 |> Set.fromList
                 |> Set.toList
 
+        tagCount tag =
+            List.length (List.filter (\r -> List.member tag r.tags) model.recipes)
+
+        totalLabel =
+            let
+                n =
+                    List.length model.recipes
+            in
+            if n == 1 then
+                "1 recipe"
+
+            else
+                String.fromInt n ++ " recipes"
+
         verse =
             getDailyVerse model
     in
     div []
         [ h2 [ style "color" "#6B705C", style "margin-bottom" "5px" ] [ text "Morris Family Recipe Box" ]
+        , p [ style "color" "#888", style "font-size" "14px", style "margin-top" "0" ] [ text totalLabel ]
         , -- SCRIPTURE CARD
           div [ style "margin-bottom" "25px", style "padding" "20px", style "background" "#fdfaf0", style "border-radius" "12px", style "border" "1px solid #e9e2d0", style "box-shadow" "0 2px 4px rgba(0,0,0,0.05)" ]
             [ p [ style "font-style" "italic", style "margin" "0", style "color" "#4a4a4a", style "line-height" "1.5", style "font-size" "16px" ] [ text ("\"" ++ verse.text ++ "\"") ]
@@ -331,7 +346,7 @@ viewRecipeList model =
         , -- CATEGORY FILTER CHIPS
           div [ style "display" "flex", style "flex-wrap" "wrap", style "gap" "8px", style "margin-bottom" "15px" ]
             (tagChip "All" (model.activeTag == "") (SetActiveTag "")
-                :: List.map (\t -> tagChip t (model.activeTag == t) (SetActiveTag t)) allTags
+                :: List.map (\t -> tagChip (t ++ " (" ++ String.fromInt (tagCount t) ++ ")") (model.activeTag == t) (SetActiveTag t)) allTags
             )
         , -- MASTER COOKBOOK BUTTONS
           div [ style "margin-bottom" "20px", style "display" "flex", style "gap" "10px" ]

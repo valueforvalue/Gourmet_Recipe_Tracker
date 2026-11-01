@@ -7623,6 +7623,19 @@ var $author$project$Main$viewRecipeCard = F2(
 	});
 var $author$project$Main$viewRecipeList = function (model) {
 	var verse = $author$project$Main$getDailyVerse(model);
+	var totalLabel = function () {
+		var n = $elm$core$List$length(model.recipes);
+		return (n === 1) ? '1 recipe' : ($elm$core$String$fromInt(n) + ' recipes');
+	}();
+	var tagCount = function (tag) {
+		return $elm$core$List$length(
+			A2(
+				$elm$core$List$filter,
+				function (r) {
+					return A2($elm$core$List$member, tag, r.tags);
+				},
+				model.recipes));
+	};
 	var searchLower = $elm$core$String$toLower(model.filterText);
 	var matchesTag = function (r) {
 		return (model.activeTag === '') || A2($elm$core$List$member, model.activeTag, r.tags);
@@ -7687,6 +7700,18 @@ var $author$project$Main$viewRecipeList = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text('Morris Family Recipe Box')
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'color', '#888'),
+						A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
+						A2($elm$html$Html$Attributes$style, 'margin-top', '0')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(totalLabel)
 					])),
 				A2(
 				$elm$html$Html$div,
@@ -7764,7 +7789,8 @@ var $author$project$Main$viewRecipeList = function (model) {
 						function (t) {
 							return A3(
 								$author$project$Main$tagChip,
-								t,
+								t + (' (' + ($elm$core$String$fromInt(
+									tagCount(t)) + ')')),
 								_Utils_eq(model.activeTag, t),
 								$author$project$Main$SetActiveTag(t));
 						},
