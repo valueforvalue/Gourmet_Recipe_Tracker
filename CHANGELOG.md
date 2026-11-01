@@ -77,6 +77,9 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   the disposable test repo until flipped to production.
 - `just release` ships a drop-in `config.json` (test-mode default) and
   `README.md` with the production-ready checklist.
+- Web UI polish: softer layered shadows, subtle gradients, hover/press motion,
+  focus rings, and a warmer serif stack — removes the flat look (CSS-only, no
+  markup change).
 
 ### Fixed
 - Config load/save now return real errors, validate port / db_file /
