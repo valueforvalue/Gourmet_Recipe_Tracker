@@ -9,16 +9,23 @@ database on the server — clients never hold their own copy.
 
 | Path | Role |
 |---|---|
-| `main.go` | entry point, `http.ServeMux` routes, CORS / recovery / logging middleware, scrape URL SSRF guard |
-| `config.go` | `config.json` load/save (port, db_file, backup_path, git_sync, git_remote_url) |
-| `database.go` | schema init + recipe CRUD (`modernc.org/sqlite`, soft delete) |
+| `main.go` | entry point, `http.ServeMux` routes, CORS / recovery / logging middleware, scrape URL SSRF guard, supervised restart |
+| `config.go` | `config.json` load/save (port, db_file, backup_path, git_sync, git_remote_url, auto_import, test_mode) |
+| `database.go` | schema init (+ `PRAGMA user_version`) + recipe CRUD (`modernc.org/sqlite`, soft delete) |
 | `vault.go` | plain-text sidecar mirror + `manifest.json` + git add/commit/push worker |
 | `restore.go` | rebuild the DB from vault `.txt` files |
+| `backup.go` | JSON snapshot (`recipes.json`) with app/schema provenance + import |
+| `ingredient.go` | recipe-scaling ingredient parser + scaler + scanner |
+| `scraper.go` | web recipe scraper (schema.org JSON-LD → microdata → heuristics) |
+| `logging.go` | rotating `tracker.log` + `logInfo`/`logWarn`/`logError` |
 | `pdf.go` | single-recipe + master cookbook PDF (`gofpdf`, letter / booklet) |
 | `parser.go` | parse a vault `.txt` back into a `Recipe` |
 | `models.go` | `Recipe` struct — the shared API shape |
 | `web/src/Main.elm` | the whole web UI (Elm 0.19) |
 | `web/js/elm.js` | compiled Elm, **committed** because `go:embed` needs it |
+| `web/css/app.css` | SPA stylesheet — seasonal themes + design tokens (CSS variables) |
+| `VERSION` | release version source of truth (stamped into the exe via `just`) |
+| `Justfile` | `build` / `test` / `web` / `release` / `version` recipes |
 | `flutter_app/lib/services/api_service.dart` | the Flutter HTTP client |
 | `docs/agents/` | agent-stack framework docs (see below) |
 | `.github/copilot-instructions.md` | Copilot's *communication channel* rules only — it defers to this file and `CONTEXT.md` for engineering behaviour |
@@ -27,9 +34,11 @@ database on the server — clients never hold their own copy.
 
 ```bash
 go build ./...        # compile
-go test ./...         # Go test suite (config, database, main, parser, vault)
+just build            # compile + stamp VERSION into the exe
+go test ./...         # Go test suite (just test)
 go run .              # serve on :8080 (reads config.json)
-cd web && elm make src/Main.elm --output=js/elm.js   # rebuild the SPA
+cd web && elm make src/Main.elm --output=js/elm.js   # rebuild the SPA (just web)
+just release          # stamp version + zip exe / APK / runner / config
 cd flutter_app && flutter test && flutter run
 ```
 
