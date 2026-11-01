@@ -3,7 +3,7 @@ module Main exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onCheck, onClick, onInput)
 import Http
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -20,6 +20,12 @@ type View
     = EntryView
     | ListView
     | ReadingView Recipe
+    | DeletedView
+
+
+type PurgeIntent
+    = PurgeSelected
+    | PurgeAll
 
 
 type alias Recipe =
@@ -44,6 +50,10 @@ type alias Model =
     , notes : String
     , status : String
     , deletingTitle : Maybe String
+    , deleted : List Recipe
+    , selectedDeleted : List String
+    , purgeIntent : Maybe PurgeIntent
+    , purgeConfirm : String
     }
 
 
@@ -61,6 +71,10 @@ initialModel =
     , notes = ""
     , status = "Ready"
     , deletingTitle = Nothing
+    , deleted = []
+    , selectedDeleted = []
+    , purgeIntent = Nothing
+    , purgeConfirm = ""
     }
 
 
@@ -92,15 +106,29 @@ type Msg
     | EditRecipe Recipe
     | CancelEdit
     | OpenReader Recipe
+    | FetchDeleted
+    | DeletedFetched (Result Http.Error (List Recipe))
+    | ToggleDeletedSelect String
+    | ToggleSelectAll
+    | RestoreSelected
+    | Restored (Result Http.Error ())
+    | StartPurge PurgeIntent
+    | UpdatePurgeConfirm String
+    | CancelPurge
+    | ConfirmPurge
+    | Purged (Result Http.Error ())
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SetView viewType ->
-            ( { model | currentView = viewType, status = "", deletingTitle = Nothing }
+            ( { model | currentView = viewType, status = "", deletingTitle = Nothing, purgeIntent = Nothing }
             , if viewType == ListView then
                 fetchRecipes
+
+              else if viewType == DeletedView then
+                fetchDeleted
 
               else
                 Cmd.none
@@ -215,6 +243,59 @@ update msg model =
         OpenReader recipe ->
             ( { model | currentView = ReadingView recipe, status = "" }, Cmd.none )
 
+        FetchDeleted ->
+            ( model, fetchDeleted )
+
+        DeletedFetched res ->
+            case res of
+                Ok list ->
+                    ( { model | deleted = list }, Cmd.none )
+
+                Err _ ->
+                    ( model, Cmd.none )
+
+        ToggleDeletedSelect title ->
+            ( { model | selectedDeleted = toggleSelected title model.selectedDeleted }, Cmd.none )
+
+        ToggleSelectAll ->
+            let
+                allTitles =
+                    List.map .title model.deleted
+
+                allSelected =
+                    not (List.isEmpty allTitles) && List.length model.selectedDeleted == List.length allTitles
+            in
+            ( { model | selectedDeleted = if allSelected then [] else allTitles }, Cmd.none )
+
+        RestoreSelected ->
+            ( { model | status = "Restoring..." }, Cmd.batch (List.map restoreRequest model.selectedDeleted) )
+
+        Restored _ ->
+            ( { model | selectedDeleted = [], status = "Restored." }, fetchDeleted )
+
+        StartPurge intent ->
+            ( { model | purgeIntent = Just intent, purgeConfirm = "" }, Cmd.none )
+
+        UpdatePurgeConfirm val ->
+            ( { model | purgeConfirm = val }, Cmd.none )
+
+        CancelPurge ->
+            ( { model | purgeIntent = Nothing, purgeConfirm = "" }, Cmd.none )
+
+        ConfirmPurge ->
+            case model.purgeIntent of
+                Just PurgeSelected ->
+                    ( { model | purgeIntent = Nothing, purgeConfirm = "", status = "Purging..." }, Cmd.batch (List.map purgeRequest model.selectedDeleted) )
+
+                Just PurgeAll ->
+                    ( { model | purgeIntent = Nothing, purgeConfirm = "", status = "Purging..." }, purgeAllRequest )
+
+                Nothing ->
+                    ( model, Cmd.none )
+
+        Purged _ ->
+            ( { model | selectedDeleted = [], status = "Purged." }, fetchDeleted )
+
 
 
 -- 3. VIEW
@@ -232,6 +313,7 @@ view model =
             , div [ style "display" "flex", style "gap" "8px" ]
                 [ button (onClick (SetView EntryView) :: navStyle) [ text "Add" ]
                 , button (onClick (SetView ListView) :: navStyle) [ text "Recipe Box" ]
+                , button (onClick (SetView DeletedView) :: navStyle) [ text "Deleted" ]
                 ]
             ]
         , div [ style "padding" "20px", style "max-width" "600px", style "margin" "0 auto" ]
@@ -244,6 +326,9 @@ view model =
 
                 ReadingView recipe ->
                     viewReader recipe
+
+                DeletedView ->
+                    viewDeleted model
             , p [ style "text-align" "center", style "color" "#6B705C", style "font-weight" "bold" ] [ text model.status ]
             ]
         ]
@@ -413,6 +498,84 @@ viewReader recipe =
 
 
 
+viewDeleted : Model -> Html Msg
+viewDeleted model =
+    let
+        selectedCount =
+            List.length model.selectedDeleted
+    in
+    div []
+        [ h2 [ style "color" "#6B705C", style "margin-bottom" "5px" ] [ text "Deleted Recipes" ]
+        , p [ style "color" "#888", style "font-size" "14px", style "margin-top" "0" ] [ text "Restore to bring a recipe back, or purge to remove it permanently." ]
+        , if List.isEmpty model.deleted then
+            div [ style "text-align" "center", style "color" "#888", style "padding" "30px" ] [ text "No deleted recipes." ]
+
+          else
+            div []
+                [ div [ style "display" "flex", style "gap" "8px", style "flex-wrap" "wrap", style "margin-bottom" "15px" ]
+                    [ button (onClick ToggleSelectAll :: actionBtnStyle "#e5e5e5" ++ [ style "color" "#555" ]) [ text "Select All" ]
+                    , button (disabled (selectedCount == 0) :: onClick RestoreSelected :: actionBtnStyle "#6B705C") [ text ("Restore (" ++ String.fromInt selectedCount ++ ")") ]
+                    , button (disabled (selectedCount == 0) :: onClick (StartPurge PurgeSelected) :: actionBtnStyle "#a00") [ text "Delete Forever" ]
+                    , button (onClick (StartPurge PurgeAll) :: actionBtnStyle "#a00") [ text "Purge All" ]
+                    ]
+                , div [] (List.map (viewDeletedCard model.selectedDeleted) model.deleted)
+                ]
+        , viewPurgeConfirm model
+        ]
+
+
+viewDeletedCard : List String -> Recipe -> Html Msg
+viewDeletedCard selected recipe =
+    div [ style "background" "white", style "padding" "12px 15px", style "margin-bottom" "12px", style "border-left" "6px solid #a00", style "border-radius" "4px", style "box-shadow" "0 1px 3px rgba(0,0,0,0.1)" ]
+        [ label [ style "display" "flex", style "align-items" "center", style "gap" "10px", style "cursor" "pointer" ]
+            [ input [ type_ "checkbox", checked (List.member recipe.title selected), onCheck (\_ -> ToggleDeletedSelect recipe.title) ] []
+            , div []
+                [ strong [ style "font-size" "18px", style "color" "#6B705C" ] [ text recipe.title ]
+                , p [ style "font-size" "13px", style "color" "#777", style "margin" "4px 0 0 0" ] [ text (String.join ",  " recipe.tags) ]
+                ]
+            ]
+        ]
+
+
+viewPurgeConfirm : Model -> Html Msg
+viewPurgeConfirm model =
+    case model.purgeIntent of
+        Nothing ->
+            text ""
+
+        Just intent ->
+            let
+                target =
+                    case intent of
+                        PurgeSelected ->
+                            "the selected recipes"
+
+                        PurgeAll ->
+                            "ALL deleted recipes"
+
+                confirmed =
+                    model.purgeConfirm == "yesdeary"
+            in
+            div [ style "background" "#fff0f0", style "padding" "15px", style "border-radius" "8px", style "border" "1px solid #a00", style "margin-top" "15px" ]
+                [ p [ style "color" "#a00", style "font-weight" "bold", style "margin-top" "0" ] [ text ("This permanently deletes " ++ target ++ ". Type \"yesdeary\" to confirm.") ]
+                , input (placeholder "yesdeary" :: value model.purgeConfirm :: onInput UpdatePurgeConfirm :: inputStyle) []
+                , div [ style "display" "flex", style "gap" "10px" ]
+                    [ button (disabled (not confirmed) :: onClick ConfirmPurge :: actionBtnStyle "#a00") [ text "Permanently Delete" ]
+                    , button (onClick CancelPurge :: actionBtnStyle "#e5e5e5" ++ [ style "color" "#555" ]) [ text "Cancel" ]
+                    ]
+                ]
+
+
+toggleSelected : String -> List String -> List String
+toggleSelected title selected =
+    if List.member title selected then
+        List.filter (\t -> t /= title) selected
+
+    else
+        title :: selected
+
+
+
 -- 4. UTILS & SCRIPTURE
 
 
@@ -488,6 +651,26 @@ postRecipe model =
 deleteRequest : String -> Cmd Msg
 deleteRequest title =
     Http.post { url = "/api/delete?title=" ++ title, body = Http.emptyBody, expect = Http.expectWhatever Deleted }
+
+
+fetchDeleted : Cmd Msg
+fetchDeleted =
+    Http.get { url = "/api/deleted", expect = Http.expectJson DeletedFetched (Decode.list recipeDecoder) }
+
+
+restoreRequest : String -> Cmd Msg
+restoreRequest title =
+    Http.post { url = "/api/restore?title=" ++ Url.percentEncode title, body = Http.emptyBody, expect = Http.expectWhatever Restored }
+
+
+purgeRequest : String -> Cmd Msg
+purgeRequest title =
+    Http.post { url = "/api/purge?title=" ++ Url.percentEncode title ++ "&confirm=yesdeary", body = Http.emptyBody, expect = Http.expectWhatever Purged }
+
+
+purgeAllRequest : Cmd Msg
+purgeAllRequest =
+    Http.post { url = "/api/purge-all?confirm=yesdeary", body = Http.emptyBody, expect = Http.expectWhatever Purged }
 
 
 

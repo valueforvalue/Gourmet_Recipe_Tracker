@@ -28,6 +28,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   requires echoing the confirmation phrase `yesdeary`; restore re-mirrors the
   vault sidecar. (Regression: `TestGetDeletedRecipes`, `TestRestoreRecipe`,
   `TestPurgeRecipe`, `TestPurgeAllDeleted`, `TestPurgeHandlersRequireConfirmation`)
+- Web "Deleted" view: checkbox multi-select, restore, and permanent purge
+  (purge requires typing `yesdeary` in the confirm box).
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

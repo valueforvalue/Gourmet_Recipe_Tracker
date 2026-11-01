@@ -4555,6 +4555,23 @@ function _Http_track(router, xhr, tracker)
 	});
 }
 
+function _Url_percentEncode(string)
+{
+	return encodeURIComponent(string);
+}
+
+function _Url_percentDecode(string)
+{
+	try
+	{
+		return $elm$core$Maybe$Just(decodeURIComponent(string));
+	}
+	catch (e)
+	{
+		return $elm$core$Maybe$Nothing;
+	}
+}
+
 // CREATE
 
 var _Regex_never = /.^/;
@@ -5444,11 +5461,12 @@ var $elm$core$Task$perform = F2(
 	});
 var $elm$browser$Browser$element = _Browser_element;
 var $author$project$Main$EntryView = {$: 'EntryView'};
-var $author$project$Main$initialModel = {activeTag: '', currentView: $author$project$Main$EntryView, deletingTitle: $elm$core$Maybe$Nothing, filterText: '', ingredients: '', instructions: '', notes: '', recipes: _List_Nil, scrapeUrl: '', status: 'Ready', tags: '', title: ''};
+var $author$project$Main$initialModel = {activeTag: '', currentView: $author$project$Main$EntryView, deleted: _List_Nil, deletingTitle: $elm$core$Maybe$Nothing, filterText: '', ingredients: '', instructions: '', notes: '', purgeConfirm: '', purgeIntent: $elm$core$Maybe$Nothing, recipes: _List_Nil, scrapeUrl: '', selectedDeleted: _List_Nil, status: 'Ready', tags: '', title: ''};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$Main$DeletedView = {$: 'DeletedView'};
 var $author$project$Main$ListView = {$: 'ListView'};
 var $author$project$Main$ReadingView = function (a) {
 	return {$: 'ReadingView', a: a};
@@ -6246,8 +6264,8 @@ var $author$project$Main$deleteRequest = function (title) {
 			url: '/api/delete?title=' + title
 		});
 };
-var $author$project$Main$RecipesFetched = function (a) {
-	return {$: 'RecipesFetched', a: a};
+var $author$project$Main$DeletedFetched = function (a) {
+	return {$: 'DeletedFetched', a: a};
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$expectStringResponse = F2(
@@ -6300,6 +6318,17 @@ var $author$project$Main$recipeDecoder = A6(
 		'instructions',
 		$elm$json$Json$Decode$list($elm$json$Json$Decode$string)),
 	A2($elm$json$Json$Decode$field, 'notes', $elm$json$Json$Decode$string));
+var $author$project$Main$fetchDeleted = $elm$http$Http$get(
+	{
+		expect: A2(
+			$elm$http$Http$expectJson,
+			$author$project$Main$DeletedFetched,
+			$elm$json$Json$Decode$list($author$project$Main$recipeDecoder)),
+		url: '/api/deleted'
+	});
+var $author$project$Main$RecipesFetched = function (a) {
+	return {$: 'RecipesFetched', a: a};
+};
 var $author$project$Main$fetchRecipes = $elm$http$Http$get(
 	{
 		expect: A2(
@@ -6308,6 +6337,14 @@ var $author$project$Main$fetchRecipes = $elm$http$Http$get(
 			$elm$json$Json$Decode$list($author$project$Main$recipeDecoder)),
 		url: '/api/recipes'
 	});
+var $elm$core$List$isEmpty = function (xs) {
+	if (!xs.b) {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$core$Basics$not = _Basics_not;
 var $author$project$Main$RecipeSaved = function (a) {
 	return {$: 'RecipeSaved', a: a};
 };
@@ -6342,7 +6379,6 @@ var $elm$json$Json$Encode$list = F2(
 				_Json_emptyArray(_Utils_Tuple0),
 				entries));
 	});
-var $elm$core$Basics$not = _Basics_not;
 var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -6412,6 +6448,35 @@ var $author$project$Main$postRecipe = function (model) {
 			url: '/api/save'
 		});
 };
+var $author$project$Main$Purged = function (a) {
+	return {$: 'Purged', a: a};
+};
+var $author$project$Main$purgeAllRequest = $elm$http$Http$post(
+	{
+		body: $elm$http$Http$emptyBody,
+		expect: $elm$http$Http$expectWhatever($author$project$Main$Purged),
+		url: '/api/purge-all?confirm=yesdeary'
+	});
+var $elm$url$Url$percentEncode = _Url_percentEncode;
+var $author$project$Main$purgeRequest = function (title) {
+	return $elm$http$Http$post(
+		{
+			body: $elm$http$Http$emptyBody,
+			expect: $elm$http$Http$expectWhatever($author$project$Main$Purged),
+			url: '/api/purge?title=' + ($elm$url$Url$percentEncode(title) + '&confirm=yesdeary')
+		});
+};
+var $author$project$Main$Restored = function (a) {
+	return {$: 'Restored', a: a};
+};
+var $author$project$Main$restoreRequest = function (title) {
+	return $elm$http$Http$post(
+		{
+			body: $elm$http$Http$emptyBody,
+			expect: $elm$http$Http$expectWhatever($author$project$Main$Restored),
+			url: '/api/restore?title=' + $elm$url$Url$percentEncode(title)
+		});
+};
 var $author$project$Main$ScrapeResult = function (a) {
 	return {$: 'ScrapeResult', a: a};
 };
@@ -6422,6 +6487,46 @@ var $author$project$Main$scrapeRecipe = function (url) {
 			url: '/api/scrape?url=' + url
 		});
 };
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
+			}
+		}
+	});
+var $elm$core$List$member = F2(
+	function (x, xs) {
+		return A2(
+			$elm$core$List$any,
+			function (a) {
+				return _Utils_eq(a, x);
+			},
+			xs);
+	});
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $author$project$Main$toggleSelected = F2(
+	function (title, selected) {
+		return A2($elm$core$List$member, title, selected) ? A2(
+			$elm$core$List$filter,
+			function (t) {
+				return !_Utils_eq(t, title);
+			},
+			selected) : A2($elm$core$List$cons, title, selected);
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6430,8 +6535,8 @@ var $author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{currentView: viewType, deletingTitle: $elm$core$Maybe$Nothing, status: ''}),
-					_Utils_eq(viewType, $author$project$Main$ListView) ? $author$project$Main$fetchRecipes : $elm$core$Platform$Cmd$none);
+						{currentView: viewType, deletingTitle: $elm$core$Maybe$Nothing, purgeIntent: $elm$core$Maybe$Nothing, status: ''}),
+					_Utils_eq(viewType, $author$project$Main$ListView) ? $author$project$Main$fetchRecipes : (_Utils_eq(viewType, $author$project$Main$DeletedView) ? $author$project$Main$fetchDeleted : $elm$core$Platform$Cmd$none));
 			case 'UpdateFilter':
 				var val = msg.a;
 				return _Utils_Tuple2(
@@ -6598,7 +6703,7 @@ var $author$project$Main$update = F2(
 					$elm$core$Platform$Cmd$none);
 			case 'CancelEdit':
 				return _Utils_Tuple2($author$project$Main$initialModel, $elm$core$Platform$Cmd$none);
-			default:
+			case 'OpenReader':
 				var recipe = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -6608,6 +6713,110 @@ var $author$project$Main$update = F2(
 							status: ''
 						}),
 					$elm$core$Platform$Cmd$none);
+			case 'FetchDeleted':
+				return _Utils_Tuple2(model, $author$project$Main$fetchDeleted);
+			case 'DeletedFetched':
+				var res = msg.a;
+				if (res.$ === 'Ok') {
+					var list = res.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{deleted: list}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'ToggleDeletedSelect':
+				var title = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							selectedDeleted: A2($author$project$Main$toggleSelected, title, model.selectedDeleted)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'ToggleSelectAll':
+				var allTitles = A2(
+					$elm$core$List$map,
+					function ($) {
+						return $.title;
+					},
+					model.deleted);
+				var allSelected = (!$elm$core$List$isEmpty(allTitles)) && _Utils_eq(
+					$elm$core$List$length(model.selectedDeleted),
+					$elm$core$List$length(allTitles));
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							selectedDeleted: allSelected ? _List_Nil : allTitles
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'RestoreSelected':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{status: 'Restoring...'}),
+					$elm$core$Platform$Cmd$batch(
+						A2($elm$core$List$map, $author$project$Main$restoreRequest, model.selectedDeleted)));
+			case 'Restored':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{selectedDeleted: _List_Nil, status: 'Restored.'}),
+					$author$project$Main$fetchDeleted);
+			case 'StartPurge':
+				var intent = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							purgeConfirm: '',
+							purgeIntent: $elm$core$Maybe$Just(intent)
+						}),
+					$elm$core$Platform$Cmd$none);
+			case 'UpdatePurgeConfirm':
+				var val = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{purgeConfirm: val}),
+					$elm$core$Platform$Cmd$none);
+			case 'CancelPurge':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{purgeConfirm: '', purgeIntent: $elm$core$Maybe$Nothing}),
+					$elm$core$Platform$Cmd$none);
+			case 'ConfirmPurge':
+				var _v5 = model.purgeIntent;
+				if (_v5.$ === 'Just') {
+					if (_v5.a.$ === 'PurgeSelected') {
+						var _v6 = _v5.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{purgeConfirm: '', purgeIntent: $elm$core$Maybe$Nothing, status: 'Purging...'}),
+							$elm$core$Platform$Cmd$batch(
+								A2($elm$core$List$map, $author$project$Main$purgeRequest, model.selectedDeleted)));
+					} else {
+						var _v7 = _v5.a;
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{purgeConfirm: '', purgeIntent: $elm$core$Maybe$Nothing, status: 'Purging...'}),
+							$author$project$Main$purgeAllRequest);
+					}
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{selectedDeleted: _List_Nil, status: 'Purged.'}),
+					$author$project$Main$fetchDeleted);
 		}
 	});
 var $author$project$Main$SetView = function (a) {
@@ -6651,31 +6860,151 @@ var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $author$project$Main$CancelEdit = {$: 'CancelEdit'};
-var $author$project$Main$ClearForm = {$: 'ClearForm'};
-var $author$project$Main$RunScrape = {$: 'RunScrape'};
-var $author$project$Main$SaveRecipe = {$: 'SaveRecipe'};
-var $author$project$Main$UpdateIngredients = function (a) {
-	return {$: 'UpdateIngredients', a: a};
+var $author$project$Main$PurgeAll = {$: 'PurgeAll'};
+var $author$project$Main$PurgeSelected = {$: 'PurgeSelected'};
+var $author$project$Main$RestoreSelected = {$: 'RestoreSelected'};
+var $author$project$Main$StartPurge = function (a) {
+	return {$: 'StartPurge', a: a};
 };
-var $author$project$Main$UpdateInstructions = function (a) {
-	return {$: 'UpdateInstructions', a: a};
+var $author$project$Main$ToggleSelectAll = {$: 'ToggleSelectAll'};
+var $author$project$Main$actionBtnStyle = function (c) {
+	return _List_fromArray(
+		[
+			A2($elm$html$Html$Attributes$style, 'background', c),
+			A2($elm$html$Html$Attributes$style, 'border', 'none'),
+			A2($elm$html$Html$Attributes$style, 'padding', '12px 16px'),
+			A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
+			A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
+			A2($elm$html$Html$Attributes$style, 'color', 'white'),
+			A2($elm$html$Html$Attributes$style, 'text-decoration', 'none'),
+			A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
+			A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
+			A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
+			A2($elm$html$Html$Attributes$style, 'display', 'inline-flex'),
+			A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
+			A2($elm$html$Html$Attributes$style, 'justify-content', 'center'),
+			A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
+			A2($elm$html$Html$Attributes$style, 'line-height', '1')
+		]);
 };
-var $author$project$Main$UpdateNotes = function (a) {
-	return {$: 'UpdateNotes', a: a};
-};
-var $author$project$Main$UpdateScrapeUrl = function (a) {
-	return {$: 'UpdateScrapeUrl', a: a};
-};
-var $author$project$Main$UpdateTags = function (a) {
-	return {$: 'UpdateTags', a: a};
-};
-var $author$project$Main$UpdateTitle = function (a) {
-	return {$: 'UpdateTitle', a: a};
-};
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$bool(bool));
+	});
+var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
 var $elm$html$Html$h2 = _VirtualDom_node('h2');
-var $elm$html$Html$h4 = _VirtualDom_node('h4');
+var $author$project$Main$ToggleDeletedSelect = function (a) {
+	return {$: 'ToggleDeletedSelect', a: a};
+};
+var $elm$html$Html$Attributes$checked = $elm$html$Html$Attributes$boolProperty('checked');
 var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$label = _VirtualDom_node('label');
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
+var $elm$html$Html$Events$targetChecked = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'checked']),
+	$elm$json$Json$Decode$bool);
+var $elm$html$Html$Events$onCheck = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'change',
+		A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetChecked));
+};
+var $elm$html$Html$strong = _VirtualDom_node('strong');
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $author$project$Main$viewDeletedCard = F2(
+	function (selected, recipe) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					A2($elm$html$Html$Attributes$style, 'background', 'white'),
+					A2($elm$html$Html$Attributes$style, 'padding', '12px 15px'),
+					A2($elm$html$Html$Attributes$style, 'margin-bottom', '12px'),
+					A2($elm$html$Html$Attributes$style, 'border-left', '6px solid #a00'),
+					A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
+					A2($elm$html$Html$Attributes$style, 'box-shadow', '0 1px 3px rgba(0,0,0,0.1)')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$label,
+					_List_fromArray(
+						[
+							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+							A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
+							A2($elm$html$Html$Attributes$style, 'gap', '10px'),
+							A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$input,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$type_('checkbox'),
+									$elm$html$Html$Attributes$checked(
+									A2($elm$core$List$member, recipe.title, selected)),
+									$elm$html$Html$Events$onCheck(
+									function (_v0) {
+										return $author$project$Main$ToggleDeletedSelect(recipe.title);
+									})
+								]),
+							_List_Nil),
+							A2(
+							$elm$html$Html$div,
+							_List_Nil,
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$strong,
+									_List_fromArray(
+										[
+											A2($elm$html$Html$Attributes$style, 'font-size', '18px'),
+											A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text(recipe.title)
+										])),
+									A2(
+									$elm$html$Html$p,
+									_List_fromArray(
+										[
+											A2($elm$html$Html$Attributes$style, 'font-size', '13px'),
+											A2($elm$html$Html$Attributes$style, 'color', '#777'),
+											A2($elm$html$Html$Attributes$style, 'margin', '4px 0 0 0')
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text(
+											A2($elm$core$String$join, ',  ', recipe.tags))
+										]))
+								]))
+						]))
+				]));
+	});
+var $author$project$Main$CancelPurge = {$: 'CancelPurge'};
+var $author$project$Main$ConfirmPurge = {$: 'ConfirmPurge'};
+var $author$project$Main$UpdatePurgeConfirm = function (a) {
+	return {$: 'UpdatePurgeConfirm', a: a};
+};
 var $author$project$Main$inputStyle = _List_fromArray(
 	[
 		A2($elm$html$Html$Attributes$style, 'width', '100%'),
@@ -6700,10 +7029,6 @@ var $elm$html$Html$Events$stopPropagationOn = F2(
 			event,
 			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
 	});
-var $elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
-	});
 var $elm$html$Html$Events$targetValue = A2(
 	$elm$json$Json$Decode$at,
 	_List_fromArray(
@@ -6718,14 +7043,246 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
-var $elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$string(string));
-	});
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Main$viewPurgeConfirm = function (model) {
+	var _v0 = model.purgeIntent;
+	if (_v0.$ === 'Nothing') {
+		return $elm$html$Html$text('');
+	} else {
+		var intent = _v0.a;
+		var target = function () {
+			if (intent.$ === 'PurgeSelected') {
+				return 'the selected recipes';
+			} else {
+				return 'ALL deleted recipes';
+			}
+		}();
+		var confirmed = model.purgeConfirm === 'yesdeary';
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					A2($elm$html$Html$Attributes$style, 'background', '#fff0f0'),
+					A2($elm$html$Html$Attributes$style, 'padding', '15px'),
+					A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
+					A2($elm$html$Html$Attributes$style, 'border', '1px solid #a00'),
+					A2($elm$html$Html$Attributes$style, 'margin-top', '15px')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$p,
+					_List_fromArray(
+						[
+							A2($elm$html$Html$Attributes$style, 'color', '#a00'),
+							A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
+							A2($elm$html$Html$Attributes$style, 'margin-top', '0')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('This permanently deletes ' + (target + '. Type \"yesdeary\" to confirm.'))
+						])),
+					A2(
+					$elm$html$Html$input,
+					A2(
+						$elm$core$List$cons,
+						$elm$html$Html$Attributes$placeholder('yesdeary'),
+						A2(
+							$elm$core$List$cons,
+							$elm$html$Html$Attributes$value(model.purgeConfirm),
+							A2(
+								$elm$core$List$cons,
+								$elm$html$Html$Events$onInput($author$project$Main$UpdatePurgeConfirm),
+								$author$project$Main$inputStyle))),
+					_List_Nil),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+							A2($elm$html$Html$Attributes$style, 'gap', '10px')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$button,
+							A2(
+								$elm$core$List$cons,
+								$elm$html$Html$Attributes$disabled(!confirmed),
+								A2(
+									$elm$core$List$cons,
+									$elm$html$Html$Events$onClick($author$project$Main$ConfirmPurge),
+									$author$project$Main$actionBtnStyle('#a00'))),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Permanently Delete')
+								])),
+							A2(
+							$elm$html$Html$button,
+							A2(
+								$elm$core$List$cons,
+								$elm$html$Html$Events$onClick($author$project$Main$CancelPurge),
+								_Utils_ap(
+									$author$project$Main$actionBtnStyle('#e5e5e5'),
+									_List_fromArray(
+										[
+											A2($elm$html$Html$Attributes$style, 'color', '#555')
+										]))),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Cancel')
+								]))
+						]))
+				]));
+	}
+};
+var $author$project$Main$viewDeleted = function (model) {
+	var selectedCount = $elm$core$List$length(model.selectedDeleted);
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$h2,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
+						A2($elm$html$Html$Attributes$style, 'margin-bottom', '5px')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Deleted Recipes')
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'color', '#888'),
+						A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
+						A2($elm$html$Html$Attributes$style, 'margin-top', '0')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Restore to bring a recipe back, or purge to remove it permanently.')
+					])),
+				$elm$core$List$isEmpty(model.deleted) ? A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
+						A2($elm$html$Html$Attributes$style, 'color', '#888'),
+						A2($elm$html$Html$Attributes$style, 'padding', '30px')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('No deleted recipes.')
+					])) : A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+								A2($elm$html$Html$Attributes$style, 'gap', '8px'),
+								A2($elm$html$Html$Attributes$style, 'flex-wrap', 'wrap'),
+								A2($elm$html$Html$Attributes$style, 'margin-bottom', '15px')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$button,
+								A2(
+									$elm$core$List$cons,
+									$elm$html$Html$Events$onClick($author$project$Main$ToggleSelectAll),
+									_Utils_ap(
+										$author$project$Main$actionBtnStyle('#e5e5e5'),
+										_List_fromArray(
+											[
+												A2($elm$html$Html$Attributes$style, 'color', '#555')
+											]))),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Select All')
+									])),
+								A2(
+								$elm$html$Html$button,
+								A2(
+									$elm$core$List$cons,
+									$elm$html$Html$Attributes$disabled(!selectedCount),
+									A2(
+										$elm$core$List$cons,
+										$elm$html$Html$Events$onClick($author$project$Main$RestoreSelected),
+										$author$project$Main$actionBtnStyle('#6B705C'))),
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										'Restore (' + ($elm$core$String$fromInt(selectedCount) + ')'))
+									])),
+								A2(
+								$elm$html$Html$button,
+								A2(
+									$elm$core$List$cons,
+									$elm$html$Html$Attributes$disabled(!selectedCount),
+									A2(
+										$elm$core$List$cons,
+										$elm$html$Html$Events$onClick(
+											$author$project$Main$StartPurge($author$project$Main$PurgeSelected)),
+										$author$project$Main$actionBtnStyle('#a00'))),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Delete Forever')
+									])),
+								A2(
+								$elm$html$Html$button,
+								A2(
+									$elm$core$List$cons,
+									$elm$html$Html$Events$onClick(
+										$author$project$Main$StartPurge($author$project$Main$PurgeAll)),
+									$author$project$Main$actionBtnStyle('#a00')),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Purge All')
+									]))
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_Nil,
+						A2(
+							$elm$core$List$map,
+							$author$project$Main$viewDeletedCard(model.selectedDeleted),
+							model.deleted))
+					])),
+				$author$project$Main$viewPurgeConfirm(model)
+			]));
+};
+var $author$project$Main$CancelEdit = {$: 'CancelEdit'};
+var $author$project$Main$ClearForm = {$: 'ClearForm'};
+var $author$project$Main$RunScrape = {$: 'RunScrape'};
+var $author$project$Main$SaveRecipe = {$: 'SaveRecipe'};
+var $author$project$Main$UpdateIngredients = function (a) {
+	return {$: 'UpdateIngredients', a: a};
+};
+var $author$project$Main$UpdateInstructions = function (a) {
+	return {$: 'UpdateInstructions', a: a};
+};
+var $author$project$Main$UpdateNotes = function (a) {
+	return {$: 'UpdateNotes', a: a};
+};
+var $author$project$Main$UpdateScrapeUrl = function (a) {
+	return {$: 'UpdateScrapeUrl', a: a};
+};
+var $author$project$Main$UpdateTags = function (a) {
+	return {$: 'UpdateTags', a: a};
+};
+var $author$project$Main$UpdateTitle = function (a) {
+	return {$: 'UpdateTitle', a: a};
+};
+var $elm$html$Html$h4 = _VirtualDom_node('h4');
 var $elm$html$Html$Attributes$rows = function (n) {
 	return A2(
 		_VirtualDom_attribute,
@@ -6733,7 +7290,6 @@ var $elm$html$Html$Attributes$rows = function (n) {
 		$elm$core$String$fromInt(n));
 };
 var $elm$html$Html$textarea = _VirtualDom_node('textarea');
-var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$Main$viewEntryForm = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -7224,27 +7780,6 @@ var $author$project$Main$UpdateFilter = function (a) {
 	return {$: 'UpdateFilter', a: a};
 };
 var $elm$html$Html$a = _VirtualDom_node('a');
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
 var $elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -7332,13 +7867,6 @@ var $elm$html$Html$Attributes$href = function (url) {
 		'href',
 		_VirtualDom_noJavaScriptUri(url));
 };
-var $elm$core$List$isEmpty = function (xs) {
-	if (!xs.b) {
-		return true;
-	} else {
-		return false;
-	}
-};
 var $author$project$Main$masterBtnStyle = function (c) {
 	return _List_fromArray(
 		[
@@ -7358,15 +7886,6 @@ var $author$project$Main$masterBtnStyle = function (c) {
 			A2($elm$html$Html$Attributes$style, 'line-height', '1')
 		]);
 };
-var $elm$core$List$member = F2(
-	function (x, xs) {
-		return A2(
-			$elm$core$List$any,
-			function (a) {
-				return _Utils_eq(a, x);
-			},
-			xs);
-	});
 var $author$project$Main$searchStyle = _List_fromArray(
 	[
 		A2($elm$html$Html$Attributes$style, 'width', '100%'),
@@ -7420,27 +7939,6 @@ var $author$project$Main$ExecuteDelete = function (a) {
 var $author$project$Main$OpenReader = function (a) {
 	return {$: 'OpenReader', a: a};
 };
-var $author$project$Main$actionBtnStyle = function (c) {
-	return _List_fromArray(
-		[
-			A2($elm$html$Html$Attributes$style, 'background', c),
-			A2($elm$html$Html$Attributes$style, 'border', 'none'),
-			A2($elm$html$Html$Attributes$style, 'padding', '12px 16px'),
-			A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-			A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-			A2($elm$html$Html$Attributes$style, 'color', 'white'),
-			A2($elm$html$Html$Attributes$style, 'text-decoration', 'none'),
-			A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
-			A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
-			A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
-			A2($elm$html$Html$Attributes$style, 'display', 'inline-flex'),
-			A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
-			A2($elm$html$Html$Attributes$style, 'justify-content', 'center'),
-			A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
-			A2($elm$html$Html$Attributes$style, 'line-height', '1')
-		]);
-};
-var $elm$html$Html$strong = _VirtualDom_node('strong');
 var $author$project$Main$viewRecipeCard = F2(
 	function (deletingTitle, recipe) {
 		var isDeleting = _Utils_eq(
@@ -7947,6 +8445,17 @@ var $author$project$Main$view = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$text('Recipe Box')
+									])),
+								A2(
+								$elm$html$Html$button,
+								A2(
+									$elm$core$List$cons,
+									$elm$html$Html$Events$onClick(
+										$author$project$Main$SetView($author$project$Main$DeletedView)),
+									$author$project$Main$navStyle),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Deleted')
 									]))
 							]))
 					])),
@@ -7967,9 +8476,11 @@ var $author$project$Main$view = function (model) {
 								return $author$project$Main$viewEntryForm(model);
 							case 'ListView':
 								return $author$project$Main$viewRecipeList(model);
-							default:
+							case 'ReadingView':
 								var recipe = _v0.a;
 								return $author$project$Main$viewReader(recipe);
+							default:
+								return $author$project$Main$viewDeleted(model);
 						}
 					}(),
 						A2(
