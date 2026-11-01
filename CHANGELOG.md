@@ -80,6 +80,9 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Web UI polish: softer layered shadows, subtle gradients, hover/press motion,
   focus rings, and a warmer serif stack — removes the flat look (CSS-only, no
   markup change).
+- Web UI "eye candy" pass: glassmorphism app bar, gradient headings and
+  buttons, pill shapes, colored hover glow, and gradient card surfaces
+  (CSS-only, theme-aware via CSS variables).
 
 ### Fixed
 - Config load/save now return real errors, validate port / db_file /
