@@ -777,9 +777,10 @@ h1, h2, h3, h4 {
   letter-spacing: -0.01em;
 }
 
-/* Aurora glow behind the content (theme-aware) */
+/* Aurora glow + paper grain behind the content (theme-aware) */
 .page {
   background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E"),
     radial-gradient(60% 45% at 95% -5%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%),
     radial-gradient(55% 50% at -5% 10%, color-mix(in srgb, var(--secondary) 32%, transparent), transparent 72%),
     radial-gradient(50% 40% at 100% 55%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%),
