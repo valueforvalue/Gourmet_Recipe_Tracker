@@ -17,6 +17,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   `TestShouldRestart`, `TestSleepCtxCancelled`, `TestRecoverTask*`)
 - `AGENTS.md`, `CONTEXT.md` and this changelog — agent-facing repo docs
   (domain glossary, file map, hard rules).
+- Web recipe list gains clickable category (tag) filter chips — matching the
+  Flutter app — plus a "No recipes found." empty state.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
@@ -31,6 +33,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   scrape redirects are re-validated so a safe URL cannot bounce to an
   internal address. (Regression: `TestMutatingRoutesRequirePost`,
   `TestCheckScrapeRedirect`)
+- Web "daily verse" no longer changes while typing (seeded by recipe count,
+  not filter text); search placeholder now matches what the search covers.
 
 ### Maintenance
 - Documented every exported identifier with `Name — contract` doc comments

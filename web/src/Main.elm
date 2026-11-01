@@ -8,6 +8,7 @@ import Http
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Regex
+import Set
 import Url
 
 
@@ -34,6 +35,7 @@ type alias Model =
     { currentView : View
     , recipes : List Recipe
     , filterText : String
+    , activeTag : String
     , scrapeUrl : String
     , title : String
     , tags : String
@@ -50,6 +52,7 @@ initialModel =
     { currentView = EntryView
     , recipes = []
     , filterText = ""
+    , activeTag = ""
     , scrapeUrl = ""
     , title = ""
     , tags = ""
@@ -68,6 +71,7 @@ initialModel =
 type Msg
     = SetView View
     | UpdateFilter String
+    | SetActiveTag String
     | UpdateScrapeUrl String
     | RunScrape
     | ScrapeResult (Result Http.Error Recipe)
@@ -104,6 +108,9 @@ update msg model =
 
         UpdateFilter val ->
             ( { model | filterText = val }, Cmd.none )
+
+        SetActiveTag tag ->
+            ( { model | activeTag = tag }, Cmd.none )
 
         UpdateScrapeUrl val ->
             ( { model | scrapeUrl = val }, Cmd.none )
@@ -289,15 +296,25 @@ viewRecipeList model =
         searchLower =
             String.toLower model.filterText
 
+        matchesSearch r =
+            String.contains searchLower (String.toLower r.title)
+                || List.any (\ing -> String.contains searchLower (String.toLower ing)) r.ingredients
+                || List.any (\tag -> String.contains searchLower (String.toLower tag)) r.tags
+                || String.contains searchLower (String.toLower r.notes)
+
+        matchesTag r =
+            model.activeTag == "" || List.member model.activeTag r.tags
+
         filteredRecipes =
-            List.filter
-                (\r ->
-                    String.contains searchLower (String.toLower r.title)
-                        || List.any (\ing -> String.contains searchLower (String.toLower ing)) r.ingredients
-                        || List.any (\tag -> String.contains searchLower (String.toLower tag)) r.tags
-                        || String.contains searchLower (String.toLower r.notes)
-                )
-                model.recipes
+            List.filter (\r -> matchesTag r && matchesSearch r) model.recipes
+
+        allTags =
+            model.recipes
+                |> List.concatMap .tags
+                |> List.map String.trim
+                |> List.filter (not << String.isEmpty)
+                |> Set.fromList
+                |> Set.toList
 
         verse =
             getDailyVerse model
@@ -309,13 +326,22 @@ viewRecipeList model =
             [ p [ style "font-style" "italic", style "margin" "0", style "color" "#4a4a4a", style "line-height" "1.5", style "font-size" "16px" ] [ text ("\"" ++ verse.text ++ "\"") ]
             , p [ style "font-size" "13px", style "text-align" "right", style "margin" "10px 0 0 0", style "font-weight" "bold", style "color" "#6B705C" ] [ text verse.ref ]
             ]
-        , input (placeholder "Search title or ingredient..." :: value model.filterText :: onInput UpdateFilter :: inputStyle) []
+        , input (placeholder "Search recipes..." :: value model.filterText :: onInput UpdateFilter :: inputStyle) []
+        , -- CATEGORY FILTER CHIPS
+          div [ style "display" "flex", style "flex-wrap" "wrap", style "gap" "8px", style "margin-bottom" "15px" ]
+            (tagChip "All" (model.activeTag == "") (SetActiveTag "")
+                :: List.map (\t -> tagChip t (model.activeTag == t) (SetActiveTag t)) allTags
+            )
         , -- MASTER COOKBOOK BUTTONS
           div [ style "margin-bottom" "20px", style "display" "flex", style "gap" "10px" ]
             [ a (href "/api/export/cookbook?booklet=false" :: target "_blank" :: masterBtnStyle "#6B705C") [ text "Letter Cookbook" ]
             , a (href "/api/export/cookbook?booklet=true" :: target "_blank" :: masterBtnStyle "#A5A58D") [ text "Booklet Cookbook" ]
             ]
-        , div [] (List.map (viewRecipeCard model.deletingTitle) filteredRecipes)
+        , if List.isEmpty filteredRecipes then
+            div [ style "text-align" "center", style "color" "#888", style "padding" "30px" ] [ text "No recipes found." ]
+
+          else
+            div [] (List.map (viewRecipeCard model.deletingTitle) filteredRecipes)
         ]
 
 
@@ -385,7 +411,7 @@ getDailyVerse : Model -> { text : String, ref : String }
 getDailyVerse model =
     let
         seed =
-            String.length model.filterText + List.length model.recipes
+            List.length model.recipes
 
         index =
             modBy (List.length bibleVerses) seed
@@ -462,6 +488,26 @@ masterBtnStyle c =
 
 navStyle =
     [ style "background" "none", style "border" "none", style "color" "white", style "font-size" "18px", style "cursor" "pointer", style "font-weight" "bold" ]
+
+
+tagChip : String -> Bool -> Msg -> Html Msg
+tagChip label selected msg =
+    button
+        ([ onClick msg
+         , style "border-radius" "16px"
+         , style "padding" "6px 12px"
+         , style "font-size" "13px"
+         , style "cursor" "pointer"
+         , style "border" "1px solid #6B705C"
+         ]
+            ++ (if selected then
+                    [ style "background" "#6B705C", style "color" "#fff" ]
+
+                else
+                    [ style "background" "#fff", style "color" "#6B705C" ]
+               )
+        )
+        [ text label ]
 
 
 
