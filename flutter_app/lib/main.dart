@@ -6,6 +6,8 @@
 import 'package:flutter/material.dart';
 import 'screens/recipe_list_screen.dart';
 import 'screens/cookbook_screen.dart';
+import 'theme/app_theme.dart';
+import 'theme/season.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,10 +22,7 @@ class RecipeTrackerApp extends StatelessWidget {
     return MaterialApp(
       title: 'Recipe Tracker',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
-        useMaterial3: true,
-      ),
+      theme: themeFor(currentSeason()),
       home: const _MainShell(),
     );
   }

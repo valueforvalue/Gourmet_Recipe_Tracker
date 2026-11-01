@@ -63,8 +63,10 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   `PRAGMA user_version`; both are tagged in `recipes.json`
   (`app_version` / `schema_version` / `exported_at`) and in the startup log.
   (Regression: `TestWriteSnapshotRoundTrip`, `TestImportFromJSONSnapshotObject`)
-- Web app bar gains a "Feedback" view with a native form that posts
-  name / email / message to the submit-form endpoint.
+- Web app bar gains a "Feedback" view that posts name / email / message to
+  the submit-form endpoint in-app (AJAX), with inline send/error status.
+- Flutter app: seasonal color themes (spring / summer / autumn / winter)
+  matching the web UI, driven by a `theme/` module + `seasonFromMonth`.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

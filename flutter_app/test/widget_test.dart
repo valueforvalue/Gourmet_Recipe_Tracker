@@ -2,7 +2,6 @@
 //
 // Basic smoke test: verifies the app launches and shows the bottom nav bar.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:morris_recipe_tracker/main.dart';
 
