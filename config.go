@@ -23,12 +23,20 @@ type Config struct {
 	// is empty. Caveat: a deliberately emptied DB is re-populated from
 	// recipes.json on the next start — delete the snapshot too to start fresh.
 	AutoImport bool `json:"auto_import"`
+	// TestMode, when true, forces git sync against a disposable test repo and
+	// a separate test vault directory so sync testing never touches real
+	// backup data.
+	TestMode bool `json:"test_mode"`
 }
 
 // GlobalConfig is the process-wide configuration, populated by LoadConfig.
 var GlobalConfig Config
 
 const configFileName = "config.json"
+
+// testBackupRemote is the disposable remote TESTMODE pushes to. It keeps sync
+// tests off any real backup repository. Change it when the test repo moves.
+const testBackupRemote = "https://github.com/valueforvalue/recipetracker_backup-test.git"
 
 // LoadConfig loads config.json (creating a default one on first run), applies
 // environment-variable overrides, and validates the result. It returns an
@@ -70,6 +78,7 @@ func loadConfig(path string) error {
 	}
 
 	applyEnvOverrides()
+	applyTestMode()
 	if err := GlobalConfig.Validate(); err != nil {
 		return fmt.Errorf("invalid config: %w", err)
 	}
@@ -118,6 +127,31 @@ func applyEnvOverrides() {
 		} else {
 			logWarn("config: RECIPE_AUTO_IMPORT=%q is not a bool (use true/false)", v)
 		}
+	}
+	if v := os.Getenv("RECIPE_TEST_MODE"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			GlobalConfig.TestMode = b
+		} else {
+			logWarn("config: RECIPE_TEST_MODE=%q is not a bool (use true/false)", v)
+		}
+	}
+}
+
+// applyTestMode redirects git sync to a disposable test repo and a separate
+// test vault directory, and forces git_sync on. It runs last so TESTMODE wins
+// over both config.json and environment overrides.
+func applyTestMode() {
+	if !GlobalConfig.TestMode {
+		return
+	}
+	GlobalConfig.GitSync = true
+	GlobalConfig.GitRemoteURL = testBackupRemote
+	if GlobalConfig.BackupPath == "" {
+		home, _ := os.UserHomeDir()
+		GlobalConfig.BackupPath = filepath.Join(home, "morris_recipe_vault")
+	}
+	if !strings.HasSuffix(GlobalConfig.BackupPath, "_test") {
+		GlobalConfig.BackupPath += "_test"
 	}
 }
 

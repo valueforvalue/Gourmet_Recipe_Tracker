@@ -41,6 +41,7 @@ created (owner-only permissions) on first run.
 | `git_sync` | `false` | mirror + commit/push the vault to git |
 | `git_remote_url` | `""` | optional remote linked on first run |
 | `auto_import` | `false` | on startup, import the vault `recipes.json` when the DB is empty |
+| `test_mode` | `false` | force sync to a disposable test repo + test vault (TESTMODE) |
 
 Each field can be overridden by an environment variable:
 
@@ -52,6 +53,7 @@ Each field can be overridden by an environment variable:
 | `git_sync` | `RECIPE_GIT_SYNC` (`true`/`false`) |
 | `git_remote_url` | `RECIPE_GIT_REMOTE` |
 | `auto_import` | `RECIPE_AUTO_IMPORT` (`true`/`false`) |
+| `test_mode` | `RECIPE_TEST_MODE` (`true`/`false`) |
 
 Config is validated at startup: a bad port, empty `db_file`, missing
 `backup_path` when git sync is on, or whitespace in the remote URL fails

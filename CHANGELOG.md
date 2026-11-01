@@ -51,6 +51,10 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   The web reader gains ½×/1×/2×/3× controls with a prominent temporary
   "scaled" banner. (Regression: `TestParseIngredient`, `TestScaleIngredient`,
   `TestFormatRat`, `TestScanRecipes`)
+- `test_mode` config flag (and `RECIPE_TEST_MODE` env): when true, git sync is
+  forced on and redirected to a disposable test repo + `<backup_path>_test`
+  vault, so sync tests never touch real backup data. (Regression:
+  `TestLoadConfigTestModeRedirectsSync`)
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
@@ -118,6 +122,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   `flutter-test`, `flutter-run`, `check`).
 - Refreshed `README.md` (config, resilience, security, `just` build flow)
   and `config.json.example` to match this session's changes.
+- Ignore SQLite WAL/SHM runtime files (`*.db-shm`, `*.db-wal`) and the
+  `test_empty_recipes.db` test artifact so `git status` stays clean.
 
 <!--
   Conventions:

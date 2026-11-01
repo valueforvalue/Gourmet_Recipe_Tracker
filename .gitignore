@@ -20,8 +20,13 @@ index.html.js
 # We ignore the local database, logs, and user configuration
 recipes.db
 test_recipes.db
+test_empty_recipes.db
 tracker.log
 config.json
+
+# --- SQLite runtime files (write-ahead log / shared memory) ---
+*.db-shm
+*.db-wal
 
 # Ignore generated output folders
 Printables/

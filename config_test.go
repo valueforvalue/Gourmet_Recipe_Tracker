@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -97,6 +98,26 @@ func TestLoadConfigRejectsMalformedFile(t *testing.T) {
 	}
 	if err := loadConfig(path); err == nil {
 		t.Fatal("loadConfig should fail on malformed config.json")
+	}
+}
+
+func TestLoadConfigTestModeRedirectsSync(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+	content := `{"port":"8080","db_file":"recipes.db","git_sync":false,"backup_path":"/tmp/vault","test_mode":true}`
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := loadConfig(path); err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	if !GlobalConfig.GitSync {
+		t.Error("test_mode must force git_sync on")
+	}
+	if GlobalConfig.GitRemoteURL != testBackupRemote {
+		t.Errorf("test_mode remote = %q, want %q", GlobalConfig.GitRemoteURL, testBackupRemote)
+	}
+	if !strings.HasSuffix(GlobalConfig.BackupPath, "_test") {
+		t.Errorf("test_mode backup_path = %q, want _test suffix", GlobalConfig.BackupPath)
 	}
 }
 
