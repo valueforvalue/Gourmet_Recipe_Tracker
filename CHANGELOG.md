@@ -82,6 +82,9 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   count, so "daily" was a misnomer).
 - Web reader notes now preserve line breaks and render URLs (including the
   scraped recipe's source) as clickable links.
+- PDF notes now render line-by-line with a `NOTES` header, and scraped
+  recipes' source URLs are clickable links in the PDF. (Regression:
+  `TestSplitLineLinks`)
 
 ### Maintenance
 - Documented every exported identifier with `Name — contract` doc comments

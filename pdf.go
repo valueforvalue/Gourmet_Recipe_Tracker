@@ -202,8 +202,63 @@ func drawRecipePage(pdf *gofpdf.Fpdf, r Recipe, tr func(string) string) {
 	// Notes Section
 	if r.Notes != "" {
 		pdf.Ln(0.2)
-		pdf.SetFont("Times", "I", 10)
+		pdf.SetFont("Times", "B", 12)
 		pdf.SetTextColor(80, 80, 80)
-		pdf.MultiCell(0, 0.2, tr("Notes: "+r.Notes), "T", "L", false)
+		pdf.CellFormat(0, 0.4, tr("NOTES"), "T", 1, "L", false, 0, "")
+		pdf.SetFont("Times", "I", 10)
+		writeNotes(pdf, tr, r.Notes)
 	}
+}
+
+// writeNotes renders recipe notes line by line, preserving line breaks and
+// making any http(s) URL (e.g. a scraped recipe's source) a clickable link.
+func writeNotes(pdf *gofpdf.Fpdf, tr func(string) string, notes string) {
+	for _, line := range strings.Split(notes, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			pdf.Ln(0.1)
+			continue
+		}
+		writeLineWithLinks(pdf, tr, line)
+		pdf.Ln(0.2)
+	}
+}
+
+func writeLineWithLinks(pdf *gofpdf.Fpdf, tr func(string) string, line string) {
+	for _, seg := range splitLineLinks(line) {
+		if seg.isURL {
+			pdf.WriteLinkString(0.2, tr(seg.text), seg.text)
+		} else {
+			pdf.Write(0.2, tr(seg.text))
+		}
+	}
+}
+
+// linkSegment is a piece of a notes line: plain text or a URL.
+type linkSegment struct {
+	text  string
+	isURL bool
+}
+
+// urlRe matches an http(s) URL in a notes line.
+var urlRe = regexp.MustCompile(`https?://[^\s]+`)
+
+func splitLineLinks(line string) []linkSegment {
+	locs := urlRe.FindAllStringIndex(line, -1)
+	if locs == nil {
+		return []linkSegment{{text: line}}
+	}
+	var segs []linkSegment
+	cursor := 0
+	for _, loc := range locs {
+		if loc[0] > cursor {
+			segs = append(segs, linkSegment{text: line[cursor:loc[0]]})
+		}
+		segs = append(segs, linkSegment{text: line[loc[0]:loc[1]], isURL: true})
+		cursor = loc[1]
+	}
+	if cursor < len(line) {
+		segs = append(segs, linkSegment{text: line[cursor:]})
+	}
+	return segs
 }
