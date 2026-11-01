@@ -9,6 +9,8 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Regex
 import Set
+import Task
+import Time
 import Url
 
 
@@ -54,6 +56,7 @@ type alias Model =
     , selectedDeleted : List String
     , purgeIntent : Maybe PurgeIntent
     , purgeConfirm : String
+    , verseIndex : Int
     }
 
 
@@ -75,6 +78,7 @@ initialModel =
     , selectedDeleted = []
     , purgeIntent = Nothing
     , purgeConfirm = ""
+    , verseIndex = 0
     }
 
 
@@ -117,6 +121,7 @@ type Msg
     | CancelPurge
     | ConfirmPurge
     | Purged (Result Http.Error ())
+    | GotTime Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -133,6 +138,9 @@ update msg model =
               else
                 Cmd.none
             )
+
+        GotTime posix ->
+            ( { model | verseIndex = verseIndexFromPosix posix }, Cmd.none )
 
         UpdateFilter val ->
             ( { model | filterText = val }, Cmd.none )
@@ -417,7 +425,7 @@ viewRecipeList model =
                 String.fromInt n ++ " recipes"
 
         verse =
-            getDailyVerse model
+            getDailyVerse model.verseIndex
     in
     div []
         [ h2 [ style "color" "#6B705C", style "margin-bottom" "5px" ] [ text "Morris Family Recipe Box" ]
@@ -590,16 +598,14 @@ bibleVerses =
     ]
 
 
-getDailyVerse : Model -> { text : String, ref : String }
-getDailyVerse model =
-    let
-        seed =
-            List.length model.recipes
-
-        index =
-            modBy (List.length bibleVerses) seed
-    in
+getDailyVerse : Int -> { text : String, ref : String }
+getDailyVerse index =
     bibleVerses |> List.drop index |> List.head |> Maybe.withDefault { text = "", ref = "" }
+
+
+verseIndexFromPosix : Time.Posix -> Int
+verseIndexFromPosix posix =
+    modBy (List.length bibleVerses) (Time.posixToMillis posix // 86400000)
 
 
 cleanInstruction : String -> String
@@ -726,9 +732,9 @@ tagChip label selected msg =
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \() -> ( initialModel, Cmd.none )
+        { init = \() -> ( initialModel, Task.perform GotTime Time.now )
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = \_ -> Time.every 60000 GotTime
         }
 

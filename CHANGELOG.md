@@ -61,6 +61,9 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   `TestCheckScrapeRedirect`)
 - Web "daily verse" no longer changes while typing (seeded by recipe count,
   not filter text); search placeholder now matches what the search covers.
+- Web "daily verse" now actually rotates by calendar day — seeded by days
+  since epoch and refreshed every minute via `elm/time` (was keyed to recipe
+  count, so "daily" was a misnomer).
 
 ### Maintenance
 - Documented every exported identifier with `Name — contract` doc comments
