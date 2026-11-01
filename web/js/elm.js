@@ -5926,7 +5926,7 @@ var $elm$time$Time$every = F2(
 	});
 var $author$project$Main$EntryView = {$: 'EntryView'};
 var $author$project$Main$Spring = {$: 'Spring'};
-var $author$project$Main$initialModel = {activeTag: '', currentView: $author$project$Main$EntryView, deleted: _List_Nil, deletingTitle: $elm$core$Maybe$Nothing, filterText: '', ingredients: '', instructions: '', notes: '', purgeConfirm: '', purgeIntent: $elm$core$Maybe$Nothing, recipes: _List_Nil, scaleFactor: '1', scaled: $elm$core$Maybe$Nothing, scrapeUrl: '', season: $author$project$Main$Spring, selectedDeleted: _List_Nil, status: 'Ready', tags: '', title: '', verseIndex: 0};
+var $author$project$Main$initialModel = {activeTag: '', currentView: $author$project$Main$EntryView, deleted: _List_Nil, deletingTitle: $elm$core$Maybe$Nothing, feedbackEmail: '', feedbackMessage: '', feedbackName: '', filterText: '', ingredients: '', instructions: '', notes: '', purgeConfirm: '', purgeIntent: $elm$core$Maybe$Nothing, recipes: _List_Nil, scaleFactor: '1', scaled: $elm$core$Maybe$Nothing, scrapeUrl: '', season: $author$project$Main$Spring, selectedDeleted: _List_Nil, status: 'Ready', tags: '', title: '', verseIndex: 0};
 var $author$project$Main$DeletedView = {$: 'DeletedView'};
 var $author$project$Main$ListView = {$: 'ListView'};
 var $author$project$Main$ReadingView = function (a) {
@@ -6838,6 +6838,22 @@ var $author$project$Main$seasonFromMonth = function (month) {
 			return $author$project$Main$Winter;
 	}
 };
+var $author$project$Main$FeedbackSent = function (a) {
+	return {$: 'FeedbackSent', a: a};
+};
+var $elm$http$Http$stringBody = _Http_pair;
+var $author$project$Main$sendFeedback = function (model) {
+	var body = 'name=' + ($elm$url$Url$percentEncode(model.feedbackName) + ('&email=' + ($elm$url$Url$percentEncode(model.feedbackEmail) + ('&message=' + $elm$url$Url$percentEncode(model.feedbackMessage)))));
+	return $elm$http$Http$post(
+		{
+			body: A2($elm$http$Http$stringBody, 'application/x-www-form-urlencoded', body),
+			expect: A2(
+				$elm$http$Http$expectJson,
+				$author$project$Main$FeedbackSent,
+				$elm$json$Json$Decode$succeed(_Utils_Tuple0)),
+			url: 'https://submit-form.com/SftusnkmF'
+		});
+};
 var $elm$time$Time$Apr = {$: 'Apr'};
 var $elm$time$Time$Aug = {$: 'Aug'};
 var $elm$time$Time$Dec = {$: 'Dec'};
@@ -7113,6 +7129,48 @@ var $author$project$Main$update = F2(
 						model,
 						{notes: val}),
 					$elm$core$Platform$Cmd$none);
+			case 'UpdateFeedbackName':
+				var val = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{feedbackName: val}),
+					$elm$core$Platform$Cmd$none);
+			case 'UpdateFeedbackEmail':
+				var val = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{feedbackEmail: val}),
+					$elm$core$Platform$Cmd$none);
+			case 'UpdateFeedbackMessage':
+				var val = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{feedbackMessage: val}),
+					$elm$core$Platform$Cmd$none);
+			case 'SendFeedback':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{status: 'Sending feedback...'}),
+					$author$project$Main$sendFeedback(model));
+			case 'FeedbackSent':
+				var res = msg.a;
+				if (res.$ === 'Ok') {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{feedbackEmail: '', feedbackMessage: '', feedbackName: '', status: 'Thanks for your feedback!'}),
+						$elm$core$Platform$Cmd$none);
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{status: 'Failed to send feedback.'}),
+						$elm$core$Platform$Cmd$none);
+				}
 			case 'SaveRecipe':
 				return _Utils_Tuple2(
 					_Utils_update(
@@ -7276,10 +7334,10 @@ var $author$project$Main$update = F2(
 						{purgeConfirm: '', purgeIntent: $elm$core$Maybe$Nothing}),
 					$elm$core$Platform$Cmd$none);
 			case 'ConfirmPurge':
-				var _v5 = model.purgeIntent;
-				if (_v5.$ === 'Just') {
-					if (_v5.a.$ === 'PurgeSelected') {
-						var _v6 = _v5.a;
+				var _v6 = model.purgeIntent;
+				if (_v6.$ === 'Just') {
+					if (_v6.a.$ === 'PurgeSelected') {
+						var _v7 = _v6.a;
 						return _Utils_Tuple2(
 							_Utils_update(
 								model,
@@ -7287,7 +7345,7 @@ var $author$project$Main$update = F2(
 							$elm$core$Platform$Cmd$batch(
 								A2($elm$core$List$map, $author$project$Main$purgeRequest, model.selectedDeleted)));
 					} else {
-						var _v7 = _v5.a;
+						var _v8 = _v6.a;
 						return _Utils_Tuple2(
 							_Utils_update(
 								model,
@@ -7305,9 +7363,9 @@ var $author$project$Main$update = F2(
 					$author$project$Main$fetchDeleted);
 			case 'ScaleRecipe':
 				var factor = msg.a;
-				var _v8 = model.currentView;
-				if (_v8.$ === 'ReadingView') {
-					var recipe = _v8.a;
+				var _v9 = model.currentView;
+				if (_v9.$ === 'ReadingView') {
+					var recipe = _v9.a;
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -7985,170 +8043,152 @@ var $author$project$Main$viewEntryForm = function (model) {
 					]))
 			]));
 };
-var $elm$html$Html$Attributes$action = function (uri) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'action',
-		_VirtualDom_noJavaScriptUri(uri));
+var $author$project$Main$SendFeedback = {$: 'SendFeedback'};
+var $author$project$Main$UpdateFeedbackEmail = function (a) {
+	return {$: 'UpdateFeedbackEmail', a: a};
+};
+var $author$project$Main$UpdateFeedbackMessage = function (a) {
+	return {$: 'UpdateFeedbackMessage', a: a};
+};
+var $author$project$Main$UpdateFeedbackName = function (a) {
+	return {$: 'UpdateFeedbackName', a: a};
 };
 var $elm$html$Html$Attributes$for = $elm$html$Html$Attributes$stringProperty('htmlFor');
-var $elm$html$Html$form = _VirtualDom_node('form');
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
-var $elm$html$Html$Attributes$method = $elm$html$Html$Attributes$stringProperty('method');
-var $elm$html$Html$Attributes$name = $elm$html$Html$Attributes$stringProperty('name');
-var $elm$html$Html$Attributes$required = $elm$html$Html$Attributes$boolProperty('required');
-var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
-var $author$project$Main$viewFeedback = A2(
-	$elm$html$Html$div,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$class('card')
-		]),
-	_List_fromArray(
-		[
-			A2(
-			$elm$html$Html$div,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('card-head')
-				]),
-			_List_fromArray(
-				[
-					A2(
-					$elm$html$Html$h2,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('card-title')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Send Feedback')
-						])),
-					A2(
-					$elm$html$Html$button,
-					_List_fromArray(
-						[
-							$elm$html$Html$Events$onClick(
-							$author$project$Main$SetView($author$project$Main$ListView)),
-							$elm$html$Html$Attributes$class('clear-btn')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Cancel')
-						]))
-				])),
-			A2(
-			$elm$html$Html$p,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('muted')
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('Questions, bugs, or ideas — we read every message.')
-				])),
-			A2(
-			$elm$html$Html$form,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$action('https://submit-form.com/SftusnkmF'),
-					$elm$html$Html$Attributes$method('post'),
-					$elm$html$Html$Attributes$target('_blank')
-				]),
-			_List_fromArray(
-				[
-					A2(
-					$elm$html$Html$label,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$for('name'),
-							$elm$html$Html$Attributes$class('feedback-label')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Name')
-						])),
-					A2(
-					$elm$html$Html$input,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$type_('text'),
-							$elm$html$Html$Attributes$id('name'),
-							$elm$html$Html$Attributes$name('name'),
-							$elm$html$Html$Attributes$placeholder('Name'),
-							$elm$html$Html$Attributes$required(true),
-							$elm$html$Html$Attributes$class('input')
-						]),
-					_List_Nil),
-					A2(
-					$elm$html$Html$label,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$for('email'),
-							$elm$html$Html$Attributes$class('feedback-label')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Email')
-						])),
-					A2(
-					$elm$html$Html$input,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$type_('email'),
-							$elm$html$Html$Attributes$id('email'),
-							$elm$html$Html$Attributes$name('email'),
-							$elm$html$Html$Attributes$placeholder('Email'),
-							$elm$html$Html$Attributes$required(true),
-							$elm$html$Html$Attributes$class('input')
-						]),
-					_List_Nil),
-					A2(
-					$elm$html$Html$label,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$for('message'),
-							$elm$html$Html$Attributes$class('feedback-label')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Message')
-						])),
-					A2(
-					$elm$html$Html$textarea,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$id('message'),
-							$elm$html$Html$Attributes$name('message'),
-							$elm$html$Html$Attributes$placeholder('Message'),
-							$elm$html$Html$Attributes$required(true),
-							$elm$html$Html$Attributes$rows(6),
-							$elm$html$Html$Attributes$class('input')
-						]),
-					_List_Nil),
-					A2(
-					$elm$html$Html$button,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$type_('submit'),
-							$elm$html$Html$Attributes$class('done-btn')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Send')
-						]))
-				])),
-			A2(
-			$elm$html$Html$p,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('muted')
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('Submitting opens a confirmation in a new tab.')
-				]))
-		]));
+var $author$project$Main$viewFeedback = function (model) {
+	var canSend = ($elm$core$String$trim(model.feedbackName) !== '') && (($elm$core$String$trim(model.feedbackEmail) !== '') && ($elm$core$String$trim(model.feedbackMessage) !== ''));
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('card')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('card-head')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$h2,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('card-title')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Send Feedback')
+							])),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onClick(
+								$author$project$Main$SetView($author$project$Main$ListView)),
+								$elm$html$Html$Attributes$class('clear-btn')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Cancel')
+							]))
+					])),
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('muted')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Questions, bugs, or ideas — we read every message.')
+					])),
+				A2(
+				$elm$html$Html$label,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$for('name'),
+						$elm$html$Html$Attributes$class('feedback-label')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Name')
+					])),
+				A2(
+				$elm$html$Html$input,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$type_('text'),
+						$elm$html$Html$Attributes$id('name'),
+						$elm$html$Html$Attributes$placeholder('Name'),
+						$elm$html$Html$Attributes$value(model.feedbackName),
+						$elm$html$Html$Events$onInput($author$project$Main$UpdateFeedbackName),
+						$elm$html$Html$Attributes$class('input')
+					]),
+				_List_Nil),
+				A2(
+				$elm$html$Html$label,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$for('email'),
+						$elm$html$Html$Attributes$class('feedback-label')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Email')
+					])),
+				A2(
+				$elm$html$Html$input,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$type_('email'),
+						$elm$html$Html$Attributes$id('email'),
+						$elm$html$Html$Attributes$placeholder('Email'),
+						$elm$html$Html$Attributes$value(model.feedbackEmail),
+						$elm$html$Html$Events$onInput($author$project$Main$UpdateFeedbackEmail),
+						$elm$html$Html$Attributes$class('input')
+					]),
+				_List_Nil),
+				A2(
+				$elm$html$Html$label,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$for('message'),
+						$elm$html$Html$Attributes$class('feedback-label')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Message')
+					])),
+				A2(
+				$elm$html$Html$textarea,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$id('message'),
+						$elm$html$Html$Attributes$placeholder('Message'),
+						$elm$html$Html$Attributes$rows(6),
+						$elm$html$Html$Attributes$value(model.feedbackMessage),
+						$elm$html$Html$Events$onInput($author$project$Main$UpdateFeedbackMessage),
+						$elm$html$Html$Attributes$class('input')
+					]),
+				_List_Nil),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Events$onClick($author$project$Main$SendFeedback),
+						$elm$html$Html$Attributes$disabled(!canSend),
+						$elm$html$Html$Attributes$class('done-btn')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Send')
+					]))
+			]));
+};
 var $author$project$Main$EditRecipe = function (a) {
 	return {$: 'EditRecipe', a: a};
 };
@@ -8200,6 +8240,7 @@ var $elm$html$Html$Attributes$href = function (url) {
 		'href',
 		_VirtualDom_noJavaScriptUri(url));
 };
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $author$project$Main$linkifyFrom = F3(
 	function (str, cursor, matches) {
 		if (!matches.b) {
@@ -9087,7 +9128,7 @@ var $author$project$Main$view = function (model) {
 							case 'DeletedView':
 								return $author$project$Main$viewDeleted(model);
 							default:
-								return $author$project$Main$viewFeedback;
+								return $author$project$Main$viewFeedback(model);
 						}
 					}(),
 						A2(

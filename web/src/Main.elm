@@ -58,6 +58,9 @@ type alias Model =
     , ingredients : String
     , instructions : String
     , notes : String
+    , feedbackName : String
+    , feedbackEmail : String
+    , feedbackMessage : String
     , status : String
     , deletingTitle : Maybe String
     , deleted : List Recipe
@@ -83,6 +86,9 @@ initialModel =
     , ingredients = ""
     , instructions = ""
     , notes = ""
+    , feedbackName = ""
+    , feedbackEmail = ""
+    , feedbackMessage = ""
     , status = "Ready"
     , deletingTitle = Nothing
     , deleted = []
@@ -113,6 +119,11 @@ type Msg
     | UpdateIngredients String
     | UpdateInstructions String
     | UpdateNotes String
+    | UpdateFeedbackName String
+    | UpdateFeedbackEmail String
+    | UpdateFeedbackMessage String
+    | SendFeedback
+    | FeedbackSent (Result Http.Error ())
     | SaveRecipe
     | RecipeSaved (Result Http.Error ())
     | FetchRecipes
@@ -223,6 +234,26 @@ update msg model =
 
         UpdateNotes val ->
             ( { model | notes = val }, Cmd.none )
+
+        UpdateFeedbackName val ->
+            ( { model | feedbackName = val }, Cmd.none )
+
+        UpdateFeedbackEmail val ->
+            ( { model | feedbackEmail = val }, Cmd.none )
+
+        UpdateFeedbackMessage val ->
+            ( { model | feedbackMessage = val }, Cmd.none )
+
+        SendFeedback ->
+            ( { model | status = "Sending feedback..." }, sendFeedback model )
+
+        FeedbackSent res ->
+            case res of
+                Ok _ ->
+                    ( { model | status = "Thanks for your feedback!", feedbackName = "", feedbackEmail = "", feedbackMessage = "" }, Cmd.none )
+
+                Err _ ->
+                    ( { model | status = "Failed to send feedback." }, Cmd.none )
 
         SaveRecipe ->
             ( { model | status = "Saving to records..." }, postRecipe model )
@@ -385,7 +416,7 @@ view model =
                     viewDeleted model
 
                 FeedbackView ->
-                    viewFeedback
+                    viewFeedback model
             , p [ class "status" ] [ text model.status ]
             ]
         ]
@@ -433,28 +464,25 @@ viewEntryForm model =
         ]
 
 
-viewFeedback : Html Msg
-viewFeedback =
+viewFeedback : Model -> Html Msg
+viewFeedback model =
+    let
+        canSend =
+            String.trim model.feedbackName /= "" && String.trim model.feedbackEmail /= "" && String.trim model.feedbackMessage /= ""
+    in
     div [ class "card" ]
         [ div [ class "card-head" ]
             [ h2 [ class "card-title" ] [ text "Send Feedback" ]
             , button [ onClick (SetView ListView), class "clear-btn" ] [ text "Cancel" ]
             ]
         , p [ class "muted" ] [ text "Questions, bugs, or ideas — we read every message." ]
-        , Html.form
-            [ action "https://submit-form.com/SftusnkmF"
-            , method "post"
-            , target "_blank"
-            ]
-            [ label [ for "name", class "feedback-label" ] [ text "Name" ]
-            , input [ type_ "text", id "name", name "name", placeholder "Name", required True, class "input" ] []
-            , label [ for "email", class "feedback-label" ] [ text "Email" ]
-            , input [ type_ "email", id "email", name "email", placeholder "Email", required True, class "input" ] []
-            , label [ for "message", class "feedback-label" ] [ text "Message" ]
-            , textarea [ id "message", name "message", placeholder "Message", required True, rows 6, class "input" ] []
-            , button [ type_ "submit", class "done-btn" ] [ text "Send" ]
-            ]
-        , p [ class "muted" ] [ text "Submitting opens a confirmation in a new tab." ]
+        , label [ for "name", class "feedback-label" ] [ text "Name" ]
+        , input [ type_ "text", id "name", placeholder "Name", value model.feedbackName, onInput UpdateFeedbackName, class "input" ] []
+        , label [ for "email", class "feedback-label" ] [ text "Email" ]
+        , input [ type_ "email", id "email", placeholder "Email", value model.feedbackEmail, onInput UpdateFeedbackEmail, class "input" ] []
+        , label [ for "message", class "feedback-label" ] [ text "Message" ]
+        , textarea [ id "message", placeholder "Message", rows 6, value model.feedbackMessage, onInput UpdateFeedbackMessage, class "input" ] []
+        , button [ onClick SendFeedback, disabled (not canSend), class "done-btn" ] [ text "Send" ]
         ]
 
 
@@ -836,6 +864,21 @@ postRecipe model =
                     ]
                 )
         , expect = Http.expectWhatever RecipeSaved
+        }
+
+
+sendFeedback : Model -> Cmd Msg
+sendFeedback model =
+    let
+        body =
+            "name=" ++ Url.percentEncode model.feedbackName
+                ++ "&email=" ++ Url.percentEncode model.feedbackEmail
+                ++ "&message=" ++ Url.percentEncode model.feedbackMessage
+    in
+    Http.post
+        { url = "https://submit-form.com/SftusnkmF"
+        , body = Http.stringBody "application/x-www-form-urlencoded" body
+        , expect = Http.expectJson FeedbackSent (Decode.succeed ())
         }
 
 

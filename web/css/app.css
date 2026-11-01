@@ -879,3 +879,9 @@ h1, h2, h3, h4 {
   border: 1px dashed #ccc;
   border-radius: 12px;
 }
+
+/* Disabled controls */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
