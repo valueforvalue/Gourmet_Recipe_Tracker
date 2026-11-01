@@ -15,6 +15,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   trigger graceful shutdown. HTTP read/write/idle timeouts close the
   slowloris gap. (Regression: `TestNewHTTPServerTimeouts`, `TestNextBackoff`,
   `TestShouldRestart`, `TestSleepCtxCancelled`, `TestRecoverTask*`)
+- `just apk` (build the Android release APK) and `just release` (zip the
+  server exe, APK, runner, and config example — binaries only, no source).
 - `AGENTS.md`, `CONTEXT.md` and this changelog — agent-facing repo docs
   (domain glossary, file map, hard rules).
 - Web recipe list gains clickable category (tag) filter chips — matching the
@@ -23,6 +25,9 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
   `config.json` keeps its stored value. Git backup is opt-in.
+- `just build` now targets `morris-tracker.exe` (matches the existing
+  deployment binary name); `run_tracker.bat` just launches that exe instead
+  of rebuilding from source or checking for updates.
 - Web UI mobile polish: 44px tap targets, Material-style app bar with
   "Recipe Tracker" title, rounded search field, and reader back/edit actions —
   aligned with the Flutter app's look and feel.

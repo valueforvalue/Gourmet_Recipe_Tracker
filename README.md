@@ -98,14 +98,19 @@ To print Booklet-sized PDFs (5.5" x 8.5") efficiently onto standard paper to bui
 
 `just` is the build entry point (see `Justfile`):
 
-    just build    # compile the Go server into recipe-tracker.exe
+    just build    # compile the Go server into morris-tracker.exe
     just test     # run the Go test suite
     just web      # rebuild web/js/elm.js from web/src/Main.elm
     just check    # build + test + web (full verification)
     just run      # run the server on :8080
+    just apk      # build the Android release APK
+    just release  # zip server exe + APK + runner into recipe-tracker-release.zip
 
 Go dependencies are declared in `go.mod` and fetched automatically — no
 manual `go get` needed.
+
+`run_tracker.bat` just launches `morris-tracker.exe` — it no longer rebuilds
+from source or checks for updates.
 
 ## Security
 
