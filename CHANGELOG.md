@@ -45,6 +45,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   No stack addendum installed (the shipped `go-htmx` addendum does not match
   this repo's Go stdlib + Elm + Flutter stack).
 - Applied the 6-axis label taxonomy to the GitHub repository.
+- Untracked `web/elm-stuff/` build cache (was committed; already gitignored,
+  now removed from the index so `elm make` no longer dirties the tree).
 
 <!--
   Conventions:
