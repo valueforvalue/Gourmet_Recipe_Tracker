@@ -2,15 +2,36 @@ package main
 
 import (
 	"encoding/json"
+	"net/url"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
+// hostStrategy forces a specific extraction strategy for a host. Empty by
+// default (JSON-LD -> microdata -> heuristic). Add an entry when a site's
+// markup breaks the default order, e.g. "broken.example": "heuristic".
+var hostStrategy = map[string]string{}
+
 // scrapeRecipe extracts a Recipe from an already-parsed HTML document. It
 // tries schema.org/Recipe JSON-LD first, then microdata (itemprop), then
-// CSS-class heuristics as a last resort.
+// CSS-class heuristics as a last resort, unless a host override says
+// otherwise.
 func scrapeRecipe(doc *goquery.Document, sourceURL string) Recipe {
+	if strategy, ok := hostStrategy[hostOf(sourceURL)]; ok {
+		switch strategy {
+		case "jsonld":
+			if r, ok := scrapeJSONLD(doc, sourceURL); ok {
+				return r
+			}
+		case "microdata":
+			if r, ok := scrapeMicrodata(doc, sourceURL); ok {
+				return r
+			}
+		case "heuristic":
+			return scrapeHeuristic(doc, sourceURL)
+		}
+	}
 	if r, ok := scrapeJSONLD(doc, sourceURL); ok {
 		return r
 	}
@@ -18,6 +39,15 @@ func scrapeRecipe(doc *goquery.Document, sourceURL string) Recipe {
 		return r
 	}
 	return scrapeHeuristic(doc, sourceURL)
+}
+
+// hostOf returns the lowercase hostname of a URL, or "" when unparseable.
+func hostOf(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(u.Hostname())
 }
 
 // --- JSON-LD (schema.org/Recipe) ---
@@ -46,7 +76,7 @@ func scrapeJSONLD(doc *goquery.Document, sourceURL string) (Recipe, bool) {
 
 	r := Recipe{
 		Title:        cleanText(firstString(obj["name"])),
-		Ingredients:  cleanStrings(ingredientsFromJSON(obj["recipeIngredient"])),
+		Ingredients:  normalizeIngredients(ingredientsFromJSON(obj["recipeIngredient"])),
 		Instructions: cleanStrings(instructionsFromJSON(obj["recipeInstructions"])),
 		Tags:         tagsFromJSON(obj),
 		Notes:        notesFromJSON(obj, sourceURL),
@@ -166,11 +196,17 @@ func stepFromJSON(v any) []string {
 	case string:
 		return []string{t}
 	case map[string]any:
-		// HowToSection groups nested steps.
+		// HowToSection groups nested steps; prefix them with the section name.
 		if typeIs(t["@type"], "HowToSection") {
+			name := cleanText(firstString(t["name"]))
 			var out []string
 			for _, key := range []string{"itemListElement", "steps", "step"} {
-				out = append(out, instructionsFromJSON(t[key])...)
+				for _, step := range instructionsFromJSON(t[key]) {
+					if name != "" {
+						step = name + ": " + step
+					}
+					out = append(out, step)
+				}
 			}
 			return out
 		}
@@ -207,6 +243,12 @@ func notesFromJSON(m map[string]any, sourceURL string) string {
 	if y := cleanText(firstString(m["recipeYield"])); y != "" {
 		parts = append(parts, "Yield: "+y)
 	}
+	if prep := cleanText(firstString(m["prepTime"])); prep != "" {
+		parts = append(parts, "Prep: "+humanizeDuration(prep))
+	}
+	if cook := cleanText(firstString(m["cookTime"])); cook != "" {
+		parts = append(parts, "Cook: "+humanizeDuration(cook))
+	}
 	if t := cleanText(firstString(m["totalTime"])); t != "" {
 		parts = append(parts, "Time: "+humanizeDuration(t))
 	}
@@ -239,6 +281,7 @@ func scrapeMicrodata(doc *goquery.Document, sourceURL string) (Recipe, bool) {
 	})
 	tags = append(tags, "Imported")
 	r.Tags = uniqueClean(tags)
+	r.Ingredients = normalizeIngredients(r.Ingredients)
 
 	var parts []string
 	parts = append(parts, "Source: "+sourceURL)
@@ -271,7 +314,7 @@ func scrapeHeuristic(doc *goquery.Document, sourceURL string) Recipe {
 			r.Instructions = append(r.Instructions, cleanText(s.Text()))
 		}
 	})
-	r.Ingredients = cleanStrings(r.Ingredients)
+	r.Ingredients = normalizeIngredients(r.Ingredients)
 	r.Instructions = cleanStrings(r.Instructions)
 	return r
 }
@@ -305,6 +348,29 @@ func cleanStrings(list []string) []string {
 		if s = cleanText(s); s != "" {
 			out = append(out, s)
 		}
+	}
+	return out
+}
+
+// normalizeIngredients cautiously cleans ingredient strings: it strips a
+// leading bullet and removes exact duplicates. It deliberately does not merge
+// near-identical strings or parse amounts, which risks losing detail.
+func normalizeIngredients(list []string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, raw := range list {
+		s := cleanText(raw)
+		for _, b := range []string{"•", "·", "–", "—", "-", "*"} {
+			if strings.HasPrefix(s, b+" ") {
+				s = cleanText(strings.TrimPrefix(s, b+" "))
+				break
+			}
+		}
+		if s == "" || seen[s] {
+			continue
+		}
+		seen[s] = true
+		out = append(out, s)
 	}
 	return out
 }

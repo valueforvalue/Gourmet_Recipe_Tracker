@@ -157,12 +157,21 @@ update msg model =
         ScrapeResult res ->
             case res of
                 Ok r ->
+                    let
+                        empty =
+                            String.trim r.title == "" && List.isEmpty r.ingredients && List.isEmpty r.instructions
+                    in
                     ( { model
                         | title = r.title
                         , ingredients = String.join "\n" r.ingredients
                         , instructions = String.join "\n" r.instructions
                         , notes = r.notes
-                        , status = "Imported! Please review."
+                        , status =
+                            if empty then
+                                "Scrape found no recipe data. Try a different URL, or enter manually below."
+
+                            else
+                                "Scraped! Review and edit below, then Save."
                       }
                     , Cmd.none
                     )

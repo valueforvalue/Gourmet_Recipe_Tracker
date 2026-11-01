@@ -6909,6 +6909,7 @@ var $author$project$Main$update = F2(
 				var res = msg.a;
 				if (res.$ === 'Ok') {
 					var r = res.a;
+					var empty = ($elm$core$String$trim(r.title) === '') && ($elm$core$List$isEmpty(r.ingredients) && $elm$core$List$isEmpty(r.instructions));
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
@@ -6916,7 +6917,7 @@ var $author$project$Main$update = F2(
 								ingredients: A2($elm$core$String$join, '\n', r.ingredients),
 								instructions: A2($elm$core$String$join, '\n', r.instructions),
 								notes: r.notes,
-								status: 'Imported! Please review.',
+								status: empty ? 'Scrape found no recipe data. Try a different URL, or enter manually below.' : 'Scraped! Review and edit below, then Save.',
 								title: r.title
 							}),
 						$elm$core$Platform$Cmd$none);

@@ -17,6 +17,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -39,6 +40,53 @@ var frontendFiles embed.FS
 var scrapeClient = &http.Client{
 	Timeout:       30 * time.Second,
 	CheckRedirect: checkScrapeRedirect,
+}
+
+// perHostLimiter enforces a minimum interval between requests to the same
+// host, as a politeness delay.
+type perHostLimiter struct {
+	mu      sync.Mutex
+	lastReq map[string]time.Time
+	minGap  time.Duration
+}
+
+func newPerHostLimiter(minGap time.Duration) *perHostLimiter {
+	return &perHostLimiter{lastReq: map[string]time.Time{}, minGap: minGap}
+}
+
+func (l *perHostLimiter) wait(host string) {
+	l.mu.Lock()
+	last := l.lastReq[host]
+	var wait time.Duration
+	if !last.IsZero() {
+		wait = l.minGap - time.Since(last)
+	}
+	l.mu.Unlock()
+	if wait > 0 {
+		time.Sleep(wait)
+	}
+	l.mu.Lock()
+	l.lastReq[host] = time.Now()
+	l.mu.Unlock()
+}
+
+// scrapeLimiter spaces out requests to the same host by at least one second.
+var scrapeLimiter = newPerHostLimiter(time.Second)
+
+// scrapeFetch fetches targetURL with a per-host politeness delay and a single
+// retry on a transient failure (network error or 5xx).
+func scrapeFetch(targetURL string) (*http.Response, error) {
+	scrapeLimiter.wait(hostOf(targetURL))
+
+	resp, err := scrapeClient.Get(targetURL)
+	if err == nil && resp.StatusCode < 500 {
+		return resp, nil
+	}
+	if resp != nil {
+		resp.Body.Close()
+	}
+	time.Sleep(500 * time.Millisecond)
+	return scrapeClient.Get(targetURL)
 }
 
 // corsMiddleware wraps a handler and adds CORS headers so the Flutter
@@ -211,7 +259,7 @@ func main() {
 			http.Error(w, "Invalid or disallowed URL", http.StatusBadRequest)
 			return
 		}
-		resp, err := scrapeClient.Get(targetURL)
+		resp, err := scrapeFetch(targetURL)
 		if err != nil {
 			logError("scrape fetch: %v", err)
 			http.Error(w, "Failed to fetch URL", http.StatusInternalServerError)

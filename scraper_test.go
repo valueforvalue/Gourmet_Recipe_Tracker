@@ -172,6 +172,80 @@ func TestHumanizeDuration(t *testing.T) {
 	}
 }
 
+func TestNormalizeIngredients(t *testing.T) {
+	in := []string{"- 1 cup sugar", "1 cup sugar", "• 2 eggs", "  flour  "}
+	got := normalizeIngredients(in)
+	want := []string{"1 cup sugar", "2 eggs", "flour"}
+	if len(got) != len(want) {
+		t.Fatalf("normalizeIngredients = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("normalizeIngredients[%d] = %q, want %q", i, got[i], want[i])
+		}
+	}
+}
+
+func TestScrapeJSONLDTimes(t *testing.T) {
+	html := `<script type="application/ld+json">
+{"@type":"Recipe","name":"Roast","recipeIngredient":["chicken"],
+ "recipeInstructions":["Cook."],
+ "prepTime":"PT15M","cookTime":"PT1H","totalTime":"PT1H15M"}
+</script>`
+
+	r := scrapeRecipe(parseHTML(t, html), "https://example.com/roast")
+
+	for _, want := range []string{"Prep: 15m", "Cook: 1h", "Time: 1h 15m"} {
+		if !strings.Contains(r.Notes, want) {
+			t.Errorf("notes = %q, missing %q", r.Notes, want)
+		}
+	}
+}
+
+func TestScrapeHowToSectionPrefix(t *testing.T) {
+	html := `<script type="application/ld+json">
+{"@type":"Recipe","name":"Pie","recipeIngredient":["dough"],
+ "recipeInstructions":[
+   {"@type":"HowToSection","name":"Crust","itemListElement":[
+     {"@type":"HowToStep","text":"Roll dough."},
+     {"@type":"HowToStep","text":"Bake crust."}
+   ]},
+   {"@type":"HowToStep","text":"Serve."}
+ ]}
+</script>`
+
+	r := scrapeRecipe(parseHTML(t, html), "https://example.com/pie")
+
+	want := []string{"Crust: Roll dough.", "Crust: Bake crust.", "Serve."}
+	if len(r.Instructions) != len(want) {
+		t.Fatalf("instructions = %v, want %v", r.Instructions, want)
+	}
+	for i := range want {
+		if r.Instructions[i] != want[i] {
+			t.Errorf("instructions[%d] = %q, want %q", i, r.Instructions[i], want[i])
+		}
+	}
+}
+
+func TestHostStrategyOverride(t *testing.T) {
+	old := hostStrategy["example.com"]
+	hostStrategy["example.com"] = "heuristic"
+	defer func() { hostStrategy["example.com"] = old }()
+
+	html := `<body><h1>Heuristic Title</h1>
+<script type="application/ld+json">
+{"@type":"Recipe","name":"JSONLD Title","recipeIngredient":["x"],"recipeInstructions":["Y."]}
+</script>
+<ul><li class="ingredient">Pasta</li></ul>
+<ol><li class="step">Boil.</li></ol></body>`
+
+	r := scrapeRecipe(parseHTML(t, html), "https://example.com/recipe")
+
+	if r.Title != "Heuristic Title" {
+		t.Errorf("title = %q, want Heuristic Title (override should force heuristic)", r.Title)
+	}
+}
+
 func contains(list []string, s string) bool {
 	for _, v := range list {
 		if v == s {

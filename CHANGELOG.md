@@ -41,6 +41,10 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   heuristics. Handles `@graph` nesting and `HowToStep`/`HowToSection`/
   `PropertyValue` shapes. (Regression: `TestScrapeJSONLD*`, `TestScrapeMicrodata`,
   `TestScrapeHeuristic`)
+- Scraper enhancements: prep/cook time in notes, cautious ingredient
+  normalization (strip bullets + drop exact duplicates), `HowToSection` step
+  prefixing, host strategy overrides, per-host politeness delay + one retry on
+  transient failures, and a scrape-result empty check in the web UI.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
