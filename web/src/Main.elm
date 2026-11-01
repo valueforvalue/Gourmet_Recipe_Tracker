@@ -71,6 +71,7 @@ type alias Model =
     , season : Season
     , scaled : Maybe Recipe
     , scaleFactor : String
+    , versionInfo : String
     }
 
 
@@ -99,6 +100,7 @@ initialModel =
     , season = Spring
     , scaled = Nothing
     , scaleFactor = "1"
+    , versionInfo = ""
     }
 
 
@@ -150,6 +152,7 @@ type Msg
     | Scaled (Result Http.Error Recipe)
     | ResetScale
     | GotTime Time.Posix
+    | VersionFetched (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -169,6 +172,14 @@ update msg model =
 
         GotTime posix ->
             ( { model | verseIndex = verseIndexFromPosix posix, season = seasonFromMonth (Time.toMonth Time.utc posix) }, Cmd.none )
+
+        VersionFetched res ->
+            case res of
+                Ok info ->
+                    ( { model | versionInfo = info }, Cmd.none )
+
+                Err _ ->
+                    ( model, Cmd.none )
 
         UpdateFilter val ->
             ( { model | filterText = val }, Cmd.none )
@@ -418,6 +429,7 @@ view model =
                 FeedbackView ->
                     viewFeedback model
             , p [ class "status" ] [ text model.status ]
+            , p [ class "version-info" ] [ text model.versionInfo ]
             ]
         ]
 
@@ -839,6 +851,19 @@ scrapeRecipe url =
     Http.get { url = "/api/scrape?url=" ++ url, expect = Http.expectJson ScrapeResult recipeDecoder }
 
 
+versionDecoder : Decode.Decoder String
+versionDecoder =
+    Decode.map2
+        (\app schema -> "v" ++ app ++ " (schema " ++ String.fromInt schema ++ ")")
+        (Decode.field "app_version" Decode.string)
+        (Decode.field "schema_version" Decode.int)
+
+
+fetchVersion : Cmd Msg
+fetchVersion =
+    Http.get { url = "/api/version", expect = Http.expectJson VersionFetched versionDecoder }
+
+
 fetchRecipes : Cmd Msg
 fetchRecipes =
     Http.get { url = "/api/recipes", expect = Http.expectJson RecipesFetched (Decode.list recipeDecoder) }
@@ -982,7 +1007,7 @@ scaleButton model label factor =
 main : Program () Model Msg
 main =
     Browser.element
-        { init = \() -> ( initialModel, Task.perform GotTime Time.now )
+        { init = \() -> ( initialModel, Cmd.batch [ Task.perform GotTime Time.now, fetchVersion ] )
         , view = view
         , update = update
         , subscriptions = \_ -> Time.every 60000 GotTime

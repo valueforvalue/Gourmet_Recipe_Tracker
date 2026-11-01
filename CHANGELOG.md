@@ -85,6 +85,7 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - New rust app launcher icon (replaces the default Flutter icon).
 - Flutter recipe detail gains a "Set Timer" button that opens the Android
   native timer.
+- Web UI footer shows the app + schema version (from `/api/version`).
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

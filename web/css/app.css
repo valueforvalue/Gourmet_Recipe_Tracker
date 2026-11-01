@@ -92,6 +92,13 @@
   font-weight: bold;
 }
 
+.version-info {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  margin-top: 12px;
+}
+
 /* ---------- App bar ---------- */
 .appbar {
   background: var(--primary);
