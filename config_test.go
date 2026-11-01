@@ -33,21 +33,31 @@ func TestConfigValidate(t *testing.T) {
 	}
 }
 
-func TestLoadConfigCreatesDefaultWithGitSyncOff(t *testing.T) {
-	os.Unsetenv("RECIPE_GIT_SYNC")
+func TestLoadConfigCreatesDefaultWithTestModeOn(t *testing.T) {
+	os.Unsetenv("RECIPE_TEST_MODE")
 	path := filepath.Join(t.TempDir(), "config.json")
 
 	if err := loadConfig(path); err != nil {
 		t.Fatalf("loadConfig: %v", err)
 	}
-	if GlobalConfig.GitSync {
-		t.Error("default git_sync should be false")
+	if !GlobalConfig.TestMode {
+		t.Error("default test_mode should be true")
+	}
+	if !GlobalConfig.GitSync {
+		t.Error("test_mode should force git_sync on")
+	}
+	if GlobalConfig.GitRemoteURL != testBackupRemote {
+		t.Errorf("default remote = %q, want test repo %q", GlobalConfig.GitRemoteURL, testBackupRemote)
 	}
 	if GlobalConfig.Port != "8080" {
 		t.Errorf("default port = %q, want 8080", GlobalConfig.Port)
 	}
-	if _, err := os.Stat(path); err != nil {
-		t.Errorf("default config file not created: %v", err)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read default config: %v", err)
+	}
+	if !strings.Contains(string(data), `"test_mode": true`) {
+		t.Errorf("default config should persist test_mode:true, got %s", data)
 	}
 }
 

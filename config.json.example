@@ -5,5 +5,5 @@
   "git_sync": false,
   "git_remote_url": "",
   "auto_import": false,
-  "test_mode": false
+  "test_mode": true
 }

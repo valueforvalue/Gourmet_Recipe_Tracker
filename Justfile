@@ -36,7 +36,8 @@ release: build apk
     cp morris-tracker.exe release/
     cp flutter_app/build/app/outputs/flutter-apk/app-release.apk release/morrisrecipetracker.apk
     cp run_tracker.bat release/
-    cp config.json.example release/
+    cp config.json.example release/config.json
+    cp README.md release/README.md
     powershell -NoProfile -Command "Compress-Archive -Path 'release/*' -DestinationPath 'recipe-tracker-release.zip' -Force"
     rm -rf release
 

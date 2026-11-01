@@ -69,6 +69,9 @@ func loadConfig(path string) error {
 		}
 		logInfo("config: loaded settings from %s", path)
 	case os.IsNotExist(err):
+		// Fresh installs default to TESTMODE: sync runs against the disposable
+		// test repo and a <backup_path>_test vault until flipped to production.
+		GlobalConfig.TestMode = true
 		if err := saveConfig(path); err != nil {
 			return fmt.Errorf("create default %s: %w", path, err)
 		}

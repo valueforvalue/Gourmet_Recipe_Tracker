@@ -59,6 +59,24 @@ Config is validated at startup: a bad port, empty `db_file`, missing
 `backup_path` when git sync is on, or whitespace in the remote URL fails
 fast with a clear error instead of silently misbehaving.
 
+### Production deployment
+
+Fresh installs and release builds ship with `test_mode: true`, which forces git
+sync to the disposable test repo and a `<backup_path>_test` vault — safe to run
+anywhere without touching real data, but wrong for real backups. To go
+production-ready:
+
+1. Set `"test_mode": false`.
+2. Set `"git_remote_url"` to your real private backup repo.
+3. Set `"backup_path"` to the server's actual backup directory. This is
+   environment-specific and may differ from the dev default
+   (`<home>/morris_recipe_vault`) — point it at wherever that machine keeps its
+   vault.
+
+Leave `"git_sync": true` (or set it). With `test_mode` off, `git_remote_url`
+and `backup_path` are authoritative; with it on, both are overridden by the
+test targets.
+
 ### 2. Adding Recipes
 * **Web Import:** Use the built-in scraper to paste a URL from a recipe site. The app will automatically extract and format the ingredients and steps.
 * **Manual Entry:** Use the web interface to type out recipes, tag them, and save them directly to the database.

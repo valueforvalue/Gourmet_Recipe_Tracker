@@ -69,6 +69,11 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Web UI mobile polish: 44px tap targets, Material-style app bar with
   "Recipe Tracker" title, rounded search field, and reader back/edit actions —
   aligned with the Flutter app's look and feel.
+- `test_mode` now defaults to `true` on a fresh install (first-run config and
+  the shipped `config.json.example`), so new/release deployments run against
+  the disposable test repo until flipped to production.
+- `just release` ships a drop-in `config.json` (test-mode default) and
+  `README.md` with the production-ready checklist.
 
 ### Fixed
 - Config load/save now return real errors, validate port / db_file /
