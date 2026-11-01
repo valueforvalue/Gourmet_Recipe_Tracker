@@ -10,6 +10,11 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 ## [Unreleased]
 
 ### Added
+- Supervised server restart: transient listen/serve errors retry with
+  exponential backoff, sync-worker panics are contained, and SIGINT/SIGTERM
+  trigger graceful shutdown. HTTP read/write/idle timeouts close the
+  slowloris gap. (Regression: `TestNewHTTPServerTimeouts`, `TestNextBackoff`,
+  `TestShouldRestart`, `TestSleepCtxCancelled`, `TestRecoverTask*`)
 - `AGENTS.md`, `CONTEXT.md` and this changelog — agent-facing repo docs
   (domain glossary, file map, hard rules).
 

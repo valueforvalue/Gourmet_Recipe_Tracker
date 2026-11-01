@@ -187,13 +187,33 @@ func removeManifestEntry(entries []ManifestEntry, title string) []ManifestEntry 
 }
 
 // StartSyncWorker processes vault sync tasks one at a time, committing and
-// pushing each change to the configured Git remote.
+// pushing each change to the configured Git remote. A panicking task is
+// contained so it cannot crash the worker (or the process).
 func StartSyncWorker() {
 	for task := range syncQueue {
-		if err := processSyncTask(task); err != nil {
+		if err := processSyncTaskGuarded(task); err != nil {
 			fmt.Printf(" [Sync Error]: %v\n", err)
 		}
 	}
+}
+
+// processSyncTaskGuarded runs one sync task, converting any panic into an
+// error so a single bad task cannot take down the worker.
+func processSyncTaskGuarded(task SyncTask) error {
+	return recoverTask(fmt.Sprintf("sync %s %q", task.Op, task.Title), func() error {
+		return processSyncTask(task)
+	})
+}
+
+// recoverTask runs fn and converts any panic into a returned error. It lets
+// the sync worker survive a panicking task instead of crashing the process.
+func recoverTask(name string, fn func() error) (err error) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			err = fmt.Errorf("%s panicked: %v", name, rec)
+		}
+	}()
+	return fn()
 }
 
 func processSyncTask(task SyncTask) error {

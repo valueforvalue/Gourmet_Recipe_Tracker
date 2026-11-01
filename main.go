@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -12,8 +14,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -314,7 +318,100 @@ func main() {
 	localIP := getLocalIP()
 	log.Printf(" [Mobile Access]: http://%s:%s", localIP, GlobalConfig.Port)
 	log.Println("-----------------------------------------------")
-	log.Fatal(http.ListenAndServe(":"+GlobalConfig.Port, corsMiddleware(loggingMiddleware(recoveryMiddleware(mux)))))
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	handler := corsMiddleware(loggingMiddleware(recoveryMiddleware(mux)))
+	if err := runSupervised(ctx, ":"+GlobalConfig.Port, handler); err != nil {
+		log.Fatalf("Server error: %v", err)
+	}
+	log.Println("Server stopped.")
+}
+
+// newHTTPServer builds an http.Server with conservative timeouts so a slow
+// client (slowloris) cannot tie up connections or goroutines indefinitely.
+func newHTTPServer(handler http.Handler) *http.Server {
+	return &http.Server{
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+}
+
+// nextBackoff returns the next restart delay, doubling prev up to a 30s cap.
+func nextBackoff(prev time.Duration) time.Duration {
+	const cap = 30 * time.Second
+	if prev <= 0 {
+		return time.Second
+	}
+	next := prev * 2
+	if next > cap {
+		return cap
+	}
+	return next
+}
+
+// shouldRestart reports whether a Serve return value warrants a restart. A
+// nil return and http.ErrServerClosed (graceful shutdown) exit cleanly;
+// anything else is a crash worth retrying.
+func shouldRestart(err error) bool {
+	return err != nil && !errors.Is(err, http.ErrServerClosed)
+}
+
+// sleepCtx blocks for d or until ctx is cancelled. It returns false when ctx
+// was cancelled so the caller can stop retrying.
+func sleepCtx(ctx context.Context, d time.Duration) bool {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-t.C:
+		return true
+	}
+}
+
+// runSupervised serves handler on addr until ctx is cancelled, restarting on
+// transient listen/serve failures with exponential backoff. A graceful
+// shutdown returns nil; it returns a non-nil error only when ctx is cancelled
+// mid-backoff.
+func runSupervised(ctx context.Context, addr string, handler http.Handler) error {
+	backoff := time.Second
+	for {
+		srv := newHTTPServer(handler)
+
+		ln, err := net.Listen("tcp", addr)
+		if err != nil {
+			log.Printf(" [Server] listen %s: %v; retry in %s", addr, err, backoff)
+			if !sleepCtx(ctx, backoff) {
+				return ctx.Err()
+			}
+			backoff = nextBackoff(backoff)
+			continue
+		}
+
+		// Shut this server down when ctx is cancelled.
+		go func(s *http.Server) {
+			<-ctx.Done()
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = s.Shutdown(shutdownCtx)
+		}(srv)
+
+		log.Printf(" [Server] listening on %s", addr)
+		err = srv.Serve(ln)
+		if !shouldRestart(err) {
+			return nil
+		}
+		log.Printf(" [Server] crashed: %v; restart in %s", err, backoff)
+		if !sleepCtx(ctx, backoff) {
+			return ctx.Err()
+		}
+		backoff = nextBackoff(backoff)
+	}
 }
 
 func getLocalIP() string {

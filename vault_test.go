@@ -1,9 +1,29 @@
 package main
 
 import (
+	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func TestRecoverTaskContainsPanic(t *testing.T) {
+	err := recoverTask("probe", func() error { panic("boom") })
+	if err == nil {
+		t.Fatal("recoverTask returned nil, want panic-wrapped error")
+	}
+	if !strings.Contains(err.Error(), "boom") {
+		t.Errorf("error %q does not mention panic cause", err)
+	}
+}
+
+func TestRecoverTaskPassThrough(t *testing.T) {
+	want := errors.New("nope")
+	got := recoverTask("probe", func() error { return want })
+	if got != want {
+		t.Errorf("recoverTask pass-through = %v, want %v", got, want)
+	}
+}
 
 func TestVaultWriteManifestRestoreRoundTrip(t *testing.T) {
 	dir := t.TempDir()
