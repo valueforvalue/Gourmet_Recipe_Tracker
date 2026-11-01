@@ -2,6 +2,8 @@
 //
 // Read-only view for a single recipe: scaling, PDF export, and Edit.
 
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:android_intent_plus/flag.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -71,6 +73,20 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
   }
 
+  Future<void> _setTimer() async {
+    try {
+      const intent = AndroidIntent(
+        action: 'android.intent.action.SET_TIMER',
+        flags: [Flag.FLAG_ACTIVITY_NEW_TASK],
+      );
+      await intent.launch();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not open timer: $e')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -78,6 +94,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       appBar: AppBar(
         title: Text(widget.recipe.title, overflow: TextOverflow.ellipsis),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.timer_outlined),
+            tooltip: 'Set Timer',
+            onPressed: _setTimer,
+          ),
           PopupMenuButton<String>(
             onSelected: (val) {
               if (val == 'pdf_letter') _openPdf(context);

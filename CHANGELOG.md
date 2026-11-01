@@ -83,6 +83,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Flutter Settings gains a theme preview (season selector) + a current-season
   indicator.
 - New rust app launcher icon (replaces the default Flutter icon).
+- Flutter recipe detail gains a "Set Timer" button that opens the Android
+  native timer.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
