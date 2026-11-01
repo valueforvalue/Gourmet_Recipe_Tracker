@@ -76,6 +76,54 @@ class ApiService {
     }
   }
 
+  // ── Soft-delete management ──────────────────────────────────────────────
+
+  /// Returns all soft-deleted recipes.
+  static Future<List<Recipe>> getDeletedRecipes() async {
+    final base = await _requireBaseUrl();
+    final response = await http
+        .get(Uri.parse('$base/api/deleted'))
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body) as List<dynamic>;
+      return data.map((e) => Recipe.fromJson(e as Map<String, dynamic>)).toList();
+    }
+    throw Exception('Failed to load deleted recipes (${response.statusCode})');
+  }
+
+  /// Restores a soft-deleted recipe.
+  static Future<void> restoreRecipe(String title) async {
+    final base = await _requireBaseUrl();
+    final response = await http
+        .post(Uri.parse('$base/api/restore?title=${Uri.encodeComponent(title)}'))
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to restore recipe (${response.statusCode})');
+    }
+  }
+
+  /// Permanently removes a soft-deleted recipe.
+  static Future<void> purgeRecipe(String title) async {
+    final base = await _requireBaseUrl();
+    final response = await http
+        .post(Uri.parse('$base/api/purge?title=${Uri.encodeComponent(title)}&confirm=yesdeary'))
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to purge recipe (${response.statusCode})');
+    }
+  }
+
+  /// Permanently removes every soft-deleted recipe.
+  static Future<void> purgeAllDeleted() async {
+    final base = await _requireBaseUrl();
+    final response = await http
+        .post(Uri.parse('$base/api/purge-all?confirm=yesdeary'))
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to purge deleted recipes (${response.statusCode})');
+    }
+  }
+
   // ── Web Scraper ───────────────────────────────────────────────────────────
 
   /// Asks the server to scrape a recipe URL and returns a pre-filled Recipe.

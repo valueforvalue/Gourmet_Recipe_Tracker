@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'screens/recipe_list_screen.dart';
 import 'screens/cookbook_screen.dart';
+import 'screens/deleted_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/season.dart';
 
@@ -41,6 +42,7 @@ class _MainShellState extends State<_MainShell> {
   static const _screens = [
     RecipeListScreen(),
     CookbookScreen(),
+    DeletedScreen(),
   ];
 
   @override
@@ -53,6 +55,7 @@ class _MainShellState extends State<_MainShell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.restaurant_menu), label: 'Recipes'),
           NavigationDestination(icon: Icon(Icons.menu_book), label: 'Cookbook'),
+          NavigationDestination(icon: Icon(Icons.delete_outline), label: 'Deleted'),
         ],
       ),
     );
