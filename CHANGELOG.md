@@ -116,6 +116,10 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   (crosses) — layered over the aurora glow.
 
 ### Fixed
+- Fix a startup deadlock: legacy title normalization held the single pooled
+  SQLite connection open while issuing an UPDATE (`SetMaxOpenConns(1)`), which
+  deadlocked on databases with legacy whitespace-padded titles.
+  (Regression: `TestInitDBNormalizesLegacyTitlesWithoutDeadlock`)
 - Config load/save now return real errors, validate port / db_file /
   backup_path / git_remote_url, parse `RECIPE_GIT_SYNC` strictly via
   `strconv.ParseBool`, and write files with `0600` permissions.

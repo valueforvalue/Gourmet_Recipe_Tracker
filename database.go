@@ -98,16 +98,25 @@ func InitDB(dbPath string) (*sql.DB, error) {
 		return nil, fmt.Errorf("set schema version: %w", err)
 	}
 
-	// Normalize existing titles to fix legacy data issues
+	// Normalize existing titles to fix legacy data issues. Read titles first
+	// and close the rows before issuing updates: with SetMaxOpenConns(1) an
+	// open *Rows holds the single pooled connection, so an UPDATE inside the
+	// same loop would deadlock waiting for that connection.
 	rows, err := db.Query("SELECT title FROM recipes")
 	if err == nil {
-		defer rows.Close()
+		var titles []string
 		for rows.Next() {
 			var oldTitle string
 			if err := rows.Scan(&oldTitle); err == nil {
-				newTitle := strings.Join(strings.Fields(oldTitle), " ")
-				if oldTitle != newTitle {
-					db.Exec("UPDATE recipes SET title = ? WHERE title = ?", newTitle, oldTitle)
+				titles = append(titles, oldTitle)
+			}
+		}
+		rows.Close()
+		for _, oldTitle := range titles {
+			newTitle := strings.Join(strings.Fields(oldTitle), " ")
+			if oldTitle != newTitle {
+				if _, err := db.Exec("UPDATE recipes SET title = ? WHERE title = ?", newTitle, oldTitle); err != nil {
+					logWarn("db: normalize title %q: %v", oldTitle, err)
 				}
 			}
 		}
