@@ -2,6 +2,6 @@
   "port": "8080",
   "db_file": "recipes.db",
   "backup_path": "morris_recipe_vault",
-  "git_sync": true,
+  "git_sync": false,
   "git_remote_url": ""
 }

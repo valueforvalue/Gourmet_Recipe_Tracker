@@ -52,6 +52,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   now removed from the index so `elm make` no longer dirties the tree).
 - Added a `Justfile` for build tasks (`build`, `test`, `web`, `run`,
   `flutter-test`, `flutter-run`, `check`).
+- Refreshed `README.md` (config, resilience, security, `just` build flow)
+  and `config.json.example` to match this session's changes.
 
 <!--
   Conventions:
