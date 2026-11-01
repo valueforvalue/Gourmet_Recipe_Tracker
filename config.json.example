@@ -3,5 +3,6 @@
   "db_file": "recipes.db",
   "backup_path": "morris_recipe_vault",
   "git_sync": false,
-  "git_remote_url": ""
+  "git_remote_url": "",
+  "auto_import": false
 }

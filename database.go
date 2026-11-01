@@ -111,6 +111,9 @@ func SaveRecipe(db *sql.DB, r Recipe) error {
 	if err := SyncSidecar(r); err != nil {
 		logError("sync: %v", err)
 	}
+	if err := SyncSnapshot(db); err != nil {
+		logError("snapshot: %v", err)
+	}
 	return nil
 }
 
@@ -231,6 +234,9 @@ func DeleteRecipe(db *sql.DB, title string) error {
 		return err
 	}
 	SyncVaultDelete(title)
+	if err := SyncSnapshot(db); err != nil {
+		logError("snapshot: %v", err)
+	}
 	return nil
 }
 
@@ -261,7 +267,10 @@ func RestoreRecipe(db *sql.DB, title string) error {
 	if err != nil {
 		return err
 	}
-	return SyncSidecar(r)
+	if err := SyncSidecar(r); err != nil {
+		return err
+	}
+	return SyncSnapshot(db)
 }
 
 // PurgeRecipe permanently removes a soft-deleted recipe row.
@@ -277,11 +286,21 @@ func PurgeRecipe(db *sql.DB, title string) error {
 	if n == 0 {
 		return fmt.Errorf("no deleted recipe %q", title)
 	}
+	if err := SyncSnapshot(db); err != nil {
+		return err
+	}
+	enqueueCommit()
 	return nil
 }
 
 // PurgeAllDeleted permanently removes every soft-deleted recipe row.
 func PurgeAllDeleted(db *sql.DB) error {
-	_, err := db.Exec("DELETE FROM recipes WHERE is_deleted = 1")
-	return err
+	if _, err := db.Exec("DELETE FROM recipes WHERE is_deleted = 1"); err != nil {
+		return err
+	}
+	if err := SyncSnapshot(db); err != nil {
+		return err
+	}
+	enqueueCommit()
+	return nil
 }

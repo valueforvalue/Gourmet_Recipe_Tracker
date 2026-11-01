@@ -40,6 +40,7 @@ created (owner-only permissions) on first run.
 | `backup_path` | `<home>/morris_recipe_vault` | vault directory (required when `git_sync` is true) |
 | `git_sync` | `false` | mirror + commit/push the vault to git |
 | `git_remote_url` | `""` | optional remote linked on first run |
+| `auto_import` | `false` | on startup, import the vault `recipes.json` when the DB is empty |
 
 Each field can be overridden by an environment variable:
 
@@ -50,6 +51,7 @@ Each field can be overridden by an environment variable:
 | `backup_path` | `RECIPE_BACKUP_PATH` |
 | `git_sync` | `RECIPE_GIT_SYNC` (`true`/`false`) |
 | `git_remote_url` | `RECIPE_GIT_REMOTE` |
+| `auto_import` | `RECIPE_AUTO_IMPORT` (`true`/`false`) |
 
 Config is validated at startup: a bad port, empty `db_file`, missing
 `backup_path` when git sync is on, or whitespace in the remote URL fails
@@ -60,7 +62,7 @@ fast with a clear error instead of silently misbehaving.
 * **Manual Entry:** Use the web interface to type out recipes, tag them, and save them directly to the database.
 
 ### 3. Backups, Vault & Restore
-Every recipe is mirrored as a human-readable `.txt` file plus a `manifest.json` index (title → file, tags, last-updated).
+Every recipe is mirrored as a human-readable `.txt` file plus a `manifest.json` index (title → file, tags, last-updated). A full JSON snapshot (`recipes.json`) of the active library is also written after every change — this is the fast import path.
 
 * **Git sync on**: the vault lives in `backup_path` — a separate Git repo — and every save or delete is committed and pushed automatically.
 * **Git sync off** (default): the vault lives in the local `backups/` folder.
@@ -72,10 +74,16 @@ To rebuild the SQLite database from the vault after a crash:
 ```
 go run . -restore
 ```
+Or rebuild from the JSON snapshot (recommended):
+```
+go run . -import /path/to/vault/recipes.json
+```
 Or restore from a specific folder:
 ```
 go run . -restore -restore-dir /path/to/vault
 ```
+Enable `"auto_import": true` to import the snapshot automatically on startup
+when the database is empty.
 
 Deleting a recipe also removes its vault file (Git history still keeps the old version).
 

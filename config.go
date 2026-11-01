@@ -19,6 +19,7 @@ type Config struct {
 	BackupPath   string `json:"backup_path"`
 	GitSync      bool   `json:"git_sync"`
 	GitRemoteURL string `json:"git_remote_url"`
+	AutoImport   bool   `json:"auto_import"`
 }
 
 // GlobalConfig is the process-wide configuration, populated by LoadConfig.
@@ -107,6 +108,13 @@ func applyEnvOverrides() {
 	}
 	if v := os.Getenv("RECIPE_GIT_REMOTE"); v != "" {
 		GlobalConfig.GitRemoteURL = v
+	}
+	if v := os.Getenv("RECIPE_AUTO_IMPORT"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			GlobalConfig.AutoImport = b
+		} else {
+			logWarn("config: RECIPE_AUTO_IMPORT=%q is not a bool (use true/false)", v)
+		}
 	}
 }
 

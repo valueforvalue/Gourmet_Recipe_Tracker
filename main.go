@@ -87,6 +87,7 @@ func main() {
 	versionFlag := flag.Bool("version", false, "print version and exit")
 	restoreFlag := flag.Bool("restore", false, "restore the database from the vault and exit")
 	restoreDirFlag := flag.String("restore-dir", "", "vault directory to restore from (defaults to configured vault)")
+	importFlag := flag.String("import", "", "import recipes from a JSON snapshot and exit")
 	flag.Parse()
 
 	if *versionFlag {
@@ -131,6 +132,31 @@ func main() {
 		}
 		logInfo("restored %d recipe(s) from %s", n, dir)
 		return
+	}
+
+	// Import mode: rebuild the database from a JSON snapshot and exit.
+	if *importFlag != "" {
+		n, err := ImportFromJSON(*importFlag, db)
+		if err != nil {
+			log.Fatalf("Import failed: %v", err)
+		}
+		logInfo("imported %d recipe(s) from %s", n, *importFlag)
+		return
+	}
+
+	// Auto-import: when enabled and the DB is empty, import the vault snapshot.
+	if GlobalConfig.AutoImport {
+		if empty, err := isRecipesEmpty(db); err == nil && empty {
+			snap := filepath.Join(vaultDir(), snapshotFileName)
+			if _, err := os.Stat(snap); err == nil {
+				n, err := ImportFromJSON(snap, db)
+				if err != nil {
+					logError("auto-import: %v", err)
+				} else {
+					logInfo("auto-imported %d recipe(s) from %s", n, snap)
+				}
+			}
+		}
 	}
 
 	// Start the background Git sync worker

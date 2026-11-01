@@ -30,6 +30,11 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   `TestPurgeRecipe`, `TestPurgeAllDeleted`, `TestPurgeHandlersRequireConfirmation`)
 - Web "Deleted" view: checkbox multi-select, restore, and permanent purge
   (purge requires typing `yesdeary` in the confirm box).
+- JSON snapshot backup: `recipes.json` (full active library) is written to the
+  vault after every change and committed/pushed; `-import <file>` rebuilds the
+  DB from it, and `auto_import` (default off) imports on startup when the DB
+  is empty. (Regression: `TestWriteSnapshotRoundTrip`, `TestImportFromJSON`,
+  `TestIsRecipesEmpty`)
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

@@ -239,6 +239,9 @@ func processSyncTask(task SyncTask) error {
 		if _, err := removeVaultEntry(dir, task.Title); err != nil {
 			return err
 		}
+	case "commit":
+		// The snapshot was already written synchronously by SyncSnapshot;
+		// this task only commits and pushes it.
 	default:
 		return fmt.Errorf("unknown sync op %q", task.Op)
 	}
