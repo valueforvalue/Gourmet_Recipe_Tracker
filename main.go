@@ -298,6 +298,7 @@ func main() {
 	mux.HandleFunc("/api/purge", handlePurge(db))
 	mux.HandleFunc("/api/purge-all", handlePurgeAll(db))
 	mux.HandleFunc("/api/scale", handleScale(db))
+	mux.HandleFunc("/api/version", handleVersion)
 
 	mux.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
 		targetURL := r.URL.Query().Get("url")
@@ -645,6 +646,16 @@ func handleScale(db *sql.DB) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(scaled)
 	}
+}
+
+// handleVersion is the GET /api/version handler. It reports the build and
+// schema version so clients (and a human debugging) can match app ↔ server.
+func handleVersion(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"app_version":    Version,
+		"schema_version": SchemaVersion,
+	})
 }
 
 func getLocalIP() string {

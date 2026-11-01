@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -32,6 +33,37 @@ func TestMutatingRoutesRequirePost(t *testing.T) {
 			t.Errorf("GET %s = %d, want %d", path, resp.StatusCode, http.StatusMethodNotAllowed)
 		}
 		resp.Body.Close()
+	}
+}
+
+func TestVersionEndpoint(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/version", handleVersion)
+
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/api/version")
+	if err != nil {
+		t.Fatalf("GET /api/version: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /api/version = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	var body struct {
+		AppVersion    string `json:"app_version"`
+		SchemaVersion int    `json:"schema_version"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if body.AppVersion != Version {
+		t.Errorf("app_version = %q, want %q", body.AppVersion, Version)
+	}
+	if body.SchemaVersion != SchemaVersion {
+		t.Errorf("schema_version = %d, want %d", body.SchemaVersion, SchemaVersion)
 	}
 }
 

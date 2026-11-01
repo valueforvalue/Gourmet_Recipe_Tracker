@@ -67,6 +67,10 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   the submit-form endpoint in-app (AJAX), with inline send/error status.
 - Flutter app: seasonal color themes (spring / summer / autumn / winter)
   matching the web UI, driven by a `theme/` module + `seasonFromMonth`.
+- Server `/api/version` endpoint reports `app_version` + `schema_version`.
+  (Regression: `TestVersionEndpoint`)
+- Flutter Settings "About" shows the app version (via `package_info_plus`) and
+  the server's app + schema version.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

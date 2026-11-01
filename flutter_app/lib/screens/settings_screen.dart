@@ -1,8 +1,9 @@
 // File: lib/screens/settings_screen.dart
 //
-// Lets the user set the server base URL and test connectivity.
+// Lets the user set the server base URL, test connectivity, and view version info.
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -17,11 +18,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _testing = false;
   String? _statusMessage;
   bool? _statusOk;
+  String _appVersion = '';
+  String _serverVersion = '';
 
   @override
   void initState() {
     super.initState();
     _loadUrl();
+    _loadVersions();
   }
 
   @override
@@ -32,7 +36,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadUrl() async {
     final url = await ApiService.getBaseUrl();
-    setState(() => _urlCtrl.text = url ?? '');
+    if (mounted) setState(() => _urlCtrl.text = url ?? '');
+  }
+
+  Future<void> _loadVersions() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted) setState(() => _appVersion = '${info.version} (build ${info.buildNumber})');
+    } catch (_) {
+      if (mounted) setState(() => _appVersion = 'unknown');
+    }
+    try {
+      final v = await ApiService.getServerVersion();
+      if (mounted) setState(() => _serverVersion = '${v.appVersion} (schema ${v.schemaVersion})');
+    } catch (_) {
+      if (mounted) setState(() => _serverVersion = 'not connected');
+    }
   }
 
   Future<void> _save() async {
@@ -42,6 +61,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SnackBar(content: Text('Server URL saved')),
       );
     }
+    _loadVersions();
   }
 
   Future<void> _test() async {
@@ -59,13 +79,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? 'Connected successfully!'
           : 'Could not reach server: ${result.error}';
     });
+    _loadVersions();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Server Settings')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,9 +139,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ],
+            const SizedBox(height: 24),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('About', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    _VersionRow(label: 'App version', value: _appVersion.isEmpty ? '…' : _appVersion),
+                    const SizedBox(height: 4),
+                    _VersionRow(label: 'Server', value: _serverVersion.isEmpty ? '…' : _serverVersion),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _VersionRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _VersionRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(width: 110, child: Text(label, style: const TextStyle(color: Colors.grey))),
+        Expanded(child: Text(value)),
+      ],
     );
   }
 }

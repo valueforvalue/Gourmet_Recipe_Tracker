@@ -104,6 +104,24 @@ class ApiService {
     return '$base/api/export/cookbook?booklet=$booklet';
   }
 
+  // ── Version ────────────────────────────────────────────────────────────
+
+  /// Returns the server's app + schema version.
+  static Future<({String appVersion, int schemaVersion})> getServerVersion() async {
+    final base = await _requireBaseUrl();
+    final response = await http
+        .get(Uri.parse('$base/api/version'))
+        .timeout(const Duration(seconds: 10));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      return (
+        appVersion: data['app_version'] as String? ?? 'unknown',
+        schemaVersion: data['schema_version'] as int? ?? 0,
+      );
+    }
+    throw Exception('Failed to load server version (${response.statusCode})');
+  }
+
   // ── Health check ──────────────────────────────────────────────────────────
 
   /// Returns true if the server responds within 5 seconds; on failure returns
