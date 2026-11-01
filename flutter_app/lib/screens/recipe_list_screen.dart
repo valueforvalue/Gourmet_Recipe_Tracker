@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/recipe.dart';
 import '../services/api_service.dart';
+import '../services/daily_verse.dart';
 import 'recipe_detail_screen.dart';
 import 'recipe_edit_screen.dart';
 import 'settings_screen.dart';
@@ -138,7 +139,13 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recipe Tracker'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text('Recipe Tracker'),
+            Text('Morris Family', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.white70)),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.feedback_outlined),
@@ -231,9 +238,27 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     }
 
     final tags = _allTags.toList()..sort();
+    final verse = verseForToday();
 
     return Column(
       children: [
+        Card(
+          margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('"${verse.text}"', style: const TextStyle(fontStyle: FontStyle.italic)),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(verse.ref, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                ),
+              ],
+            ),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
           child: Align(

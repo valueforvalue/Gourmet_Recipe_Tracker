@@ -76,6 +76,7 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Flutter: feedback button in the list screen opens the submit-form endpoint.
 - Flutter list screen shows total recipe count and per-tag counts on chips.
 - Flutter recipe detail renders URLs in notes as tappable links (match web).
+- Flutter list screen gains a daily verse card + "Morris Family" branding.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
