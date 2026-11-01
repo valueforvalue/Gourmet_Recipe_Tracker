@@ -33,6 +33,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   `TestCheckScrapeRedirect`)
 
 ### Maintenance
+- Documented every exported identifier with `Name — contract` doc comments
+  (framework `laws.md` compliance; docs-only, no behavior change).
 - Adopted the agent-stack framework: `core/` rule docs under `docs/agents/`,
   issue framework under `docs/agents/issues/`, GitHub issue + PR templates,
   `pragmatic-programmer` skill at `.pi/skills/pragmatic-programmer/`.

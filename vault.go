@@ -21,6 +21,8 @@ import (
 // backups/ folder.  The vault is the single source of truth for disaster
 // recovery: `-restore` rebuilds the SQLite database from it.
 
+// SyncTask is a unit of vault work queued for the sync worker. Op is either
+// "save" or "delete".
 type SyncTask struct {
 	Op     string // "save" or "delete"
 	Title  string
@@ -29,6 +31,7 @@ type SyncTask struct {
 
 var syncQueue = make(chan SyncTask, 100)
 
+// ManifestEntry indexes one recipe in the vault manifest.
 type ManifestEntry struct {
 	Title     string   `json:"title"`
 	File      string   `json:"file"`
@@ -36,6 +39,8 @@ type ManifestEntry struct {
 	UpdatedAt string   `json:"updated_at"`
 }
 
+// Manifest is the vault index: title -> filename, tags, last-updated. It is
+// what lets -restore rebuild the database without blind re-parsing.
 type Manifest struct {
 	Version   int             `json:"version"`
 	UpdatedAt string          `json:"updated_at"`

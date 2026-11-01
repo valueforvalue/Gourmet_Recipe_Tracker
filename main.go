@@ -24,6 +24,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
+// Version is the build version reported by -version and the startup banner.
 var Version = "4.1-SystemOverhaul"
 
 //go:embed web/index.html web/js/elm.js

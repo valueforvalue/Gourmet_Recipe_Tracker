@@ -14,7 +14,9 @@ import (
 
 // --- CONFIGURATION ---
 
-// InitConfig loads settings from GlobalConfig and handles Git syncing logic.
+// InitConfig prepares the git-backed vault when GitSync is enabled: it
+// creates the backup directory, inits a repository when missing, and links
+// the configured remote.
 func InitConfig() {
 	// Automatic Git Initialization & Linking
 	if GlobalConfig.GitSync {
