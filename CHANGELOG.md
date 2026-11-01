@@ -82,6 +82,7 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   scaled banner with Reset.
 - Flutter Settings gains a theme preview (season selector) + a current-season
   indicator.
+- New rust app launcher icon (replaces the default Flutter icon).
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
