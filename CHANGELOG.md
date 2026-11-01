@@ -85,6 +85,9 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - PDF notes now render line-by-line with a `NOTES` header, and scraped
   recipes' source URLs are clickable links in the PDF. (Regression:
   `TestSplitLineLinks`)
+- Empty collections (`/api/recipes`, `/api/deleted`) now JSON-encode as `[]`
+  instead of `null` when there are no rows. (Regression:
+  `TestEmptyCollectionsAreNonNil`)
 
 ### Maintenance
 - Documented every exported identifier with `Name — contract` doc comments

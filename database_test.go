@@ -62,6 +62,34 @@ func TestDatabaseOperations(t *testing.T) {
 	}
 }
 
+func TestEmptyCollectionsAreNonNil(t *testing.T) {
+	dbFile := "test_empty_recipes.db"
+	db, err := InitDB(dbFile)
+	if err != nil {
+		t.Fatalf("Failed to init DB: %v", err)
+	}
+	defer db.Close()
+	defer os.Remove(dbFile)
+
+	GlobalConfig.GitSync = false
+
+	recipes, err := GetAllRecipes(db)
+	if err != nil {
+		t.Fatalf("GetAllRecipes: %v", err)
+	}
+	if recipes == nil {
+		t.Error("GetAllRecipes returned nil; empty collection must be non-nil so it JSON-encodes as [] not null")
+	}
+
+	deleted, err := GetDeletedRecipes(db)
+	if err != nil {
+		t.Fatalf("GetDeletedRecipes: %v", err)
+	}
+	if deleted == nil {
+		t.Error("GetDeletedRecipes returned nil; empty collection must be non-nil so it JSON-encodes as [] not null")
+	}
+}
+
 func TestSanitizeFilename(t *testing.T) {
 	cases := []struct {
 		input    string

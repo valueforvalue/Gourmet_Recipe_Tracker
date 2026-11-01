@@ -183,7 +183,7 @@ func sanitizeFilename(name string) string {
 // scanRecipes scans rows into a []Recipe. Callers own the rows.
 func scanRecipes(rows *sql.Rows) ([]Recipe, error) {
 	defer rows.Close()
-	var recipes []Recipe
+	recipes := []Recipe{}
 	for rows.Next() {
 		var r Recipe
 		var ingStr, insStr, tagStr string
