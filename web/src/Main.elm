@@ -23,6 +23,7 @@ type View
     | ListView
     | ReadingView Recipe
     | DeletedView
+    | FeedbackView
 
 
 type PurgeIntent
@@ -366,7 +367,7 @@ view model =
                 [ button (onClick (SetView EntryView) :: navStyle) [ text "Add" ]
                 , button (onClick (SetView ListView) :: navStyle) [ text "Recipe Box" ]
                 , button (onClick (SetView DeletedView) :: navStyle) [ text "Deleted" ]
-                , a (href "https://submit-form.com/SftusnkmF" :: target "_blank" :: rel "noopener" :: navStyle) [ text "Feedback" ]
+                , button (onClick (SetView FeedbackView) :: navStyle) [ text "Feedback" ]
                 ]
             ]
         , div [ class "container" ]
@@ -382,6 +383,9 @@ view model =
 
                 DeletedView ->
                     viewDeleted model
+
+                FeedbackView ->
+                    viewFeedback
             , p [ class "status" ] [ text model.status ]
             ]
         ]
@@ -426,6 +430,31 @@ viewEntryForm model =
                     text ""
                 ]
             ]
+        ]
+
+
+viewFeedback : Html Msg
+viewFeedback =
+    div [ class "card" ]
+        [ div [ class "card-head" ]
+            [ h2 [ class "card-title" ] [ text "Send Feedback" ]
+            , button [ onClick (SetView ListView), class "clear-btn" ] [ text "Cancel" ]
+            ]
+        , p [ class "muted" ] [ text "Questions, bugs, or ideas — we read every message." ]
+        , Html.form
+            [ action "https://submit-form.com/SftusnkmF"
+            , method "post"
+            , target "_blank"
+            ]
+            [ label [ for "name", class "feedback-label" ] [ text "Name" ]
+            , input [ type_ "text", id "name", name "name", placeholder "Name", required True, class "input" ] []
+            , label [ for "email", class "feedback-label" ] [ text "Email" ]
+            , input [ type_ "email", id "email", name "email", placeholder "Email", required True, class "input" ] []
+            , label [ for "message", class "feedback-label" ] [ text "Message" ]
+            , textarea [ id "message", name "message", placeholder "Message", required True, rows 6, class "input" ] []
+            , button [ type_ "submit", class "done-btn" ] [ text "Send" ]
+            ]
+        , p [ class "muted" ] [ text "Submitting opens a confirmation in a new tab." ]
         ]
 
 

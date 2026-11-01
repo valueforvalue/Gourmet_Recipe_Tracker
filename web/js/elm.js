@@ -7342,10 +7342,10 @@ var $author$project$Main$update = F2(
 					$elm$core$Platform$Cmd$none);
 		}
 	});
+var $author$project$Main$FeedbackView = {$: 'FeedbackView'};
 var $author$project$Main$SetView = function (a) {
 	return {$: 'SetView', a: a};
 };
-var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {
 		return A2(
@@ -7364,12 +7364,6 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
 var $author$project$Main$navStyle = _List_fromArray(
 	[
 		$elm$html$Html$Attributes$class('nav-btn')
@@ -7392,7 +7386,6 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		$elm$json$Json$Decode$succeed(msg));
 };
 var $elm$html$Html$p = _VirtualDom_node('p');
-var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
 var $author$project$Main$seasonToString = function (season) {
 	switch (season.$) {
 		case 'Spring':
@@ -7406,7 +7399,6 @@ var $author$project$Main$seasonToString = function (season) {
 	}
 };
 var $elm$html$Html$span = _VirtualDom_node('span');
-var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $author$project$Main$PurgeAll = {$: 'PurgeAll'};
@@ -7993,6 +7985,170 @@ var $author$project$Main$viewEntryForm = function (model) {
 					]))
 			]));
 };
+var $elm$html$Html$Attributes$action = function (uri) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'action',
+		_VirtualDom_noJavaScriptUri(uri));
+};
+var $elm$html$Html$Attributes$for = $elm$html$Html$Attributes$stringProperty('htmlFor');
+var $elm$html$Html$form = _VirtualDom_node('form');
+var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
+var $elm$html$Html$Attributes$method = $elm$html$Html$Attributes$stringProperty('method');
+var $elm$html$Html$Attributes$name = $elm$html$Html$Attributes$stringProperty('name');
+var $elm$html$Html$Attributes$required = $elm$html$Html$Attributes$boolProperty('required');
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
+var $author$project$Main$viewFeedback = A2(
+	$elm$html$Html$div,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('card')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('card-head')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$h2,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('card-title')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Send Feedback')
+						])),
+					A2(
+					$elm$html$Html$button,
+					_List_fromArray(
+						[
+							$elm$html$Html$Events$onClick(
+							$author$project$Main$SetView($author$project$Main$ListView)),
+							$elm$html$Html$Attributes$class('clear-btn')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Cancel')
+						]))
+				])),
+			A2(
+			$elm$html$Html$p,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('muted')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Questions, bugs, or ideas — we read every message.')
+				])),
+			A2(
+			$elm$html$Html$form,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$action('https://submit-form.com/SftusnkmF'),
+					$elm$html$Html$Attributes$method('post'),
+					$elm$html$Html$Attributes$target('_blank')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$label,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$for('name'),
+							$elm$html$Html$Attributes$class('feedback-label')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Name')
+						])),
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('text'),
+							$elm$html$Html$Attributes$id('name'),
+							$elm$html$Html$Attributes$name('name'),
+							$elm$html$Html$Attributes$placeholder('Name'),
+							$elm$html$Html$Attributes$required(true),
+							$elm$html$Html$Attributes$class('input')
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$label,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$for('email'),
+							$elm$html$Html$Attributes$class('feedback-label')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Email')
+						])),
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('email'),
+							$elm$html$Html$Attributes$id('email'),
+							$elm$html$Html$Attributes$name('email'),
+							$elm$html$Html$Attributes$placeholder('Email'),
+							$elm$html$Html$Attributes$required(true),
+							$elm$html$Html$Attributes$class('input')
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$label,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$for('message'),
+							$elm$html$Html$Attributes$class('feedback-label')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Message')
+						])),
+					A2(
+					$elm$html$Html$textarea,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$id('message'),
+							$elm$html$Html$Attributes$name('message'),
+							$elm$html$Html$Attributes$placeholder('Message'),
+							$elm$html$Html$Attributes$required(true),
+							$elm$html$Html$Attributes$rows(6),
+							$elm$html$Html$Attributes$class('input')
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$button,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('submit'),
+							$elm$html$Html$Attributes$class('done-btn')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Send')
+						]))
+				])),
+			A2(
+			$elm$html$Html$p,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('muted')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Submitting opens a confirmation in a new tab.')
+				]))
+		]));
 var $author$project$Main$EditRecipe = function (a) {
 	return {$: 'EditRecipe', a: a};
 };
@@ -8037,6 +8193,13 @@ var $elm$html$Html$h3 = _VirtualDom_node('h3');
 var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$html$Html$ol = _VirtualDom_node('ol');
 var $elm$regex$Regex$find = _Regex_findAtMost(_Regex_infinity);
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
 var $author$project$Main$linkifyFrom = F3(
 	function (str, cursor, matches) {
 		if (!matches.b) {
@@ -8891,17 +9054,12 @@ var $author$project$Main$view = function (model) {
 										$elm$html$Html$text('Deleted')
 									])),
 								A2(
-								$elm$html$Html$a,
+								$elm$html$Html$button,
 								A2(
 									$elm$core$List$cons,
-									$elm$html$Html$Attributes$href('https://submit-form.com/SftusnkmF'),
-									A2(
-										$elm$core$List$cons,
-										$elm$html$Html$Attributes$target('_blank'),
-										A2(
-											$elm$core$List$cons,
-											$elm$html$Html$Attributes$rel('noopener'),
-											$author$project$Main$navStyle))),
+									$elm$html$Html$Events$onClick(
+										$author$project$Main$SetView($author$project$Main$FeedbackView)),
+									$author$project$Main$navStyle),
 								_List_fromArray(
 									[
 										$elm$html$Html$text('Feedback')
@@ -8926,8 +9084,10 @@ var $author$project$Main$view = function (model) {
 							case 'ReadingView':
 								var recipe = _v0.a;
 								return A2($author$project$Main$viewReader, model, recipe);
-							default:
+							case 'DeletedView':
 								return $author$project$Main$viewDeleted(model);
+							default:
+								return $author$project$Main$viewFeedback;
 						}
 					}(),
 						A2(
