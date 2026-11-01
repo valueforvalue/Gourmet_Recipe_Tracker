@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"math/big"
 	"net"
 	"net/http"
 	"net/url"
@@ -136,6 +137,7 @@ func main() {
 	restoreFlag := flag.Bool("restore", false, "restore the database from the vault and exit")
 	restoreDirFlag := flag.String("restore-dir", "", "vault directory to restore from (defaults to configured vault)")
 	importFlag := flag.String("import", "", "import recipes from a JSON snapshot and exit")
+	scanFlag := flag.Bool("scan", false, "scan recipes for unscalable ingredients and exit")
 	flag.Parse()
 
 	if *versionFlag {
@@ -189,6 +191,23 @@ func main() {
 			log.Fatalf("Import failed: %v", err)
 		}
 		logInfo("imported %d recipe(s) from %s", n, *importFlag)
+		return
+	}
+
+	// Scan mode: report ingredients that can't be safely scaled.
+	if *scanFlag {
+		issues, err := scanUnscalable(db)
+		if err != nil {
+			log.Fatalf("Scan failed: %v", err)
+		}
+		if len(issues) == 0 {
+			logInfo("all recipes are scalable")
+		} else {
+			for _, iss := range issues {
+				logWarn("unscalable: %s — %q", iss.Title, iss.Ingredient)
+			}
+			logInfo("%d unscalable ingredient(s)", len(issues))
+		}
 		return
 	}
 
@@ -250,6 +269,7 @@ func main() {
 	mux.HandleFunc("/api/restore", handleRestore(db))
 	mux.HandleFunc("/api/purge", handlePurge(db))
 	mux.HandleFunc("/api/purge-all", handlePurgeAll(db))
+	mux.HandleFunc("/api/scale", handleScale(db))
 
 	mux.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
 		targetURL := r.URL.Query().Get("url")
@@ -575,6 +595,27 @@ func handlePurgeAll(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// handleScale is the GET /api/scale handler. It returns the recipe named by
+// ?title= with each scalable ingredient multiplied by ?factor=.
+func handleScale(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		title := r.URL.Query().Get("title")
+		factor, ok := new(big.Rat).SetString(r.URL.Query().Get("factor"))
+		if !ok || factor.Sign() <= 0 {
+			http.Error(w, "invalid factor", http.StatusBadRequest)
+			return
+		}
+		recipe, err := GetRecipeByTitle(db, title)
+		if err != nil {
+			http.Error(w, "Recipe not found", http.StatusNotFound)
+			return
+		}
+		scaled := scaleRecipe(recipe, factor)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(scaled)
 	}
 }
 

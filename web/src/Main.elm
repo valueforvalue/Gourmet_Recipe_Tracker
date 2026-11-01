@@ -57,6 +57,8 @@ type alias Model =
     , purgeIntent : Maybe PurgeIntent
     , purgeConfirm : String
     , verseIndex : Int
+    , scaled : Maybe Recipe
+    , scaleFactor : String
     }
 
 
@@ -79,6 +81,8 @@ initialModel =
     , purgeIntent = Nothing
     , purgeConfirm = ""
     , verseIndex = 0
+    , scaled = Nothing
+    , scaleFactor = "1"
     }
 
 
@@ -121,6 +125,9 @@ type Msg
     | CancelPurge
     | ConfirmPurge
     | Purged (Result Http.Error ())
+    | ScaleRecipe String
+    | Scaled (Result Http.Error Recipe)
+    | ResetScale
     | GotTime Time.Posix
 
 
@@ -128,7 +135,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SetView viewType ->
-            ( { model | currentView = viewType, status = "", deletingTitle = Nothing, purgeIntent = Nothing }
+            ( { model | currentView = viewType, status = "", deletingTitle = Nothing, purgeIntent = Nothing, scaled = Nothing, scaleFactor = "1" }
             , if viewType == ListView then
                 fetchRecipes
 
@@ -313,6 +320,25 @@ update msg model =
         Purged _ ->
             ( { model | selectedDeleted = [], status = "Purged." }, fetchDeleted )
 
+        ScaleRecipe factor ->
+            case model.currentView of
+                ReadingView recipe ->
+                    ( { model | scaleFactor = factor }, scaleRequest recipe.title factor )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        Scaled res ->
+            case res of
+                Ok r ->
+                    ( { model | scaled = Just r }, Cmd.none )
+
+                Err _ ->
+                    ( { model | status = "Failed to scale." }, Cmd.none )
+
+        ResetScale ->
+            ( { model | scaled = Nothing, scaleFactor = "1" }, Cmd.none )
+
 
 
 -- 3. VIEW
@@ -342,7 +368,7 @@ view model =
                     viewRecipeList model
 
                 ReadingView recipe ->
-                    viewReader recipe
+                    viewReader model recipe
 
                 DeletedView ->
                     viewDeleted model
@@ -491,25 +517,46 @@ viewRecipeCard deletingTitle recipe =
         ]
 
 
-viewReader : Recipe -> Html Msg
-viewReader recipe =
+viewReader : Model -> Recipe -> Html Msg
+viewReader model recipe =
+    let
+        display =
+            Maybe.withDefault recipe model.scaled
+
+        scaled =
+            model.scaled /= Nothing
+    in
     div [ style "background" "white", style "padding" "20px", style "border-radius" "8px", style "box-shadow" "0 4px 20px rgba(0,0,0,0.1)" ]
         [ div [ style "display" "flex", style "justify-content" "space-between", style "align-items" "center", style "gap" "8px", style "flex-wrap" "wrap", style "margin-bottom" "10px" ]
             [ button [ onClick (SetView ListView), style "background" "none", style "border" "none", style "color" "#6B705C", style "font-size" "16px", style "cursor" "pointer", style "padding" "10px 0", style "min-height" "44px" ] [ text "← Back" ]
             , button [ onClick (EditRecipe recipe), style "background" "#d4a373", style "color" "white", style "border" "none", style "padding" "10px 16px", style "border-radius" "8px", style "cursor" "pointer", style "font-size" "14px", style "min-height" "44px" ] [ text "Edit" ]
             ]
-        , h1 [ style "color" "#6B705C", style "margin-bottom" "10px" ] [ text recipe.title ]
-        , div [ style "font-style" "italic", style "color" "#888", style "margin-bottom" "20px" ] [ text (String.join ",  " recipe.tags) ]
+        , h1 [ style "color" "#6B705C", style "margin-bottom" "10px" ] [ text display.title ]
+        , div [ style "font-style" "italic", style "color" "#888", style "margin-bottom" "20px" ] [ text (String.join ",  " display.tags) ]
+        , div [ style "display" "flex", style "gap" "8px", style "flex-wrap" "wrap", style "margin-bottom" "15px" ]
+            [ scaleButton model "½×" "0.5"
+            , scaleButton model "1×" "1"
+            , scaleButton model "2×" "2"
+            , scaleButton model "3×" "3"
+            ]
+        , if scaled then
+            div [ style "background" "#fff4e5", style "border" "2px solid #d4a373", style "padding" "12px", style "border-radius" "8px", style "margin-bottom" "15px", style "font-weight" "bold", style "color" "#a05a00" ]
+                [ span [] [ text ("⚠ ×" ++ model.scaleFactor ++ " — temporarily scaled") ]
+                , button [ onClick ResetScale, style "margin-left" "10px", style "background" "none", style "border" "none", style "color" "#6B705C", style "text-decoration" "underline", style "cursor" "pointer", style "font-size" "13px" ] [ text "Reset" ]
+                ]
+
+          else
+            text ""
         , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px" ] [ text "Ingredients" ]
-        , ul [ style "line-height" "1.8", style "font-size" "18px" ] (List.map (\ing -> li [] [ text ing ]) recipe.ingredients)
+        , ul [ style "line-height" "1.8", style "font-size" "18px" ] (List.map (\ing -> li [] [ text ing ]) display.ingredients)
         , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px", style "margin-top" "30px" ] [ text "Instructions" ]
-        , ol [ style "line-height" "1.6", style "font-size" "18px" ] (List.map (\inst -> li [ style "margin-bottom" "15px" ] [ text (cleanInstruction inst) ]) recipe.instructions)
-        , if String.isEmpty recipe.notes then
+        , ol [ style "line-height" "1.6", style "font-size" "18px" ] (List.map (\inst -> li [ style "margin-bottom" "15px" ] [ text (cleanInstruction inst) ]) display.instructions)
+        , if String.isEmpty display.notes then
             text ""
 
           else
             div [ style "margin-top" "30px", style "padding" "15px", style "background" "#f9f9f9", style "border-radius" "4px" ]
-                [ h4 [ style "margin" "0 0 10px 0" ] [ text "Notes" ], p [] [ text recipe.notes ] ]
+                [ h4 [ style "margin" "0 0 10px 0" ] [ text "Notes" ], p [] [ text display.notes ] ]
         , button [ onClick (SetView ListView), style "margin-top" "30px", style "width" "100%", style "padding" "15px", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Done Reading" ]
         ]
 
@@ -673,6 +720,11 @@ fetchDeleted =
     Http.get { url = "/api/deleted", expect = Http.expectJson DeletedFetched (Decode.list recipeDecoder) }
 
 
+scaleRequest : String -> String -> Cmd Msg
+scaleRequest title factor =
+    Http.get { url = "/api/scale?title=" ++ Url.percentEncode title ++ "&factor=" ++ factor, expect = Http.expectJson Scaled recipeDecoder }
+
+
 restoreRequest : String -> Cmd Msg
 restoreRequest title =
     Http.post { url = "/api/restore?title=" ++ Url.percentEncode title, body = Http.emptyBody, expect = Http.expectWhatever Restored }
@@ -732,6 +784,12 @@ tagChip label selected msg =
                )
         )
         [ text label ]
+
+
+
+scaleButton : Model -> String -> String -> Html Msg
+scaleButton model label factor =
+    button (onClick (ScaleRecipe factor) :: actionBtnStyle (if model.scaleFactor == factor then "#6B705C" else "#A5A58D")) [ text label ]
 
 
 

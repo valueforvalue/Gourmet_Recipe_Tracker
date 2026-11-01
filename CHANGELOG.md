@@ -45,6 +45,12 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   normalization (strip bullets + drop exact duplicates), `HowToSection` step
   prefixing, host strategy overrides, per-host politeness delay + one retry on
   transient failures, and a scrape-result empty check in the web UI.
+- Recipe scaling (tolerant parser): a Go ingredient parser turns free-text
+  lines into (quantity, unit, name), a `-scan` command flags unscalable
+  ingredients, and `GET /api/scale` multiplies scalable quantities by a factor.
+  The web reader gains ½×/1×/2×/3× controls with a prominent temporary
+  "scaled" banner. (Regression: `TestParseIngredient`, `TestScaleIngredient`,
+  `TestFormatRat`, `TestScanRecipes`)
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
