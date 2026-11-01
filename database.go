@@ -177,31 +177,34 @@ func sanitizeFilename(name string) string {
 	return safe
 }
 
-// GetAllRecipes retrieves active recipes for the web view.
-func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
-	query := `SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE is_deleted = 0 ORDER BY title ASC`
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, err
-	}
+// scanRecipes scans rows into a []Recipe. Callers own the rows.
+func scanRecipes(rows *sql.Rows) ([]Recipe, error) {
 	defer rows.Close()
-
 	var recipes []Recipe
 	for rows.Next() {
 		var r Recipe
 		var ingStr, insStr, tagStr string
-		err = rows.Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes)
-		if err == nil {
-			r.Ingredients = safeSplit(ingStr, "|")
-			r.Instructions = safeSplit(insStr, "|")
-			r.Tags = safeSplit(tagStr, ",")
-			recipes = append(recipes, r)
+		if err := rows.Scan(&r.Title, &ingStr, &insStr, &tagStr, &r.Notes); err != nil {
+			return nil, err
 		}
+		r.Ingredients = safeSplit(ingStr, "|")
+		r.Instructions = safeSplit(insStr, "|")
+		r.Tags = safeSplit(tagStr, ",")
+		recipes = append(recipes, r)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return recipes, nil
+}
+
+// GetAllRecipes retrieves active recipes for the web view.
+func GetAllRecipes(db *sql.DB) ([]Recipe, error) {
+	rows, err := db.Query(`SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE is_deleted = 0 ORDER BY title ASC`)
+	if err != nil {
+		return nil, err
+	}
+	return scanRecipes(rows)
 }
 
 // GetRecipeByTitle retrieves a specific recipe for PDF generation.
@@ -229,4 +232,56 @@ func DeleteRecipe(db *sql.DB, title string) error {
 	}
 	SyncVaultDelete(title)
 	return nil
+}
+
+// GetDeletedRecipes retrieves soft-deleted recipes for the trash view.
+func GetDeletedRecipes(db *sql.DB) ([]Recipe, error) {
+	rows, err := db.Query(`SELECT title, ingredients, instructions, tags, notes FROM recipes WHERE is_deleted = 1 ORDER BY title ASC`)
+	if err != nil {
+		return nil, err
+	}
+	return scanRecipes(rows)
+}
+
+// RestoreRecipe un-deletes a recipe and re-mirrors it to the vault so the
+// durable backup reflects the restore.
+func RestoreRecipe(db *sql.DB, title string) error {
+	res, err := db.Exec("UPDATE recipes SET is_deleted = 0 WHERE title = ? AND is_deleted = 1", title)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("no deleted recipe %q", title)
+	}
+	r, err := GetRecipeByTitle(db, title)
+	if err != nil {
+		return err
+	}
+	return SyncSidecar(r)
+}
+
+// PurgeRecipe permanently removes a soft-deleted recipe row.
+func PurgeRecipe(db *sql.DB, title string) error {
+	res, err := db.Exec("DELETE FROM recipes WHERE title = ? AND is_deleted = 1", title)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("no deleted recipe %q", title)
+	}
+	return nil
+}
+
+// PurgeAllDeleted permanently removes every soft-deleted recipe row.
+func PurgeAllDeleted(db *sql.DB) error {
+	_, err := db.Exec("DELETE FROM recipes WHERE is_deleted = 1")
+	return err
 }

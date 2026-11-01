@@ -26,6 +26,10 @@ import (
 // Version is the build version reported by -version and the startup banner.
 var Version = "4.1-SystemOverhaul"
 
+// purgeConfirmWord is the exact phrase a client must echo to authorize a
+// permanent (hard) delete.
+const purgeConfirmWord = "yesdeary"
+
 //go:embed web/index.html web/js/elm.js
 var frontendFiles embed.FS
 
@@ -165,6 +169,11 @@ func main() {
 	mux.HandleFunc("/api/save", handleSaveRecipe(db))
 
 	mux.HandleFunc("/api/delete", handleDeleteRecipe(db))
+
+	mux.HandleFunc("/api/deleted", handleDeleted(db))
+	mux.HandleFunc("/api/restore", handleRestore(db))
+	mux.HandleFunc("/api/purge", handlePurge(db))
+	mux.HandleFunc("/api/purge-all", handlePurgeAll(db))
 
 	mux.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
 		targetURL := r.URL.Query().Get("url")
@@ -443,6 +452,85 @@ func handleDeleteRecipe(db *sql.DB) http.HandlerFunc {
 		if err := DeleteRecipe(db, title); err != nil {
 			logError("DeleteRecipe: %v", err)
 			http.Error(w, "Failed to delete recipe", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// handleDeleted is the GET /api/deleted handler. It lists soft-deleted
+// recipes.
+func handleDeleted(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		recipes, err := GetDeletedRecipes(db)
+		if err != nil {
+			logError("GetDeletedRecipes: %v", err)
+			http.Error(w, "Failed to load deleted recipes", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(recipes)
+	}
+}
+
+// handleRestore is the POST /api/restore handler. It un-deletes the recipe
+// named by ?title= and re-mirrors it to the vault.
+func handleRestore(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		title := r.URL.Query().Get("title")
+		logInfo("restore: %s", title)
+		if err := RestoreRecipe(db, title); err != nil {
+			logError("RestoreRecipe: %v", err)
+			http.Error(w, "Failed to restore recipe", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// handlePurge is the POST /api/purge handler. It permanently removes the
+// deleted recipe named by ?title= after the caller echoes purgeConfirmWord.
+func handlePurge(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Query().Get("confirm") != purgeConfirmWord {
+			http.Error(w, "type '"+purgeConfirmWord+"' to confirm permanent delete", http.StatusBadRequest)
+			return
+		}
+		title := r.URL.Query().Get("title")
+		logInfo("purge: %s", title)
+		if err := PurgeRecipe(db, title); err != nil {
+			logError("PurgeRecipe: %v", err)
+			http.Error(w, "Failed to purge recipe", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// handlePurgeAll is the POST /api/purge-all handler. It permanently removes
+// every soft-deleted recipe after the caller echoes purgeConfirmWord.
+func handlePurgeAll(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if r.URL.Query().Get("confirm") != purgeConfirmWord {
+			http.Error(w, "type '"+purgeConfirmWord+"' to confirm permanent delete", http.StatusBadRequest)
+			return
+		}
+		logInfo("purge all")
+		if err := PurgeAllDeleted(db); err != nil {
+			logError("PurgeAllDeleted: %v", err)
+			http.Error(w, "Failed to purge deleted recipes", http.StatusInternalServerError)
 			return
 		}
 		w.WriteHeader(http.StatusOK)

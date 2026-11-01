@@ -23,6 +23,11 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   Flutter app — plus a "No recipes found." empty state.
 - Web recipe list shows a total recipe count and per-tag counts on the
   filter chips.
+- Soft-delete management API: `GET /api/deleted`, `POST /api/restore`,
+  `POST /api/purge`, and `POST /api/purge-all`. Purge is permanent and
+  requires echoing the confirmation phrase `yesdeary`; restore re-mirrors the
+  vault sidecar. (Regression: `TestGetDeletedRecipes`, `TestRestoreRecipe`,
+  `TestPurgeRecipe`, `TestPurgeAllDeleted`, `TestPurgeHandlersRequireConfirmation`)
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
