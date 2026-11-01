@@ -96,7 +96,9 @@ func main() {
 		log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	}
 
-	LoadConfig()
+	if err := LoadConfig(); err != nil {
+		log.Fatalf("Critical Error: %v", err)
+	}
 	InitConfig()
 
 	dbFile := GlobalConfig.DBFile

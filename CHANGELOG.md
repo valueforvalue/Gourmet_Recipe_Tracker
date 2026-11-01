@@ -18,6 +18,16 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - `AGENTS.md`, `CONTEXT.md` and this changelog — agent-facing repo docs
   (domain glossary, file map, hard rules).
 
+### Changed
+- `git_sync` now defaults to `false` for brand-new config files; an existing
+  `config.json` keeps its stored value. Git backup is opt-in.
+
+### Fixed
+- Config load/save now return real errors, validate port / db_file /
+  backup_path / git_remote_url, parse `RECIPE_GIT_SYNC` strictly via
+  `strconv.ParseBool`, and write files with `0600` permissions.
+  (Regression: `TestConfigValidate`, `TestLoadConfig*`, `TestSaveConfigPermissions`)
+
 ### Maintenance
 - Adopted the agent-stack framework: `core/` rule docs under `docs/agents/`,
   issue framework under `docs/agents/issues/`, GitHub issue + PR templates,
