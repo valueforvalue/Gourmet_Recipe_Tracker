@@ -2,6 +2,7 @@
 //
 // Read-only view for a single recipe.  Provides an Edit button and PDF export.
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/recipe.dart';
@@ -108,7 +109,7 @@ class RecipeDetailScreen extends StatelessWidget {
             const SizedBox(height: 20),
             _SectionHeader(title: 'Notes'),
             const SizedBox(height: 8),
-            Text(recipe.notes, style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 15)),
+            _LinkifiedText(text: recipe.notes),
           ],
         ],
       ),
@@ -126,5 +127,59 @@ class _SectionHeader extends StatelessWidget {
       title,
       style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
     );
+  }
+}
+
+// Renders text with URLs as tappable links (line breaks preserved).
+class _LinkifiedText extends StatefulWidget {
+  final String text;
+  const _LinkifiedText({required this.text});
+
+  @override
+  State<_LinkifiedText> createState() => _LinkifiedTextState();
+}
+
+class _LinkifiedTextState extends State<_LinkifiedText> {
+  static final RegExp _urlRe = RegExp(r'https?://[^\s]+');
+  final List<TapGestureRecognizer> _recognizers = [];
+
+  @override
+  void dispose() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _open(String url) async {
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = const TextStyle(fontStyle: FontStyle.italic, fontSize: 15);
+    final linkColor = Theme.of(context).colorScheme.primary;
+    final spans = <TextSpan>[];
+    final matches = _urlRe.allMatches(widget.text).toList();
+
+    var cursor = 0;
+    for (final m in matches) {
+      if (m.start > cursor) {
+        spans.add(TextSpan(text: widget.text.substring(cursor, m.start)));
+      }
+      final recognizer = TapGestureRecognizer()..onTap = () => _open(m.group(0)!);
+      _recognizers.add(recognizer);
+      spans.add(TextSpan(
+        text: m.group(0),
+        style: baseStyle.copyWith(color: linkColor, decoration: TextDecoration.underline),
+        recognizer: recognizer,
+      ));
+      cursor = m.end;
+    }
+    if (cursor < widget.text.length) {
+      spans.add(TextSpan(text: widget.text.substring(cursor)));
+    }
+
+    return Text.rich(TextSpan(style: baseStyle, children: spans));
   }
 }
