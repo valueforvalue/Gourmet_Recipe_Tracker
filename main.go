@@ -145,6 +145,8 @@ func main() {
 	}
 
 	// Auto-import: when enabled and the DB is empty, import the vault snapshot.
+	// Caveat: a DB emptied on purpose will be re-populated from the snapshot on
+	// next startup — remove recipes.json to start truly fresh.
 	if GlobalConfig.AutoImport {
 		if empty, err := isRecipesEmpty(db); err == nil && empty {
 			snap := filepath.Join(vaultDir(), snapshotFileName)

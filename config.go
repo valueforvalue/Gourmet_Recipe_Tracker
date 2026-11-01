@@ -19,7 +19,10 @@ type Config struct {
 	BackupPath   string `json:"backup_path"`
 	GitSync      bool   `json:"git_sync"`
 	GitRemoteURL string `json:"git_remote_url"`
-	AutoImport   bool   `json:"auto_import"`
+	// AutoImport, when true, imports the vault snapshot on startup if the DB
+	// is empty. Caveat: a deliberately emptied DB is re-populated from
+	// recipes.json on the next start — delete the snapshot too to start fresh.
+	AutoImport bool `json:"auto_import"`
 }
 
 // GlobalConfig is the process-wide configuration, populated by LoadConfig.

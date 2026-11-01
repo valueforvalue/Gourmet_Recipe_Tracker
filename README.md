@@ -85,6 +85,10 @@ go run . -restore -restore-dir /path/to/vault
 Enable `"auto_import": true` to import the snapshot automatically on startup
 when the database is empty.
 
+> **Caveat:** with `auto_import` on, a database you *deliberately* cleared will
+> be re-populated from `recipes.json` on the next startup (empty DB looks the
+> same as a fresh install). To start truly fresh, delete `recipes.json` too.
+
 Deleting a recipe also removes its vault file (Git history still keeps the old version).
 
 ### 4. Printing for Physical Use (The "2-Up" Method)
