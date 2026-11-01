@@ -6619,12 +6619,16 @@ var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $author$project$Main$navStyle = _List_fromArray(
 	[
-		A2($elm$html$Html$Attributes$style, 'background', 'none'),
-		A2($elm$html$Html$Attributes$style, 'border', 'none'),
+		A2($elm$html$Html$Attributes$style, 'background', 'rgba(255,255,255,0.15)'),
+		A2($elm$html$Html$Attributes$style, 'border', '1px solid rgba(255,255,255,0.35)'),
 		A2($elm$html$Html$Attributes$style, 'color', 'white'),
-		A2($elm$html$Html$Attributes$style, 'font-size', '18px'),
+		A2($elm$html$Html$Attributes$style, 'font-size', '15px'),
 		A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-		A2($elm$html$Html$Attributes$style, 'font-weight', 'bold')
+		A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
+		A2($elm$html$Html$Attributes$style, 'padding', '10px 16px'),
+		A2($elm$html$Html$Attributes$style, 'border-radius', '20px'),
+		A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
+		A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box')
 	]);
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
@@ -6676,10 +6680,12 @@ var $author$project$Main$inputStyle = _List_fromArray(
 	[
 		A2($elm$html$Html$Attributes$style, 'width', '100%'),
 		A2($elm$html$Html$Attributes$style, 'margin-bottom', '12px'),
-		A2($elm$html$Html$Attributes$style, 'padding', '10px'),
+		A2($elm$html$Html$Attributes$style, 'padding', '12px 14px'),
 		A2($elm$html$Html$Attributes$style, 'border', '1px solid #ccc'),
-		A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-		A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box')
+		A2($elm$html$Html$Attributes$style, 'border-radius', '10px'),
+		A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
+		A2($elm$html$Html$Attributes$style, 'font-size', '16px'),
+		A2($elm$html$Html$Attributes$style, 'font-family', 'inherit')
 	]);
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -6774,9 +6780,10 @@ var $author$project$Main$viewEntryForm = function (model) {
 										$elm$html$Html$Attributes$value(model.scrapeUrl),
 										$elm$html$Html$Events$onInput($author$project$Main$UpdateScrapeUrl),
 										A2($elm$html$Html$Attributes$style, 'flex', '3'),
-										A2($elm$html$Html$Attributes$style, 'padding', '10px'),
-										A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-										A2($elm$html$Html$Attributes$style, 'border', '1px solid #ccc')
+										A2($elm$html$Html$Attributes$style, 'padding', '12px'),
+										A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
+										A2($elm$html$Html$Attributes$style, 'border', '1px solid #ccc'),
+										A2($elm$html$Html$Attributes$style, 'font-size', '16px')
 									]),
 								_List_Nil),
 								A2(
@@ -6788,8 +6795,9 @@ var $author$project$Main$viewEntryForm = function (model) {
 										A2($elm$html$Html$Attributes$style, 'background', '#6B705C'),
 										A2($elm$html$Html$Attributes$style, 'color', 'white'),
 										A2($elm$html$Html$Attributes$style, 'border', 'none'),
-										A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-										A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
+										A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
+										A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
+										A2($elm$html$Html$Attributes$style, 'min-height', '44px')
 									]),
 								_List_fromArray(
 									[
@@ -6964,6 +6972,9 @@ var $author$project$Main$viewEntryForm = function (model) {
 					]))
 			]));
 };
+var $author$project$Main$EditRecipe = function (a) {
+	return {$: 'EditRecipe', a: a};
+};
 var $elm$regex$Regex$Match = F4(
 	function (match, index, number, submatches) {
 		return {index: index, match: match, number: number, submatches: submatches};
@@ -7010,12 +7021,63 @@ var $author$project$Main$viewReader = function (recipe) {
 		_List_fromArray(
 			[
 				A2($elm$html$Html$Attributes$style, 'background', 'white'),
-				A2($elm$html$Html$Attributes$style, 'padding', '30px'),
+				A2($elm$html$Html$Attributes$style, 'padding', '20px'),
 				A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
 				A2($elm$html$Html$Attributes$style, 'box-shadow', '0 4px 20px rgba(0,0,0,0.1)')
 			]),
 		_List_fromArray(
 			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+						A2($elm$html$Html$Attributes$style, 'justify-content', 'space-between'),
+						A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
+						A2($elm$html$Html$Attributes$style, 'gap', '8px'),
+						A2($elm$html$Html$Attributes$style, 'flex-wrap', 'wrap'),
+						A2($elm$html$Html$Attributes$style, 'margin-bottom', '10px')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onClick(
+								$author$project$Main$SetView($author$project$Main$ListView)),
+								A2($elm$html$Html$Attributes$style, 'background', 'none'),
+								A2($elm$html$Html$Attributes$style, 'border', 'none'),
+								A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
+								A2($elm$html$Html$Attributes$style, 'font-size', '16px'),
+								A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
+								A2($elm$html$Html$Attributes$style, 'padding', '10px 0'),
+								A2($elm$html$Html$Attributes$style, 'min-height', '44px')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('← Back')
+							])),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Events$onClick(
+								$author$project$Main$EditRecipe(recipe)),
+								A2($elm$html$Html$Attributes$style, 'background', '#d4a373'),
+								A2($elm$html$Html$Attributes$style, 'color', 'white'),
+								A2($elm$html$Html$Attributes$style, 'border', 'none'),
+								A2($elm$html$Html$Attributes$style, 'padding', '10px 16px'),
+								A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
+								A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
+								A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
+								A2($elm$html$Html$Attributes$style, 'min-height', '44px')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Edit')
+							]))
+					])),
 				A2(
 				$elm$html$Html$h1,
 				_List_fromArray(
@@ -7283,11 +7345,17 @@ var $author$project$Main$masterBtnStyle = function (c) {
 			A2($elm$html$Html$Attributes$style, 'background', c),
 			A2($elm$html$Html$Attributes$style, 'color', 'white'),
 			A2($elm$html$Html$Attributes$style, 'text-decoration', 'none'),
-			A2($elm$html$Html$Attributes$style, 'padding', '10px'),
+			A2($elm$html$Html$Attributes$style, 'padding', '14px'),
 			A2($elm$html$Html$Attributes$style, 'flex', '1'),
 			A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
-			A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-			A2($elm$html$Html$Attributes$style, 'font-size', '11px')
+			A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
+			A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
+			A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
+			A2($elm$html$Html$Attributes$style, 'display', 'inline-flex'),
+			A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
+			A2($elm$html$Html$Attributes$style, 'justify-content', 'center'),
+			A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
+			A2($elm$html$Html$Attributes$style, 'line-height', '1')
 		]);
 };
 var $elm$core$List$member = F2(
@@ -7299,6 +7367,17 @@ var $elm$core$List$member = F2(
 			},
 			xs);
 	});
+var $author$project$Main$searchStyle = _List_fromArray(
+	[
+		A2($elm$html$Html$Attributes$style, 'width', '100%'),
+		A2($elm$html$Html$Attributes$style, 'margin-bottom', '12px'),
+		A2($elm$html$Html$Attributes$style, 'padding', '12px 18px'),
+		A2($elm$html$Html$Attributes$style, 'border', '1px solid #ccc'),
+		A2($elm$html$Html$Attributes$style, 'border-radius', '24px'),
+		A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
+		A2($elm$html$Html$Attributes$style, 'font-size', '16px'),
+		A2($elm$html$Html$Attributes$style, 'font-family', 'inherit')
+	]);
 var $author$project$Main$tagChip = F3(
 	function (label, selected, msg) {
 		return A2(
@@ -7307,11 +7386,13 @@ var $author$project$Main$tagChip = F3(
 				_List_fromArray(
 					[
 						$elm$html$Html$Events$onClick(msg),
-						A2($elm$html$Html$Attributes$style, 'border-radius', '16px'),
-						A2($elm$html$Html$Attributes$style, 'padding', '6px 12px'),
-						A2($elm$html$Html$Attributes$style, 'font-size', '13px'),
+						A2($elm$html$Html$Attributes$style, 'border-radius', '20px'),
+						A2($elm$html$Html$Attributes$style, 'padding', '10px 16px'),
+						A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
 						A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-						A2($elm$html$Html$Attributes$style, 'border', '1px solid #6B705C')
+						A2($elm$html$Html$Attributes$style, 'border', '1px solid #6B705C'),
+						A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
+						A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box')
 					]),
 				selected ? _List_fromArray(
 					[
@@ -7333,9 +7414,6 @@ var $author$project$Main$CancelDelete = {$: 'CancelDelete'};
 var $author$project$Main$ConfirmDelete = function (a) {
 	return {$: 'ConfirmDelete', a: a};
 };
-var $author$project$Main$EditRecipe = function (a) {
-	return {$: 'EditRecipe', a: a};
-};
 var $author$project$Main$ExecuteDelete = function (a) {
 	return {$: 'ExecuteDelete', a: a};
 };
@@ -7347,13 +7425,19 @@ var $author$project$Main$actionBtnStyle = function (c) {
 		[
 			A2($elm$html$Html$Attributes$style, 'background', c),
 			A2($elm$html$Html$Attributes$style, 'border', 'none'),
-			A2($elm$html$Html$Attributes$style, 'padding', '8px 15px'),
-			A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
+			A2($elm$html$Html$Attributes$style, 'padding', '12px 16px'),
+			A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
 			A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
 			A2($elm$html$Html$Attributes$style, 'color', 'white'),
 			A2($elm$html$Html$Attributes$style, 'text-decoration', 'none'),
 			A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
-			A2($elm$html$Html$Attributes$style, 'font-size', '12px')
+			A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
+			A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
+			A2($elm$html$Html$Attributes$style, 'display', 'inline-flex'),
+			A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
+			A2($elm$html$Html$Attributes$style, 'justify-content', 'center'),
+			A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
+			A2($elm$html$Html$Attributes$style, 'line-height', '1')
 		]);
 };
 var $elm$html$Html$strong = _VirtualDom_node('strong');
@@ -7657,7 +7741,7 @@ var $author$project$Main$viewRecipeList = function (model) {
 						A2(
 							$elm$core$List$cons,
 							$elm$html$Html$Events$onInput($author$project$Main$UpdateFilter),
-							$author$project$Main$inputStyle))),
+							$author$project$Main$searchStyle))),
 				_List_Nil),
 				A2(
 				$elm$html$Html$div,
@@ -7758,9 +7842,12 @@ var $author$project$Main$view = function (model) {
 				_List_fromArray(
 					[
 						A2($elm$html$Html$Attributes$style, 'background', '#6B705C'),
-						A2($elm$html$Html$Attributes$style, 'padding', '10px'),
+						A2($elm$html$Html$Attributes$style, 'padding', '10px 16px'),
 						A2($elm$html$Html$Attributes$style, 'display', 'flex'),
 						A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
+						A2($elm$html$Html$Attributes$style, 'justify-content', 'space-between'),
+						A2($elm$html$Html$Attributes$style, 'flex-wrap', 'wrap'),
+						A2($elm$html$Html$Attributes$style, 'gap', '8px'),
 						A2($elm$html$Html$Attributes$style, 'position', 'sticky'),
 						A2($elm$html$Html$Attributes$style, 'top', '0'),
 						A2($elm$html$Html$Attributes$style, 'z-index', '10'),
@@ -7772,15 +7859,44 @@ var $author$project$Main$view = function (model) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'flex', '1')
+								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
+								A2($elm$html$Html$Attributes$style, 'flex-direction', 'column'),
+								A2($elm$html$Html$Attributes$style, 'line-height', '1.15')
 							]),
-						_List_Nil),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$span,
+								_List_fromArray(
+									[
+										A2($elm$html$Html$Attributes$style, 'color', '#fff'),
+										A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
+										A2($elm$html$Html$Attributes$style, 'font-size', '20px')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Recipe Tracker')
+									])),
+								A2(
+								$elm$html$Html$span,
+								_List_fromArray(
+									[
+										A2($elm$html$Html$Attributes$style, 'color', '#fff'),
+										A2($elm$html$Html$Attributes$style, 'font-style', 'italic'),
+										A2($elm$html$Html$Attributes$style, 'font-size', '12px'),
+										A2($elm$html$Html$Attributes$style, 'opacity', '0.8')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Morris Family')
+									]))
+							])),
 						A2(
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
 								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-								A2($elm$html$Html$Attributes$style, 'gap', '20px')
+								A2($elm$html$Html$Attributes$style, 'gap', '8px')
 							]),
 						_List_fromArray(
 							[
@@ -7805,30 +7921,6 @@ var $author$project$Main$view = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$text('Recipe Box')
-									]))
-							])),
-						A2(
-						$elm$html$Html$div,
-						_List_fromArray(
-							[
-								A2($elm$html$Html$Attributes$style, 'flex', '1'),
-								A2($elm$html$Html$Attributes$style, 'text-align', 'right'),
-								A2($elm$html$Html$Attributes$style, 'padding-right', '15px')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$span,
-								_List_fromArray(
-									[
-										A2($elm$html$Html$Attributes$style, 'color', '#fff'),
-										A2($elm$html$Html$Attributes$style, 'font-style', 'italic'),
-										A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
-										A2($elm$html$Html$Attributes$style, 'opacity', '0.8')
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Morris Family')
 									]))
 							]))
 					])),

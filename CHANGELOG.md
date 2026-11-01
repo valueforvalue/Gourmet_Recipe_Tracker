@@ -23,6 +23,9 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
   `config.json` keeps its stored value. Git backup is opt-in.
+- Web UI mobile polish: 44px tap targets, Material-style app bar with
+  "Recipe Tracker" title, rounded search field, and reader back/edit actions —
+  aligned with the Flutter app's look and feel.
 
 ### Fixed
 - Config load/save now return real errors, validate port / db_file /

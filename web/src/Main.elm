@@ -223,15 +223,16 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ style "background-color" "#FDF5E6", style "min-height" "100vh", style "font-family" "serif" ]
-        [ -- NAVIGATION BAR
-          div [ style "background" "#6B705C", style "padding" "10px", style "display" "flex", style "align-items" "center", style "position" "sticky", style "top" "0", style "z-index" "10", style "box-shadow" "0 2px 5px rgba(0,0,0,0.2)" ]
-            [ div [ style "flex" "1" ] []
-            , div [ style "display" "flex", style "gap" "20px" ]
+        [ -- APP BAR
+          div [ style "background" "#6B705C", style "padding" "10px 16px", style "display" "flex", style "align-items" "center", style "justify-content" "space-between", style "flex-wrap" "wrap", style "gap" "8px", style "position" "sticky", style "top" "0", style "z-index" "10", style "box-shadow" "0 2px 5px rgba(0,0,0,0.2)" ]
+            [ div [ style "display" "flex", style "flex-direction" "column", style "line-height" "1.15" ]
+                [ span [ style "color" "#fff", style "font-weight" "bold", style "font-size" "20px" ] [ text "Recipe Tracker" ]
+                , span [ style "color" "#fff", style "font-style" "italic", style "font-size" "12px", style "opacity" "0.8" ] [ text "Morris Family" ]
+                ]
+            , div [ style "display" "flex", style "gap" "8px" ]
                 [ button (onClick (SetView EntryView) :: navStyle) [ text "Add" ]
                 , button (onClick (SetView ListView) :: navStyle) [ text "Recipe Box" ]
                 ]
-            , div [ style "flex" "1", style "text-align" "right", style "padding-right" "15px" ]
-                [ span [ style "color" "#fff", style "font-style" "italic", style "font-size" "14px", style "opacity" "0.8" ] [ text "Morris Family" ] ]
             ]
         , div [ style "padding" "20px", style "max-width" "600px", style "margin" "0 auto" ]
             [ case model.currentView of
@@ -255,8 +256,8 @@ viewEntryForm model =
           div [ style "background" "#f0f0e0", style "padding" "15px", style "border-radius" "8px", style "margin-bottom" "20px", style "border" "1px dashed #6B705C" ]
             [ h4 [ style "margin-top" "0", style "color" "#6B705C" ] [ text "✨ Import from Web" ]
             , div [ style "display" "flex", style "gap" "10px" ]
-                [ input [ placeholder "Paste recipe URL here...", value model.scrapeUrl, onInput UpdateScrapeUrl, style "flex" "3", style "padding" "10px", style "border-radius" "4px", style "border" "1px solid #ccc" ] []
-                , button [ onClick RunScrape, style "flex" "1", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Import" ]
+                [ input [ placeholder "Paste recipe URL here...", value model.scrapeUrl, onInput UpdateScrapeUrl, style "flex" "3", style "padding" "12px", style "border-radius" "8px", style "border" "1px solid #ccc", style "font-size" "16px" ] []
+                , button [ onClick RunScrape, style "flex" "1", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "8px", style "cursor" "pointer", style "min-height" "44px" ] [ text "Import" ]
                 ]
             ]
         , -- MANUAL ENTRY SECTION
@@ -326,7 +327,7 @@ viewRecipeList model =
             [ p [ style "font-style" "italic", style "margin" "0", style "color" "#4a4a4a", style "line-height" "1.5", style "font-size" "16px" ] [ text ("\"" ++ verse.text ++ "\"") ]
             , p [ style "font-size" "13px", style "text-align" "right", style "margin" "10px 0 0 0", style "font-weight" "bold", style "color" "#6B705C" ] [ text verse.ref ]
             ]
-        , input (placeholder "Search recipes..." :: value model.filterText :: onInput UpdateFilter :: inputStyle) []
+        , input (placeholder "Search recipes..." :: value model.filterText :: onInput UpdateFilter :: searchStyle) []
         , -- CATEGORY FILTER CHIPS
           div [ style "display" "flex", style "flex-wrap" "wrap", style "gap" "8px", style "margin-bottom" "15px" ]
             (tagChip "All" (model.activeTag == "") (SetActiveTag "")
@@ -375,8 +376,12 @@ viewRecipeCard deletingTitle recipe =
 
 viewReader : Recipe -> Html Msg
 viewReader recipe =
-    div [ style "background" "white", style "padding" "30px", style "border-radius" "8px", style "box-shadow" "0 4px 20px rgba(0,0,0,0.1)" ]
-        [ h1 [ style "color" "#6B705C", style "margin-bottom" "10px" ] [ text recipe.title ]
+    div [ style "background" "white", style "padding" "20px", style "border-radius" "8px", style "box-shadow" "0 4px 20px rgba(0,0,0,0.1)" ]
+        [ div [ style "display" "flex", style "justify-content" "space-between", style "align-items" "center", style "gap" "8px", style "flex-wrap" "wrap", style "margin-bottom" "10px" ]
+            [ button [ onClick (SetView ListView), style "background" "none", style "border" "none", style "color" "#6B705C", style "font-size" "16px", style "cursor" "pointer", style "padding" "10px 0", style "min-height" "44px" ] [ text "← Back" ]
+            , button [ onClick (EditRecipe recipe), style "background" "#d4a373", style "color" "white", style "border" "none", style "padding" "10px 16px", style "border-radius" "8px", style "cursor" "pointer", style "font-size" "14px", style "min-height" "44px" ] [ text "Edit" ]
+            ]
+        , h1 [ style "color" "#6B705C", style "margin-bottom" "10px" ] [ text recipe.title ]
         , div [ style "font-style" "italic", style "color" "#888", style "margin-bottom" "20px" ] [ text (String.join ",  " recipe.tags) ]
         , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px" ] [ text "Ingredients" ]
         , ul [ style "line-height" "1.8", style "font-size" "18px" ] (List.map (\ing -> li [] [ text ing ]) recipe.ingredients)
@@ -475,30 +480,36 @@ deleteRequest title =
 
 
 inputStyle =
-    [ style "width" "100%", style "margin-bottom" "12px", style "padding" "10px", style "border" "1px solid #ccc", style "border-radius" "4px", style "box-sizing" "border-box" ]
+    [ style "width" "100%", style "margin-bottom" "12px", style "padding" "12px 14px", style "border" "1px solid #ccc", style "border-radius" "10px", style "box-sizing" "border-box", style "font-size" "16px", style "font-family" "inherit" ]
+
+
+searchStyle =
+    [ style "width" "100%", style "margin-bottom" "12px", style "padding" "12px 18px", style "border" "1px solid #ccc", style "border-radius" "24px", style "box-sizing" "border-box", style "font-size" "16px", style "font-family" "inherit" ]
 
 
 actionBtnStyle c =
-    [ style "background" c, style "border" "none", style "padding" "8px 15px", style "border-radius" "4px", style "cursor" "pointer", style "color" "white", style "text-decoration" "none", style "text-align" "center", style "font-size" "12px" ]
+    [ style "background" c, style "border" "none", style "padding" "12px 16px", style "border-radius" "8px", style "cursor" "pointer", style "color" "white", style "text-decoration" "none", style "text-align" "center", style "font-size" "14px", style "min-height" "44px", style "display" "inline-flex", style "align-items" "center", style "justify-content" "center", style "box-sizing" "border-box", style "line-height" "1" ]
 
 
 masterBtnStyle c =
-    [ style "background" c, style "color" "white", style "text-decoration" "none", style "padding" "10px", style "flex" "1", style "text-align" "center", style "border-radius" "4px", style "font-size" "11px" ]
+    [ style "background" c, style "color" "white", style "text-decoration" "none", style "padding" "14px", style "flex" "1", style "text-align" "center", style "border-radius" "8px", style "font-size" "14px", style "min-height" "44px", style "display" "inline-flex", style "align-items" "center", style "justify-content" "center", style "box-sizing" "border-box", style "line-height" "1" ]
 
 
 navStyle =
-    [ style "background" "none", style "border" "none", style "color" "white", style "font-size" "18px", style "cursor" "pointer", style "font-weight" "bold" ]
+    [ style "background" "rgba(255,255,255,0.15)", style "border" "1px solid rgba(255,255,255,0.35)", style "color" "white", style "font-size" "15px", style "cursor" "pointer", style "font-weight" "bold", style "padding" "10px 16px", style "border-radius" "20px", style "min-height" "44px", style "box-sizing" "border-box" ]
 
 
 tagChip : String -> Bool -> Msg -> Html Msg
 tagChip label selected msg =
     button
         ([ onClick msg
-         , style "border-radius" "16px"
-         , style "padding" "6px 12px"
-         , style "font-size" "13px"
+         , style "border-radius" "20px"
+         , style "padding" "10px 16px"
+         , style "font-size" "14px"
          , style "cursor" "pointer"
          , style "border" "1px solid #6B705C"
+         , style "min-height" "44px"
+         , style "box-sizing" "border-box"
          ]
             ++ (if selected then
                     [ style "background" "#6B705C", style "color" "#fff" ]
