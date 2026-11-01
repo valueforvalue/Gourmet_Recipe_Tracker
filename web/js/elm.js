@@ -5925,7 +5925,8 @@ var $elm$time$Time$every = F2(
 			A2($elm$time$Time$Every, interval, tagger));
 	});
 var $author$project$Main$EntryView = {$: 'EntryView'};
-var $author$project$Main$initialModel = {activeTag: '', currentView: $author$project$Main$EntryView, deleted: _List_Nil, deletingTitle: $elm$core$Maybe$Nothing, filterText: '', ingredients: '', instructions: '', notes: '', purgeConfirm: '', purgeIntent: $elm$core$Maybe$Nothing, recipes: _List_Nil, scaleFactor: '1', scaled: $elm$core$Maybe$Nothing, scrapeUrl: '', selectedDeleted: _List_Nil, status: 'Ready', tags: '', title: '', verseIndex: 0};
+var $author$project$Main$Spring = {$: 'Spring'};
+var $author$project$Main$initialModel = {activeTag: '', currentView: $author$project$Main$EntryView, deleted: _List_Nil, deletingTitle: $elm$core$Maybe$Nothing, filterText: '', ingredients: '', instructions: '', notes: '', purgeConfirm: '', purgeIntent: $elm$core$Maybe$Nothing, recipes: _List_Nil, scaleFactor: '1', scaled: $elm$core$Maybe$Nothing, scrapeUrl: '', season: $author$project$Main$Spring, selectedDeleted: _List_Nil, status: 'Ready', tags: '', title: '', verseIndex: 0};
 var $author$project$Main$DeletedView = {$: 'DeletedView'};
 var $author$project$Main$ListView = {$: 'ListView'};
 var $author$project$Main$ReadingView = function (a) {
@@ -6810,6 +6811,139 @@ var $author$project$Main$scrapeRecipe = function (url) {
 			url: '/api/scrape?url=' + url
 		});
 };
+var $author$project$Main$Autumn = {$: 'Autumn'};
+var $author$project$Main$Summer = {$: 'Summer'};
+var $author$project$Main$Winter = {$: 'Winter'};
+var $author$project$Main$seasonFromMonth = function (month) {
+	switch (month.$) {
+		case 'Mar':
+			return $author$project$Main$Spring;
+		case 'Apr':
+			return $author$project$Main$Spring;
+		case 'May':
+			return $author$project$Main$Spring;
+		case 'Jun':
+			return $author$project$Main$Summer;
+		case 'Jul':
+			return $author$project$Main$Summer;
+		case 'Aug':
+			return $author$project$Main$Summer;
+		case 'Sep':
+			return $author$project$Main$Autumn;
+		case 'Oct':
+			return $author$project$Main$Autumn;
+		case 'Nov':
+			return $author$project$Main$Autumn;
+		default:
+			return $author$project$Main$Winter;
+	}
+};
+var $elm$time$Time$Apr = {$: 'Apr'};
+var $elm$time$Time$Aug = {$: 'Aug'};
+var $elm$time$Time$Dec = {$: 'Dec'};
+var $elm$time$Time$Feb = {$: 'Feb'};
+var $elm$time$Time$Jan = {$: 'Jan'};
+var $elm$time$Time$Jul = {$: 'Jul'};
+var $elm$time$Time$Jun = {$: 'Jun'};
+var $elm$time$Time$Mar = {$: 'Mar'};
+var $elm$time$Time$May = {$: 'May'};
+var $elm$time$Time$Nov = {$: 'Nov'};
+var $elm$time$Time$Oct = {$: 'Oct'};
+var $elm$time$Time$Sep = {$: 'Sep'};
+var $elm$time$Time$flooredDiv = F2(
+	function (numerator, denominator) {
+		return $elm$core$Basics$floor(numerator / denominator);
+	});
+var $elm$time$Time$posixToMillis = function (_v0) {
+	var millis = _v0.a;
+	return millis;
+};
+var $elm$time$Time$toAdjustedMinutesHelp = F3(
+	function (defaultOffset, posixMinutes, eras) {
+		toAdjustedMinutesHelp:
+		while (true) {
+			if (!eras.b) {
+				return posixMinutes + defaultOffset;
+			} else {
+				var era = eras.a;
+				var olderEras = eras.b;
+				if (_Utils_cmp(era.start, posixMinutes) < 0) {
+					return posixMinutes + era.offset;
+				} else {
+					var $temp$defaultOffset = defaultOffset,
+						$temp$posixMinutes = posixMinutes,
+						$temp$eras = olderEras;
+					defaultOffset = $temp$defaultOffset;
+					posixMinutes = $temp$posixMinutes;
+					eras = $temp$eras;
+					continue toAdjustedMinutesHelp;
+				}
+			}
+		}
+	});
+var $elm$time$Time$toAdjustedMinutes = F2(
+	function (_v0, time) {
+		var defaultOffset = _v0.a;
+		var eras = _v0.b;
+		return A3(
+			$elm$time$Time$toAdjustedMinutesHelp,
+			defaultOffset,
+			A2(
+				$elm$time$Time$flooredDiv,
+				$elm$time$Time$posixToMillis(time),
+				60000),
+			eras);
+	});
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $elm$time$Time$toCivil = function (minutes) {
+	var rawDay = A2($elm$time$Time$flooredDiv, minutes, 60 * 24) + 719468;
+	var era = (((rawDay >= 0) ? rawDay : (rawDay - 146096)) / 146097) | 0;
+	var dayOfEra = rawDay - (era * 146097);
+	var yearOfEra = ((((dayOfEra - ((dayOfEra / 1460) | 0)) + ((dayOfEra / 36524) | 0)) - ((dayOfEra / 146096) | 0)) / 365) | 0;
+	var dayOfYear = dayOfEra - (((365 * yearOfEra) + ((yearOfEra / 4) | 0)) - ((yearOfEra / 100) | 0));
+	var mp = (((5 * dayOfYear) + 2) / 153) | 0;
+	var month = mp + ((mp < 10) ? 3 : (-9));
+	var year = yearOfEra + (era * 400);
+	return {
+		day: (dayOfYear - ((((153 * mp) + 2) / 5) | 0)) + 1,
+		month: month,
+		year: year + ((month <= 2) ? 1 : 0)
+	};
+};
+var $elm$time$Time$toMonth = F2(
+	function (zone, time) {
+		var _v0 = $elm$time$Time$toCivil(
+			A2($elm$time$Time$toAdjustedMinutes, zone, time)).month;
+		switch (_v0) {
+			case 1:
+				return $elm$time$Time$Jan;
+			case 2:
+				return $elm$time$Time$Feb;
+			case 3:
+				return $elm$time$Time$Mar;
+			case 4:
+				return $elm$time$Time$Apr;
+			case 5:
+				return $elm$time$Time$May;
+			case 6:
+				return $elm$time$Time$Jun;
+			case 7:
+				return $elm$time$Time$Jul;
+			case 8:
+				return $elm$time$Time$Aug;
+			case 9:
+				return $elm$time$Time$Sep;
+			case 10:
+				return $elm$time$Time$Oct;
+			case 11:
+				return $elm$time$Time$Nov;
+			default:
+				return $elm$time$Time$Dec;
+		}
+	});
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
 		any:
@@ -6850,6 +6984,7 @@ var $author$project$Main$toggleSelected = F2(
 			},
 			selected) : A2($elm$core$List$cons, title, selected);
 	});
+var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
 var $author$project$Main$bibleVerses = _List_fromArray(
 	[
 		{ref: 'Ecclesiastes 9:7', text: 'Go, eat your bread with joy, and drink your wine with a merry heart, for God has already approved what you do.'},
@@ -6860,10 +6995,6 @@ var $author$project$Main$bibleVerses = _List_fromArray(
 		{ref: 'Psalm 34:8', text: 'Taste and see that the Lord is good.'}
 	]);
 var $elm$core$Basics$modBy = _Basics_modBy;
-var $elm$time$Time$posixToMillis = function (_v0) {
-	var millis = _v0.a;
-	return millis;
-};
 var $author$project$Main$verseIndexFromPosix = function (posix) {
 	return A2(
 		$elm$core$Basics$modBy,
@@ -6886,6 +7017,8 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
+							season: $author$project$Main$seasonFromMonth(
+								A2($elm$time$Time$toMonth, $elm$time$Time$utc, posix)),
 							verseIndex: $author$project$Main$verseIndexFromPosix(posix)
 						}),
 					$elm$core$Platform$Cmd$none);
@@ -7212,6 +7345,14 @@ var $author$project$Main$update = F2(
 var $author$project$Main$SetView = function (a) {
 	return {$: 'SetView', a: a};
 };
+var $elm$virtual_dom$VirtualDom$attribute = F2(
+	function (key, value) {
+		return A2(
+			_VirtualDom_attribute,
+			_VirtualDom_noOnOrFormAction(key),
+			_VirtualDom_noJavaScriptOrHtmlUri(value));
+	});
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
@@ -7244,6 +7385,18 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		$elm$json$Json$Decode$succeed(msg));
 };
 var $elm$html$Html$p = _VirtualDom_node('p');
+var $author$project$Main$seasonToString = function (season) {
+	switch (season.$) {
+		case 'Spring':
+			return 'spring';
+		case 'Summer':
+			return 'summer';
+		case 'Autumn':
+			return 'autumn';
+		default:
+			return 'winter';
+	}
+};
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
@@ -8650,7 +8803,11 @@ var $author$project$Main$view = function (model) {
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('page')
+				$elm$html$Html$Attributes$class('page'),
+				A2(
+				$elm$html$Html$Attributes$attribute,
+				'data-theme',
+				$author$project$Main$seasonToString(model.season))
 			]),
 		_List_fromArray(
 			[

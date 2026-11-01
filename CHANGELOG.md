@@ -55,6 +55,9 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   forced on and redirected to a disposable test repo + `<backup_path>_test`
   vault, so sync tests never touch real backup data. (Regression:
   `TestLoadConfigTestModeRedirectsSync`)
+- Seasonal color themes for the web UI: spring / summer / autumn / winter
+  palettes applied via CSS custom properties, with Elm setting `data-theme`
+  from the current month (northern-hemisphere astronomical seasons).
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

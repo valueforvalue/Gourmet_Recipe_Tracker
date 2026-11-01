@@ -30,6 +30,13 @@ type PurgeIntent
     | PurgeAll
 
 
+type Season
+    = Spring
+    | Summer
+    | Autumn
+    | Winter
+
+
 type alias Recipe =
     { title : String
     , tags : List String
@@ -57,6 +64,7 @@ type alias Model =
     , purgeIntent : Maybe PurgeIntent
     , purgeConfirm : String
     , verseIndex : Int
+    , season : Season
     , scaled : Maybe Recipe
     , scaleFactor : String
     }
@@ -81,6 +89,7 @@ initialModel =
     , purgeIntent = Nothing
     , purgeConfirm = ""
     , verseIndex = 0
+    , season = Spring
     , scaled = Nothing
     , scaleFactor = "1"
     }
@@ -147,7 +156,7 @@ update msg model =
             )
 
         GotTime posix ->
-            ( { model | verseIndex = verseIndexFromPosix posix }, Cmd.none )
+            ( { model | verseIndex = verseIndexFromPosix posix, season = seasonFromMonth (Time.toMonth Time.utc posix) }, Cmd.none )
 
         UpdateFilter val ->
             ( { model | filterText = val }, Cmd.none )
@@ -346,7 +355,7 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ class "page" ]
+    div [ class "page", attribute "data-theme" (seasonToString model.season) ]
         [ -- APP BAR
           div [ class "appbar" ]
             [ div [ class "appbar-brand" ]
@@ -662,6 +671,56 @@ getDailyVerse index =
 verseIndexFromPosix : Time.Posix -> Int
 verseIndexFromPosix posix =
     modBy (List.length bibleVerses) (Time.posixToMillis posix // 86400000)
+
+
+seasonFromMonth : Time.Month -> Season
+seasonFromMonth month =
+    case month of
+        Time.Mar ->
+            Spring
+
+        Time.Apr ->
+            Spring
+
+        Time.May ->
+            Spring
+
+        Time.Jun ->
+            Summer
+
+        Time.Jul ->
+            Summer
+
+        Time.Aug ->
+            Summer
+
+        Time.Sep ->
+            Autumn
+
+        Time.Oct ->
+            Autumn
+
+        Time.Nov ->
+            Autumn
+
+        _ ->
+            Winter
+
+
+seasonToString : Season -> String
+seasonToString season =
+    case season of
+        Spring ->
+            "spring"
+
+        Summer ->
+            "summer"
+
+        Autumn ->
+            "autumn"
+
+        Winter ->
+            "winter"
 
 
 cleanInstruction : String -> String

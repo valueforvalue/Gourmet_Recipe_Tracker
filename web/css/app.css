@@ -1,11 +1,76 @@
 /* Morris Family Recipe Tracker — stylesheet
-   Faithful extraction of the inline styles previously in Main.elm.
-   Palette: sage #6B705C · sage-light #A5A58D · tan #d4a373 · danger #a00 ·
-   gray #e5e5e5 · page #FDF5E6 · scripture #fdfaf0 / #e9e2d0 */
+   Seasonal themes via CSS custom properties. Elm sets data-theme on .page
+   from the current month (northern-hemisphere astronomical seasons):
+     spring  = Mar–May · summer = Jun–Aug · autumn = Sep–Nov · winter = Dec–Feb
+   Tokens below are the seasonal primaries; danger (#a00) and neutral grays
+   stay constant because they are semantic. */
+
+:root {
+  /* fallback / default palette */
+  --primary: #6B705C;
+  --secondary: #A5A58D;
+  --accent: #d4a373;
+  --page-bg: #FDF5E6;
+  --scraper-bg: #f0f0e0;
+  --scripture-bg: #fdfaf0;
+  --scripture-border: #e9e2d0;
+  --banner-bg: #fff4e5;
+  --banner-text: #a05a00;
+  --danger: #a00;
+  --danger-bg: #fff0f0;
+}
+
+.page[data-theme="spring"] {
+  --primary: #3d7a52;
+  --secondary: #7f9d5a;
+  --accent: #cf6f9b;
+  --page-bg: #f2f7ed;
+  --scraper-bg: #e6f0df;
+  --scripture-bg: #f6faf1;
+  --scripture-border: #e2ecd8;
+  --banner-bg: #fdeef4;
+  --banner-text: #b23a6b;
+}
+
+.page[data-theme="summer"] {
+  --primary: #0f6e6a;
+  --secondary: #2fa8a0;
+  --accent: #d9a13c;
+  --page-bg: #f0faf9;
+  --scraper-bg: #e0f2f0;
+  --scripture-bg: #f5fcfb;
+  --scripture-border: #d9efec;
+  --banner-bg: #fdf6e0;
+  --banner-text: #a06a00;
+}
+
+.page[data-theme="autumn"] {
+  --primary: #9c4a1f;
+  --secondary: #b0763b;
+  --accent: #d97a38;
+  --page-bg: #fdf3ea;
+  --scraper-bg: #f8e7d6;
+  --scripture-bg: #fdf7ef;
+  --scripture-border: #f0e0cd;
+  --banner-bg: #fdeedf;
+  --banner-text: #9c4a1f;
+}
+
+.page[data-theme="winter"] {
+  --primary: #2c4a6e;
+  --secondary: #5a7d9e;
+  --accent: #7f9db8;
+  --page-bg: #f2f6fb;
+  --scraper-bg: #e3ebf4;
+  --scripture-bg: #f7fafd;
+  --scripture-border: #e0e8f2;
+  --banner-bg: #e9f0f8;
+  --banner-text: #2c4a6e;
+}
 
 /* ---------- Layout ---------- */
 .page {
-  background-color: #FDF5E6;
+  background-color: var(--page-bg);
   min-height: 100vh;
   font-family: serif;
 }
@@ -18,13 +83,13 @@
 
 .status {
   text-align: center;
-  color: #6B705C;
+  color: var(--primary);
   font-weight: bold;
 }
 
 /* ---------- App bar ---------- */
 .appbar {
-  background: #6B705C;
+  background: var(--primary);
   padding: 10px 16px;
   display: flex;
   align-items: center;
@@ -76,16 +141,16 @@
 
 /* ---------- Scraper ---------- */
 .scraper {
-  background: #f0f0e0;
+  background: var(--scraper-bg);
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 20px;
-  border: 1px dashed #6B705C;
+  border: 1px dashed var(--primary);
 }
 
 .scraper-title {
   margin-top: 0;
-  color: #6B705C;
+  color: var(--primary);
 }
 
 .scraper-row {
@@ -103,7 +168,7 @@
 
 .scraper-btn {
   flex: 1;
-  background: #6B705C;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 8px;
@@ -126,13 +191,13 @@
 }
 
 .card-title {
-  color: #6B705C;
+  color: var(--primary);
 }
 
 .clear-btn {
   background: none;
   border: none;
-  color: #a00;
+  color: var(--danger);
   text-decoration: underline;
   cursor: pointer;
   font-size: 12px;
@@ -144,7 +209,7 @@
 }
 
 .save-btn {
-  background: #A5A58D;
+  background: var(--secondary);
   color: white;
   padding: 15px;
   flex: 2;
@@ -188,7 +253,7 @@
 
 /* ---------- List ---------- */
 .list-title {
-  color: #6B705C;
+  color: var(--primary);
   margin-bottom: 5px;
 }
 
@@ -201,9 +266,9 @@
 .scripture {
   margin-bottom: 25px;
   padding: 20px;
-  background: #fdfaf0;
+  background: var(--scripture-bg);
   border-radius: 12px;
-  border: 1px solid #e9e2d0;
+  border: 1px solid var(--scripture-border);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -220,7 +285,7 @@
   text-align: right;
   margin: 10px 0 0 0;
   font-weight: bold;
-  color: #6B705C;
+  color: var(--primary);
 }
 
 .chip-row {
@@ -247,7 +312,7 @@
   background: white;
   padding: 15px;
   margin-bottom: 15px;
-  border-left: 6px solid #6B705C;
+  border-left: 6px solid var(--primary);
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -256,7 +321,7 @@
   font-size: 20px;
   display: block;
   cursor: pointer;
-  color: #6B705C;
+  color: var(--primary);
   text-decoration: underline;
 }
 
@@ -267,7 +332,7 @@
 }
 
 .confirm-bar {
-  background: #fff0f0;
+  background: var(--danger-bg);
   padding: 10px;
   border-radius: 4px;
   margin-top: 10px;
@@ -277,7 +342,7 @@
 }
 
 .confirm-text {
-  color: #a00;
+  color: var(--danger);
 }
 
 .btn-row {
@@ -286,7 +351,7 @@
 }
 
 .yes-btn {
-  background: #a00;
+  background: var(--danger);
   color: white;
   border: none;
   padding: 5px 15px;
@@ -339,12 +404,12 @@
   line-height: 1;
 }
 
-.btn-sage { background: #6B705C; }
-.btn-muted { background: #A5A58D; }
-.btn-tan { background: #d4a373; }
-.btn-red { background: #a00; }
+.btn-sage { background: var(--primary); }
+.btn-muted { background: var(--secondary); }
+.btn-tan { background: var(--accent); }
+.btn-red { background: var(--danger); }
 .btn-gray { background: #e5e5e5; color: #555; }
-.btn-danger-ghost { background: #e5e5e5; color: #a00; }
+.btn-danger-ghost { background: #e5e5e5; color: var(--danger); }
 
 .master-sage,
 .master-muted {
@@ -363,8 +428,8 @@
   line-height: 1;
 }
 
-.master-sage { background: #6B705C; }
-.master-muted { background: #A5A58D; }
+.master-sage { background: var(--primary); }
+.master-muted { background: var(--secondary); }
 
 /* ---------- Chips ---------- */
 .chip {
@@ -372,19 +437,19 @@
   padding: 10px 16px;
   font-size: 14px;
   cursor: pointer;
-  border: 1px solid #6B705C;
+  border: 1px solid var(--primary);
   min-height: 44px;
   box-sizing: border-box;
 }
 
 .chip-selected {
-  background: #6B705C;
+  background: var(--primary);
   color: #fff;
 }
 
 .chip-unselected {
   background: #fff;
-  color: #6B705C;
+  color: var(--primary);
 }
 
 /* ---------- Reader ---------- */
@@ -407,7 +472,7 @@
 .back-btn {
   background: none;
   border: none;
-  color: #6B705C;
+  color: var(--primary);
   font-size: 16px;
   cursor: pointer;
   padding: 10px 0;
@@ -415,7 +480,7 @@
 }
 
 .reader-edit-btn {
-  background: #d4a373;
+  background: var(--accent);
   color: white;
   border: none;
   padding: 10px 16px;
@@ -426,7 +491,7 @@
 }
 
 .reader-title {
-  color: #6B705C;
+  color: var(--primary);
   margin-bottom: 10px;
 }
 
@@ -444,32 +509,32 @@
 }
 
 .scale-banner {
-  background: #fff4e5;
-  border: 2px solid #d4a373;
+  background: var(--banner-bg);
+  border: 2px solid var(--accent);
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 15px;
   font-weight: bold;
-  color: #a05a00;
+  color: var(--banner-text);
 }
 
 .scale-reset {
   margin-left: 10px;
   background: none;
   border: none;
-  color: #6B705C;
+  color: var(--primary);
   text-decoration: underline;
   cursor: pointer;
   font-size: 13px;
 }
 
 .section-heading {
-  border-bottom: 2px solid #A5A58D;
+  border-bottom: 2px solid var(--secondary);
   padding-bottom: 5px;
 }
 
 .section-heading-spaced {
-  border-bottom: 2px solid #A5A58D;
+  border-bottom: 2px solid var(--secondary);
   padding-bottom: 5px;
   margin-top: 30px;
 }
@@ -503,7 +568,7 @@
   margin-top: 30px;
   width: 100%;
   padding: 15px;
-  background: #6B705C;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 4px;
@@ -515,7 +580,7 @@
   background: white;
   padding: 12px 15px;
   margin-bottom: 12px;
-  border-left: 6px solid #a00;
+  border-left: 6px solid var(--danger);
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -529,7 +594,7 @@
 
 .deleted-title {
   font-size: 18px;
-  color: #6B705C;
+  color: var(--primary);
 }
 
 .deleted-tags {
@@ -539,22 +604,22 @@
 }
 
 .purge-box {
-  background: #fff0f0;
+  background: var(--danger-bg);
   padding: 15px;
   border-radius: 8px;
-  border: 1px solid #a00;
+  border: 1px solid var(--danger);
   margin-top: 15px;
 }
 
 .purge-warning {
-  color: #a00;
+  color: var(--danger);
   font-weight: bold;
   margin-top: 0;
 }
 
 /* ---------- Misc ---------- */
 .link {
-  color: #6B705C;
+  color: var(--primary);
 }
 
 .note-line {
