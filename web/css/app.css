@@ -777,12 +777,13 @@ h1, h2, h3, h4 {
   letter-spacing: -0.01em;
 }
 
-/* Soft aurora glow behind the content (theme-aware, low opacity) */
+/* Aurora glow behind the content (theme-aware) */
 .page {
   background-image:
-    radial-gradient(60% 40% at 88% -5%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
-    radial-gradient(55% 45% at 4% 10%, color-mix(in srgb, var(--secondary) 18%, transparent), transparent 72%),
-    radial-gradient(120% 70% at 50% -10%, rgba(255, 255, 255, 0.5), transparent 60%);
+    radial-gradient(60% 45% at 95% -5%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%),
+    radial-gradient(55% 50% at -5% 10%, color-mix(in srgb, var(--secondary) 32%, transparent), transparent 72%),
+    radial-gradient(50% 40% at 100% 55%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%),
+    radial-gradient(120% 70% at 50% -10%, rgba(255, 255, 255, 0.45), transparent 60%);
 }
 
 /* Glassmorphism app bar */
