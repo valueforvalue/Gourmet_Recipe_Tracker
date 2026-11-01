@@ -35,6 +35,12 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   DB from it, and `auto_import` (default off) imports on startup when the DB
   is empty. (Regression: `TestWriteSnapshotRoundTrip`, `TestImportFromJSON`,
   `TestIsRecipesEmpty`)
+- Recipe scraper rewritten to extract schema.org/Recipe JSON-LD first (title,
+  ingredients, instructions, category/cuisine/keyword tags, yield, time,
+  description), falling back to microdata (`itemprop`) and then CSS-class
+  heuristics. Handles `@graph` nesting and `HowToStep`/`HowToSection`/
+  `PropertyValue` shapes. (Regression: `TestScrapeJSONLD*`, `TestScrapeMicrodata`,
+  `TestScrapeHeuristic`)
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

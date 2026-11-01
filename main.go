@@ -232,42 +232,7 @@ func main() {
 			return
 		}
 
-		var extracted Recipe
-		extracted.Title = strings.Join(strings.Fields(doc.Find("h1").First().Text()), " ")
-		extracted.Notes = "Source: " + targetURL
-		extracted.Tags = []string{"Imported"}
-
-		// FIXED INGREDIENT SCRAPER: Target CSS classes instead of specific measurement words
-		doc.Find("li").Each(func(i int, s *goquery.Selection) {
-			itemClass, _ := s.Attr("class")
-			parentClass, _ := s.Parent().Attr("class")
-			grandparentClass, _ := s.Parent().Parent().Attr("class")
-
-			combinedClasses := strings.ToLower(itemClass + " " + parentClass + " " + grandparentClass)
-
-			if strings.Contains(combinedClasses, "ingredient") {
-				txt := strings.Join(strings.Fields(s.Text()), " ")
-				if txt != "" {
-					extracted.Ingredients = append(extracted.Ingredients, txt)
-				}
-			}
-		})
-
-		// FIXED INSTRUCTION SCRAPER: Broaden search to include directions and steps
-		doc.Find("li").Each(func(i int, s *goquery.Selection) {
-			itemClass, _ := s.Attr("class")
-			parentClass, _ := s.Parent().Attr("class")
-			grandparentClass, _ := s.Parent().Parent().Attr("class")
-
-			combinedClasses := strings.ToLower(itemClass + " " + parentClass + " " + grandparentClass)
-
-			if strings.Contains(combinedClasses, "instruction") || strings.Contains(combinedClasses, "direction") || strings.Contains(combinedClasses, "step") {
-				txt := strings.Join(strings.Fields(s.Text()), " ")
-				if txt != "" {
-					extracted.Instructions = append(extracted.Instructions, txt)
-				}
-			}
-		})
+		extracted := scrapeRecipe(doc, targetURL)
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(extracted)
