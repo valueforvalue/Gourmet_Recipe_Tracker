@@ -7961,6 +7961,86 @@ var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$h3 = _VirtualDom_node('h3');
 var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$html$Html$ol = _VirtualDom_node('ol');
+var $elm$regex$Regex$find = _Regex_findAtMost(_Regex_infinity);
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
+var $author$project$Main$linkifyFrom = F3(
+	function (str, cursor, matches) {
+		if (!matches.b) {
+			return _List_fromArray(
+				[
+					$elm$html$Html$text(
+					A3(
+						$elm$core$String$slice,
+						cursor,
+						$elm$core$String$length(str),
+						str))
+				]);
+		} else {
+			var m = matches.a;
+			var rest = matches.b;
+			var url = m.match;
+			var nextCursor = m.index + $elm$core$String$length(url);
+			return _Utils_ap(
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						A3($elm$core$String$slice, cursor, m.index, str)),
+						A2(
+						$elm$html$Html$a,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$href(url),
+								$elm$html$Html$Attributes$target('_blank'),
+								A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(url)
+							]))
+					]),
+				A3($author$project$Main$linkifyFrom, str, nextCursor, rest));
+		}
+	});
+var $author$project$Main$urlRegex = A2(
+	$elm$core$Maybe$withDefault,
+	$elm$regex$Regex$never,
+	$elm$regex$Regex$fromString('https?://[^\\s]+'));
+var $author$project$Main$linkify = function (str) {
+	return A3(
+		$author$project$Main$linkifyFrom,
+		str,
+		0,
+		A2($elm$regex$Regex$find, $author$project$Main$urlRegex, str));
+};
+var $author$project$Main$renderNotes = function (notes) {
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		A2(
+			$elm$core$List$map,
+			function (line) {
+				return A2(
+					$elm$html$Html$p,
+					_List_fromArray(
+						[
+							A2($elm$html$Html$Attributes$style, 'margin', '4px 0')
+						]),
+					$author$project$Main$linkify(line));
+			},
+			A2(
+				$elm$core$List$filter,
+				function (line) {
+					return $elm$core$String$trim(line) !== '';
+				},
+				A2($elm$core$String$split, '\n', notes))));
+};
 var $author$project$Main$ScaleRecipe = function (a) {
 	return {$: 'ScaleRecipe', a: a};
 };
@@ -8211,13 +8291,7 @@ var $author$project$Main$viewReader = F2(
 								[
 									$elm$html$Html$text('Notes')
 								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text(display.notes)
-								]))
+							$author$project$Main$renderNotes(display.notes)
 						])),
 					A2(
 					$elm$html$Html$button,
@@ -8246,7 +8320,6 @@ var $author$project$Main$SetActiveTag = function (a) {
 var $author$project$Main$UpdateFilter = function (a) {
 	return {$: 'UpdateFilter', a: a};
 };
-var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$core$List$append = F2(
 	function (xs, ys) {
 		if (!ys.b) {
@@ -8313,12 +8386,6 @@ var $author$project$Main$getDailyVerse = function (index) {
 		$elm$core$List$head(
 			A2($elm$core$List$drop, index, $author$project$Main$bibleVerses)));
 };
-var $elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
 var $author$project$Main$masterBtnStyle = function (c) {
 	return _List_fromArray(
 		[
@@ -8379,7 +8446,6 @@ var $author$project$Main$tagChip = F3(
 					$elm$html$Html$text(label)
 				]));
 	});
-var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $elm$core$String$toLower = _String_toLower;
 var $author$project$Main$CancelDelete = {$: 'CancelDelete'};
 var $author$project$Main$ConfirmDelete = function (a) {

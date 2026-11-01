@@ -556,7 +556,7 @@ viewReader model recipe =
 
           else
             div [ style "margin-top" "30px", style "padding" "15px", style "background" "#f9f9f9", style "border-radius" "4px" ]
-                [ h4 [ style "margin" "0 0 10px 0" ] [ text "Notes" ], p [] [ text display.notes ] ]
+                [ h4 [ style "margin" "0 0 10px 0" ] [ text "Notes" ], renderNotes display.notes ]
         , button [ onClick (SetView ListView), style "margin-top" "30px", style "width" "100%", style "padding" "15px", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Done Reading" ]
         ]
 
@@ -671,6 +671,46 @@ cleanInstruction inst =
             Regex.fromString "^\\d+[\\.\\)]\\s*" |> Maybe.withDefault Regex.never
     in
     Regex.replace re (\_ -> "") (String.trim inst)
+
+
+urlRegex : Regex.Regex
+urlRegex =
+    Maybe.withDefault Regex.never (Regex.fromString "https?://[^\\s]+")
+
+
+linkify : String -> List (Html Msg)
+linkify str =
+    linkifyFrom str 0 (Regex.find urlRegex str)
+
+
+linkifyFrom : String -> Int -> List Regex.Match -> List (Html Msg)
+linkifyFrom str cursor matches =
+    case matches of
+        [] ->
+            [ text (String.slice cursor (String.length str) str) ]
+
+        m :: rest ->
+            let
+                url =
+                    m.match
+
+                nextCursor =
+                    m.index + String.length url
+            in
+            [ text (String.slice cursor m.index str)
+            , a [ href url, target "_blank", style "color" "#6B705C" ] [ text url ]
+            ]
+                ++ linkifyFrom str nextCursor rest
+
+
+renderNotes : String -> Html Msg
+renderNotes notes =
+    div []
+        (notes
+            |> String.split "\n"
+            |> List.filter (\line -> String.trim line /= "")
+            |> List.map (\line -> p [ style "margin" "4px 0" ] (linkify line))
+        )
 
 
 

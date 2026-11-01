@@ -80,6 +80,8 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Web "daily verse" now actually rotates by calendar day — seeded by days
   since epoch and refreshed every minute via `elm/time` (was keyed to recipe
   count, so "daily" was a misnomer).
+- Web reader notes now preserve line breaks and render URLs (including the
+  scraped recipe's source) as clickable links.
 
 ### Maintenance
 - Documented every exported identifier with `Name — contract` doc comments
