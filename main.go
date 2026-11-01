@@ -74,12 +74,34 @@ func (l *perHostLimiter) wait(host string) {
 // scrapeLimiter spaces out requests to the same host by at least one second.
 var scrapeLimiter = newPerHostLimiter(time.Second)
 
+// scrapeUserAgent identifies the scraper as a regular browser. Many recipe
+// sites (allrecipes, etc.) answer Go's default "Go-http-client/1.1" UA with
+// 402/403 instead of the page.
+const scrapeUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+// newScrapeRequest builds a GET request carrying browser-like headers so sites
+// that gate on User-Agent serve the page instead of a bot block.
+func newScrapeRequest(targetURL string) (*http.Request, error) {
+	req, err := http.NewRequest(http.MethodGet, targetURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", scrapeUserAgent)
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+	return req, nil
+}
+
 // scrapeFetch fetches targetURL with a per-host politeness delay and a single
 // retry on a transient failure (network error or 5xx).
 func scrapeFetch(targetURL string) (*http.Response, error) {
 	scrapeLimiter.wait(hostOf(targetURL))
 
-	resp, err := scrapeClient.Get(targetURL)
+	req, err := newScrapeRequest(targetURL)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := scrapeClient.Do(req)
 	if err == nil && resp.StatusCode < 500 {
 		return resp, nil
 	}
@@ -87,7 +109,11 @@ func scrapeFetch(targetURL string) (*http.Response, error) {
 		resp.Body.Close()
 	}
 	time.Sleep(500 * time.Millisecond)
-	return scrapeClient.Get(targetURL)
+	req, err = newScrapeRequest(targetURL)
+	if err != nil {
+		return nil, err
+	}
+	return scrapeClient.Do(req)
 }
 
 // corsMiddleware wraps a handler and adds CORS headers so the Flutter

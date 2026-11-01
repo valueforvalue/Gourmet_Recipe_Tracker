@@ -254,3 +254,16 @@ func contains(list []string, s string) bool {
 	}
 	return false
 }
+
+func TestNewScrapeRequestSetsBrowserHeaders(t *testing.T) {
+	req, err := newScrapeRequest("https://example.com/recipe")
+	if err != nil {
+		t.Fatalf("newScrapeRequest: %v", err)
+	}
+	if got := req.Header.Get("User-Agent"); got != scrapeUserAgent {
+		t.Errorf("User-Agent = %q, want %q", got, scrapeUserAgent)
+	}
+	if req.Header.Get("Accept") == "" {
+		t.Error("Accept header not set")
+	}
+}

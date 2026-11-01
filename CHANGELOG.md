@@ -111,6 +111,10 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   down network sync for a minute instead of spamming the log on every save;
   local sidecar writes and commits still happen. (Regression:
   `TestIsPermanentPushError`, `TestSyncBackoff`)
+- Recipe scraper now sends a browser `User-Agent` (plus `Accept`/
+  `Accept-Language`) instead of Go's default `Go-http-client/1.1`, so sites
+  that gate on UA — allrecipes returned `402` — serve the page. (Regression:
+  `TestNewScrapeRequestSetsBrowserHeaders`)
 
 ### Maintenance
 - Documented every exported identifier with `Name — contract` doc comments
