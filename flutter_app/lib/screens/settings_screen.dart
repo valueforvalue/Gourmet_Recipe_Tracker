@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../services/api_service.dart';
+import '../theme/season.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -151,6 +152,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _VersionRow(label: 'App version', value: _appVersion.isEmpty ? '…' : _appVersion),
                     const SizedBox(height: 4),
                     _VersionRow(label: 'Server', value: _serverVersion.isEmpty ? '…' : _serverVersion),
+                    const SizedBox(height: 4),
+                    _VersionRow(label: 'Season', value: activeSeason.value.label),
+                    const SizedBox(height: 16),
+                    Text('Theme preview', style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: 8),
+                    DropdownButton<Season>(
+                      value: activeSeason.value,
+                      isExpanded: true,
+                      items: Season.values
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s.label)))
+                          .toList(),
+                      onChanged: (s) {
+                        if (s != null) setState(() => activeSeason.value = s);
+                      },
+                    ),
                   ],
                 ),
               ),

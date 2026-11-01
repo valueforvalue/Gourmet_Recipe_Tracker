@@ -184,6 +184,32 @@ class ApiService {
     throw Exception('Failed to scale recipe (${response.statusCode})');
   }
 
+  // ── Feedback (Formspark) ────────────────────────────────────────────────
+
+  /// Submits feedback to the external Formspark form.
+  static Future<void> submitFeedback({
+    required String name,
+    required String email,
+    required String message,
+  }) async {
+    final body = 'name=${Uri.encodeQueryComponent(name)}'
+        '&email=${Uri.encodeQueryComponent(email)}'
+        '&message=${Uri.encodeQueryComponent(message)}';
+    final response = await http
+        .post(
+          Uri.parse('https://submit-form.com/SftusnkmF'),
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+          body: body,
+        )
+        .timeout(const Duration(seconds: 20));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to send feedback (${response.statusCode})');
+    }
+  }
+
   // ── Health check ──────────────────────────────────────────────────────────
 
   /// Returns true if the server responds within 5 seconds; on failure returns

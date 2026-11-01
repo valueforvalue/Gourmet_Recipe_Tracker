@@ -3,10 +3,10 @@
 // Home screen — displays all recipes with live search/filter.
 
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/recipe.dart';
 import '../services/api_service.dart';
 import '../services/daily_verse.dart';
+import 'feedback_screen.dart';
 import 'recipe_detail_screen.dart';
 import 'recipe_edit_screen.dart';
 import 'settings_screen.dart';
@@ -124,17 +124,6 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     }
   }
 
-  Future<void> _openFeedback() async {
-    const url = 'https://submit-form.com/SftusnkmF';
-    if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open feedback form')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,7 +139,9 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
           IconButton(
             icon: const Icon(Icons.feedback_outlined),
             tooltip: 'Send Feedback',
-            onPressed: _openFeedback,
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const FeedbackScreen()));
+            },
           ),
           IconButton(
             icon: const Icon(Icons.settings),

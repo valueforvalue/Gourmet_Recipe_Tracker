@@ -73,12 +73,15 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
   the server's app + schema version.
 - Flutter: "Deleted" tab with restore + permanent purge (single + purge-all
   with `yesdeary` confirmation), backed by the server's soft-delete endpoints.
-- Flutter: feedback button in the list screen opens the submit-form endpoint.
+- Flutter: in-app feedback form (name / email / message) posts to the
+  submit-form endpoint.
 - Flutter list screen shows total recipe count and per-tag counts on chips.
 - Flutter recipe detail renders URLs in notes as tappable links (match web).
 - Flutter list screen gains a daily verse card + "Morris Family" branding.
 - Flutter recipe detail gains ×½/×1/×2/×3 scaling controls + a temporary
   scaled banner with Reset.
+- Flutter Settings gains a theme preview (season selector) + a current-season
+  indicator.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

@@ -3,7 +3,16 @@
 // Maps the current month to a season (northern-hemisphere, astronomical).
 // Mirrors the web UI's data-theme logic in web/src/Main.elm.
 
-enum Season { spring, summer, autumn, winter }
+import 'package:flutter/foundation.dart';
+
+enum Season {
+  spring,
+  summer,
+  autumn,
+  winter;
+
+  String get label => name[0].toUpperCase() + name.substring(1);
+}
 
 /// Returns the season for a 1-based month (1 = January).
 Season seasonFromMonth(int month) {
@@ -15,3 +24,6 @@ Season seasonFromMonth(int month) {
 
 /// Season for the current calendar date.
 Season currentSeason() => seasonFromMonth(DateTime.now().month);
+
+/// The active season, changeable at runtime so Settings can preview themes.
+final ValueNotifier<Season> activeSeason = ValueNotifier(currentSeason());

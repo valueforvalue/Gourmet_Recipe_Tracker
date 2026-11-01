@@ -20,11 +20,16 @@ class RecipeTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Recipe Tracker',
-      debugShowCheckedModeBanner: false,
-      theme: themeFor(currentSeason()),
-      home: const _MainShell(),
+    return ValueListenableBuilder<Season>(
+      valueListenable: activeSeason,
+      builder: (context, season, _) {
+        return MaterialApp(
+          title: 'Recipe Tracker',
+          debugShowCheckedModeBanner: false,
+          theme: themeFor(season),
+          home: const _MainShell(),
+        );
+      },
     );
   }
 }
