@@ -170,6 +170,20 @@ class ApiService {
     throw Exception('Failed to load server version (${response.statusCode})');
   }
 
+  // ── Scaling ────────────────────────────────────────────────────────────
+
+  /// Returns a recipe with scalable ingredients multiplied by [factor].
+  static Future<Recipe> scaleRecipe(String title, String factor) async {
+    final base = await _requireBaseUrl();
+    final response = await http
+        .get(Uri.parse('$base/api/scale?title=${Uri.encodeComponent(title)}&factor=${Uri.encodeComponent(factor)}'))
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode == 200) {
+      return Recipe.fromJson(json.decode(response.body) as Map<String, dynamic>);
+    }
+    throw Exception('Failed to scale recipe (${response.statusCode})');
+  }
+
   // ── Health check ──────────────────────────────────────────────────────────
 
   /// Returns true if the server responds within 5 seconds; on failure returns

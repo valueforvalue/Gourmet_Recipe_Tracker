@@ -1,6 +1,6 @@
 // File: lib/screens/recipe_detail_screen.dart
 //
-// Read-only view for a single recipe.  Provides an Edit button and PDF export.
+// Read-only view for a single recipe: scaling, PDF export, and Edit.
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -9,14 +9,54 @@ import '../models/recipe.dart';
 import 'recipe_edit_screen.dart';
 import '../services/api_service.dart';
 
-class RecipeDetailScreen extends StatelessWidget {
+class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
-
   const RecipeDetailScreen({super.key, required this.recipe});
+
+  @override
+  State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
+}
+
+class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  Recipe? _scaled;
+  String _factor = '1';
+
+  Recipe get _display => _scaled ?? widget.recipe;
+  bool get _isScaled => _scaled != null;
+
+  static const _scaleOptions = [
+    (label: '½×', factor: '0.5'),
+    (label: '1×', factor: '1'),
+    (label: '2×', factor: '2'),
+    (label: '3×', factor: '3'),
+  ];
+
+  Future<void> _scale(String factor) async {
+    setState(() => _factor = factor);
+    if (factor == '1') {
+      setState(() => _scaled = null);
+      return;
+    }
+    try {
+      final scaled = await ApiService.scaleRecipe(widget.recipe.title, factor);
+      if (mounted) setState(() => _scaled = scaled);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to scale: $e')));
+      }
+    }
+  }
+
+  void _reset() {
+    setState(() {
+      _scaled = null;
+      _factor = '1';
+    });
+  }
 
   Future<void> _openPdf(BuildContext context, {bool booklet = false}) async {
     try {
-      final url = await ApiService.getRecipePdfUrl(recipe.title, booklet: booklet);
+      final url = await ApiService.getRecipePdfUrl(widget.recipe.title, booklet: booklet);
       if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -33,9 +73,10 @@ class RecipeDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: Text(recipe.title, overflow: TextOverflow.ellipsis),
+        title: Text(widget.recipe.title, overflow: TextOverflow.ellipsis),
         actions: [
           PopupMenuButton<String>(
             onSelected: (val) {
@@ -53,7 +94,7 @@ class RecipeDetailScreen extends StatelessWidget {
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) => RecipeEditScreen(recipe: recipe)),
+                MaterialPageRoute(builder: (_) => RecipeEditScreen(recipe: widget.recipe)),
               );
             },
           ),
@@ -63,18 +104,52 @@ class RecipeDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           // Tags
-          if (recipe.tags.isNotEmpty) ...[
+          if (widget.recipe.tags.isNotEmpty) ...[
             Wrap(
               spacing: 6,
-              children: recipe.tags.map((t) => Chip(label: Text(t))).toList(),
+              children: widget.recipe.tags.map((t) => Chip(label: Text(t))).toList(),
             ),
             const SizedBox(height: 16),
           ],
 
+          // Scale controls
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final o in _scaleOptions)
+                ChoiceChip(
+                  label: Text(o.label),
+                  selected: _factor == o.factor,
+                  onSelected: (_) => _scale(o.factor),
+                ),
+            ],
+          ),
+          if (_isScaled) ...[
+            const SizedBox(height: 12),
+            Card(
+              color: scheme.tertiaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '⚠ ×$_factor — temporarily scaled',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: scheme.onTertiaryContainer),
+                      ),
+                    ),
+                    TextButton(onPressed: _reset, child: const Text('Reset')),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+
           // Ingredients
           _SectionHeader(title: 'Ingredients'),
           const SizedBox(height: 8),
-          ...recipe.ingredients.map(
+          ..._display.ingredients.map(
             (ing) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(
@@ -91,7 +166,7 @@ class RecipeDetailScreen extends StatelessWidget {
           // Instructions
           _SectionHeader(title: 'Instructions'),
           const SizedBox(height: 8),
-          ...recipe.instructions.asMap().entries.map(
+          ..._display.instructions.asMap().entries.map(
             (e) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -105,11 +180,11 @@ class RecipeDetailScreen extends StatelessWidget {
           ),
 
           // Notes
-          if (recipe.notes.isNotEmpty) ...[
+          if (_display.notes.isNotEmpty) ...[
             const SizedBox(height: 20),
             _SectionHeader(title: 'Notes'),
             const SizedBox(height: 8),
-            _LinkifiedText(text: recipe.notes),
+            _LinkifiedText(text: _display.notes),
           ],
         ],
       ),
