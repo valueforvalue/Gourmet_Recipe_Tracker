@@ -1,0 +1,562 @@
+/* Morris Family Recipe Tracker — stylesheet
+   Faithful extraction of the inline styles previously in Main.elm.
+   Palette: sage #6B705C · sage-light #A5A58D · tan #d4a373 · danger #a00 ·
+   gray #e5e5e5 · page #FDF5E6 · scripture #fdfaf0 / #e9e2d0 */
+
+/* ---------- Layout ---------- */
+.page {
+  background-color: #FDF5E6;
+  min-height: 100vh;
+  font-family: serif;
+}
+
+.container {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.status {
+  text-align: center;
+  color: #6B705C;
+  font-weight: bold;
+}
+
+/* ---------- App bar ---------- */
+.appbar {
+  background: #6B705C;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.appbar-brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.appbar-title {
+  color: #fff;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.appbar-subtitle {
+  color: #fff;
+  font-style: italic;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.appbar-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 10px 16px;
+  border-radius: 20px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+/* ---------- Scraper ---------- */
+.scraper {
+  background: #f0f0e0;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px dashed #6B705C;
+}
+
+.scraper-title {
+  margin-top: 0;
+  color: #6B705C;
+}
+
+.scraper-row {
+  display: flex;
+  gap: 10px;
+}
+
+.scraper-input {
+  flex: 3;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+.scraper-btn {
+  flex: 1;
+  background: #6B705C;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-title {
+  color: #6B705C;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #a00;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.save-btn {
+  background: #A5A58D;
+  color: white;
+  padding: 15px;
+  flex: 2;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: #e5e5e5;
+  color: #555;
+  padding: 15px;
+  flex: 1;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* ---------- Inputs ---------- */
+.input {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-sizing: border-box;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.search {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px 18px;
+  border: 1px solid #ccc;
+  border-radius: 24px;
+  box-sizing: border-box;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+/* ---------- List ---------- */
+.list-title {
+  color: #6B705C;
+  margin-bottom: 5px;
+}
+
+.muted {
+  color: #888;
+  font-size: 14px;
+  margin-top: 0;
+}
+
+.scripture {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: #fdfaf0;
+  border-radius: 12px;
+  border: 1px solid #e9e2d0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.scripture-text {
+  font-style: italic;
+  margin: 0;
+  color: #4a4a4a;
+  line-height: 1.5;
+  font-size: 16px;
+}
+
+.scripture-ref {
+  font-size: 13px;
+  text-align: right;
+  margin: 10px 0 0 0;
+  font-weight: bold;
+  color: #6B705C;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.cookbook-row {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.empty {
+  text-align: center;
+  color: #888;
+  padding: 30px;
+}
+
+/* ---------- Recipe cards ---------- */
+.recipe-card {
+  background: white;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-left: 6px solid #6B705C;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.recipe-title {
+  font-size: 20px;
+  display: block;
+  cursor: pointer;
+  color: #6B705C;
+  text-decoration: underline;
+}
+
+.recipe-tags {
+  font-size: 13px;
+  color: #777;
+  margin: 5px 0;
+}
+
+.confirm-bar {
+  background: #fff0f0;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.confirm-text {
+  color: #a00;
+}
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+}
+
+.yes-btn {
+  background: #a00;
+  color: white;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.no-btn {
+  background: #ccc;
+  border: none;
+  padding: 5px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.toolbar-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+/* ---------- Buttons ---------- */
+.btn-sage,
+.btn-muted,
+.btn-tan,
+.btn-red,
+.btn-gray,
+.btn-danger-ghost {
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  text-decoration: none;
+  text-align: center;
+  font-size: 14px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+.btn-sage { background: #6B705C; }
+.btn-muted { background: #A5A58D; }
+.btn-tan { background: #d4a373; }
+.btn-red { background: #a00; }
+.btn-gray { background: #e5e5e5; color: #555; }
+.btn-danger-ghost { background: #e5e5e5; color: #a00; }
+
+.master-sage,
+.master-muted {
+  color: white;
+  text-decoration: none;
+  padding: 14px;
+  flex: 1;
+  text-align: center;
+  border-radius: 8px;
+  font-size: 14px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+.master-sage { background: #6B705C; }
+.master-muted { background: #A5A58D; }
+
+/* ---------- Chips ---------- */
+.chip {
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1px solid #6B705C;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.chip-selected {
+  background: #6B705C;
+  color: #fff;
+}
+
+.chip-unselected {
+  background: #fff;
+  color: #6B705C;
+}
+
+/* ---------- Reader ---------- */
+.reader-card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.reader-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #6B705C;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 10px 0;
+  min-height: 44px;
+}
+
+.reader-edit-btn {
+  background: #d4a373;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  min-height: 44px;
+}
+
+.reader-title {
+  color: #6B705C;
+  margin-bottom: 10px;
+}
+
+.reader-tags {
+  font-style: italic;
+  color: #888;
+  margin-bottom: 20px;
+}
+
+.scale-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.scale-banner {
+  background: #fff4e5;
+  border: 2px solid #d4a373;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  color: #a05a00;
+}
+
+.scale-reset {
+  margin-left: 10px;
+  background: none;
+  border: none;
+  color: #6B705C;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.section-heading {
+  border-bottom: 2px solid #A5A58D;
+  padding-bottom: 5px;
+}
+
+.section-heading-spaced {
+  border-bottom: 2px solid #A5A58D;
+  padding-bottom: 5px;
+  margin-top: 30px;
+}
+
+.ingredient-list {
+  line-height: 1.8;
+  font-size: 18px;
+}
+
+.instruction-list {
+  line-height: 1.6;
+  font-size: 18px;
+}
+
+.instruction-item {
+  margin-bottom: 15px;
+}
+
+.notes-box {
+  margin-top: 30px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.notes-heading {
+  margin: 0 0 10px 0;
+}
+
+.done-btn {
+  margin-top: 30px;
+  width: 100%;
+  padding: 15px;
+  background: #6B705C;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* ---------- Deleted ---------- */
+.deleted-card {
+  background: white;
+  padding: 12px 15px;
+  margin-bottom: 12px;
+  border-left: 6px solid #a00;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.deleted-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.deleted-title {
+  font-size: 18px;
+  color: #6B705C;
+}
+
+.deleted-tags {
+  font-size: 13px;
+  color: #777;
+  margin: 4px 0 0 0;
+}
+
+.purge-box {
+  background: #fff0f0;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #a00;
+  margin-top: 15px;
+}
+
+.purge-warning {
+  color: #a00;
+  font-weight: bold;
+  margin-top: 0;
+}
+
+/* ---------- Misc ---------- */
+.link {
+  color: #6B705C;
+}
+
+.note-line {
+  margin: 4px 0;
+}

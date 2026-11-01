@@ -32,7 +32,7 @@ var Version = "4.1-SystemOverhaul"
 // permanent (hard) delete.
 const purgeConfirmWord = "yesdeary"
 
-//go:embed web/index.html web/js/elm.js
+//go:embed web/index.html web/js/elm.js web/css/app.css
 var frontendFiles embed.FS
 
 // scrapeClient bounds how long a recipe scrape may take so a slow site can't

@@ -7213,21 +7213,18 @@ var $author$project$Main$SetView = function (a) {
 	return {$: 'SetView', a: a};
 };
 var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
-var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $author$project$Main$navStyle = _List_fromArray(
 	[
-		A2($elm$html$Html$Attributes$style, 'background', 'rgba(255,255,255,0.15)'),
-		A2($elm$html$Html$Attributes$style, 'border', '1px solid rgba(255,255,255,0.35)'),
-		A2($elm$html$Html$Attributes$style, 'color', 'white'),
-		A2($elm$html$Html$Attributes$style, 'font-size', '15px'),
-		A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-		A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
-		A2($elm$html$Html$Attributes$style, 'padding', '10px 16px'),
-		A2($elm$html$Html$Attributes$style, 'border-radius', '20px'),
-		A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
-		A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box')
+		$elm$html$Html$Attributes$class('nav-btn')
 	]);
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
@@ -7257,24 +7254,23 @@ var $author$project$Main$StartPurge = function (a) {
 	return {$: 'StartPurge', a: a};
 };
 var $author$project$Main$ToggleSelectAll = {$: 'ToggleSelectAll'};
+var $author$project$Main$actionBtnClass = function (c) {
+	switch (c) {
+		case '#A5A58D':
+			return 'btn-muted';
+		case '#d4a373':
+			return 'btn-tan';
+		case '#a00':
+			return 'btn-red';
+		default:
+			return 'btn-sage';
+	}
+};
 var $author$project$Main$actionBtnStyle = function (c) {
 	return _List_fromArray(
 		[
-			A2($elm$html$Html$Attributes$style, 'background', c),
-			A2($elm$html$Html$Attributes$style, 'border', 'none'),
-			A2($elm$html$Html$Attributes$style, 'padding', '12px 16px'),
-			A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-			A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-			A2($elm$html$Html$Attributes$style, 'color', 'white'),
-			A2($elm$html$Html$Attributes$style, 'text-decoration', 'none'),
-			A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
-			A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
-			A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
-			A2($elm$html$Html$Attributes$style, 'display', 'inline-flex'),
-			A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
-			A2($elm$html$Html$Attributes$style, 'justify-content', 'center'),
-			A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
-			A2($elm$html$Html$Attributes$style, 'line-height', '1')
+			$elm$html$Html$Attributes$class(
+			$author$project$Main$actionBtnClass(c))
 		]);
 };
 var $elm$json$Json$Encode$bool = _Json_wrap;
@@ -7310,13 +7306,6 @@ var $elm$html$Html$Events$onCheck = function (tagger) {
 		A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetChecked));
 };
 var $elm$html$Html$strong = _VirtualDom_node('strong');
-var $elm$html$Html$Attributes$stringProperty = F2(
-	function (key, string) {
-		return A2(
-			_VirtualDom_property,
-			key,
-			$elm$json$Json$Encode$string(string));
-	});
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $author$project$Main$viewDeletedCard = F2(
 	function (selected, recipe) {
@@ -7324,12 +7313,7 @@ var $author$project$Main$viewDeletedCard = F2(
 			$elm$html$Html$div,
 			_List_fromArray(
 				[
-					A2($elm$html$Html$Attributes$style, 'background', 'white'),
-					A2($elm$html$Html$Attributes$style, 'padding', '12px 15px'),
-					A2($elm$html$Html$Attributes$style, 'margin-bottom', '12px'),
-					A2($elm$html$Html$Attributes$style, 'border-left', '6px solid #a00'),
-					A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-					A2($elm$html$Html$Attributes$style, 'box-shadow', '0 1px 3px rgba(0,0,0,0.1)')
+					$elm$html$Html$Attributes$class('deleted-card')
 				]),
 			_List_fromArray(
 				[
@@ -7337,10 +7321,7 @@ var $author$project$Main$viewDeletedCard = F2(
 					$elm$html$Html$label,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-							A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
-							A2($elm$html$Html$Attributes$style, 'gap', '10px'),
-							A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
+							$elm$html$Html$Attributes$class('deleted-label')
 						]),
 					_List_fromArray(
 						[
@@ -7366,8 +7347,7 @@ var $author$project$Main$viewDeletedCard = F2(
 									$elm$html$Html$strong,
 									_List_fromArray(
 										[
-											A2($elm$html$Html$Attributes$style, 'font-size', '18px'),
-											A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
+											$elm$html$Html$Attributes$class('deleted-title')
 										]),
 									_List_fromArray(
 										[
@@ -7377,9 +7357,7 @@ var $author$project$Main$viewDeletedCard = F2(
 									$elm$html$Html$p,
 									_List_fromArray(
 										[
-											A2($elm$html$Html$Attributes$style, 'font-size', '13px'),
-											A2($elm$html$Html$Attributes$style, 'color', '#777'),
-											A2($elm$html$Html$Attributes$style, 'margin', '4px 0 0 0')
+											$elm$html$Html$Attributes$class('deleted-tags')
 										]),
 									_List_fromArray(
 										[
@@ -7397,14 +7375,7 @@ var $author$project$Main$UpdatePurgeConfirm = function (a) {
 };
 var $author$project$Main$inputStyle = _List_fromArray(
 	[
-		A2($elm$html$Html$Attributes$style, 'width', '100%'),
-		A2($elm$html$Html$Attributes$style, 'margin-bottom', '12px'),
-		A2($elm$html$Html$Attributes$style, 'padding', '12px 14px'),
-		A2($elm$html$Html$Attributes$style, 'border', '1px solid #ccc'),
-		A2($elm$html$Html$Attributes$style, 'border-radius', '10px'),
-		A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
-		A2($elm$html$Html$Attributes$style, 'font-size', '16px'),
-		A2($elm$html$Html$Attributes$style, 'font-family', 'inherit')
+		$elm$html$Html$Attributes$class('input')
 	]);
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -7453,11 +7424,7 @@ var $author$project$Main$viewPurgeConfirm = function (model) {
 			$elm$html$Html$div,
 			_List_fromArray(
 				[
-					A2($elm$html$Html$Attributes$style, 'background', '#fff0f0'),
-					A2($elm$html$Html$Attributes$style, 'padding', '15px'),
-					A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-					A2($elm$html$Html$Attributes$style, 'border', '1px solid #a00'),
-					A2($elm$html$Html$Attributes$style, 'margin-top', '15px')
+					$elm$html$Html$Attributes$class('purge-box')
 				]),
 			_List_fromArray(
 				[
@@ -7465,9 +7432,7 @@ var $author$project$Main$viewPurgeConfirm = function (model) {
 					$elm$html$Html$p,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'color', '#a00'),
-							A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
-							A2($elm$html$Html$Attributes$style, 'margin-top', '0')
+							$elm$html$Html$Attributes$class('purge-warning')
 						]),
 					_List_fromArray(
 						[
@@ -7490,8 +7455,7 @@ var $author$project$Main$viewPurgeConfirm = function (model) {
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-							A2($elm$html$Html$Attributes$style, 'gap', '10px')
+							$elm$html$Html$Attributes$class('btn-row')
 						]),
 					_List_fromArray(
 						[
@@ -7513,12 +7477,10 @@ var $author$project$Main$viewPurgeConfirm = function (model) {
 							A2(
 								$elm$core$List$cons,
 								$elm$html$Html$Events$onClick($author$project$Main$CancelPurge),
-								_Utils_ap(
-									$author$project$Main$actionBtnStyle('#e5e5e5'),
-									_List_fromArray(
-										[
-											A2($elm$html$Html$Attributes$style, 'color', '#555')
-										]))),
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('btn-gray')
+									])),
 							_List_fromArray(
 								[
 									$elm$html$Html$text('Cancel')
@@ -7538,8 +7500,7 @@ var $author$project$Main$viewDeleted = function (model) {
 				$elm$html$Html$h2,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
-						A2($elm$html$Html$Attributes$style, 'margin-bottom', '5px')
+						$elm$html$Html$Attributes$class('list-title')
 					]),
 				_List_fromArray(
 					[
@@ -7549,9 +7510,7 @@ var $author$project$Main$viewDeleted = function (model) {
 				$elm$html$Html$p,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'color', '#888'),
-						A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
-						A2($elm$html$Html$Attributes$style, 'margin-top', '0')
+						$elm$html$Html$Attributes$class('muted')
 					]),
 				_List_fromArray(
 					[
@@ -7561,9 +7520,7 @@ var $author$project$Main$viewDeleted = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
-						A2($elm$html$Html$Attributes$style, 'color', '#888'),
-						A2($elm$html$Html$Attributes$style, 'padding', '30px')
+						$elm$html$Html$Attributes$class('empty')
 					]),
 				_List_fromArray(
 					[
@@ -7577,10 +7534,7 @@ var $author$project$Main$viewDeleted = function (model) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-								A2($elm$html$Html$Attributes$style, 'gap', '8px'),
-								A2($elm$html$Html$Attributes$style, 'flex-wrap', 'wrap'),
-								A2($elm$html$Html$Attributes$style, 'margin-bottom', '15px')
+								$elm$html$Html$Attributes$class('toolbar-row')
 							]),
 						_List_fromArray(
 							[
@@ -7589,12 +7543,10 @@ var $author$project$Main$viewDeleted = function (model) {
 								A2(
 									$elm$core$List$cons,
 									$elm$html$Html$Events$onClick($author$project$Main$ToggleSelectAll),
-									_Utils_ap(
-										$author$project$Main$actionBtnStyle('#e5e5e5'),
-										_List_fromArray(
-											[
-												A2($elm$html$Html$Attributes$style, 'color', '#555')
-											]))),
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('btn-gray')
+										])),
 								_List_fromArray(
 									[
 										$elm$html$Html$text('Select All')
@@ -7690,11 +7642,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'background', '#f0f0e0'),
-						A2($elm$html$Html$Attributes$style, 'padding', '15px'),
-						A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-						A2($elm$html$Html$Attributes$style, 'margin-bottom', '20px'),
-						A2($elm$html$Html$Attributes$style, 'border', '1px dashed #6B705C')
+						$elm$html$Html$Attributes$class('scraper')
 					]),
 				_List_fromArray(
 					[
@@ -7702,8 +7650,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 						$elm$html$Html$h4,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'margin-top', '0'),
-								A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
+								$elm$html$Html$Attributes$class('scraper-title')
 							]),
 						_List_fromArray(
 							[
@@ -7713,8 +7660,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-								A2($elm$html$Html$Attributes$style, 'gap', '10px')
+								$elm$html$Html$Attributes$class('scraper-row')
 							]),
 						_List_fromArray(
 							[
@@ -7725,11 +7671,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 										$elm$html$Html$Attributes$placeholder('Paste recipe URL here...'),
 										$elm$html$Html$Attributes$value(model.scrapeUrl),
 										$elm$html$Html$Events$onInput($author$project$Main$UpdateScrapeUrl),
-										A2($elm$html$Html$Attributes$style, 'flex', '3'),
-										A2($elm$html$Html$Attributes$style, 'padding', '12px'),
-										A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-										A2($elm$html$Html$Attributes$style, 'border', '1px solid #ccc'),
-										A2($elm$html$Html$Attributes$style, 'font-size', '16px')
+										$elm$html$Html$Attributes$class('scraper-input')
 									]),
 								_List_Nil),
 								A2(
@@ -7737,13 +7679,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$Events$onClick($author$project$Main$RunScrape),
-										A2($elm$html$Html$Attributes$style, 'flex', '1'),
-										A2($elm$html$Html$Attributes$style, 'background', '#6B705C'),
-										A2($elm$html$Html$Attributes$style, 'color', 'white'),
-										A2($elm$html$Html$Attributes$style, 'border', 'none'),
-										A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-										A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-										A2($elm$html$Html$Attributes$style, 'min-height', '44px')
+										$elm$html$Html$Attributes$class('scraper-btn')
 									]),
 								_List_fromArray(
 									[
@@ -7755,10 +7691,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'background', 'white'),
-						A2($elm$html$Html$Attributes$style, 'padding', '20px'),
-						A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-						A2($elm$html$Html$Attributes$style, 'box-shadow', '0 2px 10px rgba(0,0,0,0.1)')
+						$elm$html$Html$Attributes$class('card')
 					]),
 				_List_fromArray(
 					[
@@ -7766,9 +7699,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-								A2($elm$html$Html$Attributes$style, 'justify-content', 'space-between'),
-								A2($elm$html$Html$Attributes$style, 'align-items', 'center')
+								$elm$html$Html$Attributes$class('card-head')
 							]),
 						_List_fromArray(
 							[
@@ -7776,7 +7707,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 								$elm$html$Html$h2,
 								_List_fromArray(
 									[
-										A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
+										$elm$html$Html$Attributes$class('card-title')
 									]),
 								_List_fromArray(
 									[
@@ -7788,12 +7719,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$Events$onClick($author$project$Main$ClearForm),
-										A2($elm$html$Html$Attributes$style, 'background', 'none'),
-										A2($elm$html$Html$Attributes$style, 'border', 'none'),
-										A2($elm$html$Html$Attributes$style, 'color', '#a00'),
-										A2($elm$html$Html$Attributes$style, 'text-decoration', 'underline'),
-										A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-										A2($elm$html$Html$Attributes$style, 'font-size', '12px')
+										$elm$html$Html$Attributes$class('clear-btn')
 									]),
 								_List_fromArray(
 									[
@@ -7875,8 +7801,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-								A2($elm$html$Html$Attributes$style, 'gap', '10px')
+								$elm$html$Html$Attributes$class('form-row')
 							]),
 						_List_fromArray(
 							[
@@ -7885,13 +7810,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$Events$onClick($author$project$Main$SaveRecipe),
-										A2($elm$html$Html$Attributes$style, 'background', '#A5A58D'),
-										A2($elm$html$Html$Attributes$style, 'color', 'white'),
-										A2($elm$html$Html$Attributes$style, 'padding', '15px'),
-										A2($elm$html$Html$Attributes$style, 'flex', '2'),
-										A2($elm$html$Html$Attributes$style, 'border', 'none'),
-										A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-										A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
+										$elm$html$Html$Attributes$class('save-btn')
 									]),
 								_List_fromArray(
 									[
@@ -7902,13 +7821,7 @@ var $author$project$Main$viewEntryForm = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$Events$onClick($author$project$Main$CancelEdit),
-										A2($elm$html$Html$Attributes$style, 'background', '#e5e5e5'),
-										A2($elm$html$Html$Attributes$style, 'color', '#555'),
-										A2($elm$html$Html$Attributes$style, 'padding', '15px'),
-										A2($elm$html$Html$Attributes$style, 'flex', '1'),
-										A2($elm$html$Html$Attributes$style, 'border', 'none'),
-										A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-										A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
+										$elm$html$Html$Attributes$class('cancel-btn')
 									]),
 								_List_fromArray(
 									[
@@ -7998,7 +7911,7 @@ var $author$project$Main$linkifyFrom = F3(
 							[
 								$elm$html$Html$Attributes$href(url),
 								$elm$html$Html$Attributes$target('_blank'),
-								A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
+								$elm$html$Html$Attributes$class('link')
 							]),
 						_List_fromArray(
 							[
@@ -8030,7 +7943,7 @@ var $author$project$Main$renderNotes = function (notes) {
 					$elm$html$Html$p,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'margin', '4px 0')
+							$elm$html$Html$Attributes$class('note-line')
 						]),
 					$author$project$Main$linkify(line));
 			},
@@ -8068,10 +7981,7 @@ var $author$project$Main$viewReader = F2(
 			$elm$html$Html$div,
 			_List_fromArray(
 				[
-					A2($elm$html$Html$Attributes$style, 'background', 'white'),
-					A2($elm$html$Html$Attributes$style, 'padding', '20px'),
-					A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-					A2($elm$html$Html$Attributes$style, 'box-shadow', '0 4px 20px rgba(0,0,0,0.1)')
+					$elm$html$Html$Attributes$class('reader-card')
 				]),
 			_List_fromArray(
 				[
@@ -8079,12 +7989,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-							A2($elm$html$Html$Attributes$style, 'justify-content', 'space-between'),
-							A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
-							A2($elm$html$Html$Attributes$style, 'gap', '8px'),
-							A2($elm$html$Html$Attributes$style, 'flex-wrap', 'wrap'),
-							A2($elm$html$Html$Attributes$style, 'margin-bottom', '10px')
+							$elm$html$Html$Attributes$class('reader-head')
 						]),
 					_List_fromArray(
 						[
@@ -8094,13 +7999,7 @@ var $author$project$Main$viewReader = F2(
 								[
 									$elm$html$Html$Events$onClick(
 									$author$project$Main$SetView($author$project$Main$ListView)),
-									A2($elm$html$Html$Attributes$style, 'background', 'none'),
-									A2($elm$html$Html$Attributes$style, 'border', 'none'),
-									A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
-									A2($elm$html$Html$Attributes$style, 'font-size', '16px'),
-									A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-									A2($elm$html$Html$Attributes$style, 'padding', '10px 0'),
-									A2($elm$html$Html$Attributes$style, 'min-height', '44px')
+									$elm$html$Html$Attributes$class('back-btn')
 								]),
 							_List_fromArray(
 								[
@@ -8112,14 +8011,7 @@ var $author$project$Main$viewReader = F2(
 								[
 									$elm$html$Html$Events$onClick(
 									$author$project$Main$EditRecipe(recipe)),
-									A2($elm$html$Html$Attributes$style, 'background', '#d4a373'),
-									A2($elm$html$Html$Attributes$style, 'color', 'white'),
-									A2($elm$html$Html$Attributes$style, 'border', 'none'),
-									A2($elm$html$Html$Attributes$style, 'padding', '10px 16px'),
-									A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-									A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-									A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
-									A2($elm$html$Html$Attributes$style, 'min-height', '44px')
+									$elm$html$Html$Attributes$class('reader-edit-btn')
 								]),
 							_List_fromArray(
 								[
@@ -8130,8 +8022,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$h1,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
-							A2($elm$html$Html$Attributes$style, 'margin-bottom', '10px')
+							$elm$html$Html$Attributes$class('reader-title')
 						]),
 					_List_fromArray(
 						[
@@ -8141,9 +8032,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'font-style', 'italic'),
-							A2($elm$html$Html$Attributes$style, 'color', '#888'),
-							A2($elm$html$Html$Attributes$style, 'margin-bottom', '20px')
+							$elm$html$Html$Attributes$class('reader-tags')
 						]),
 					_List_fromArray(
 						[
@@ -8154,10 +8043,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-							A2($elm$html$Html$Attributes$style, 'gap', '8px'),
-							A2($elm$html$Html$Attributes$style, 'flex-wrap', 'wrap'),
-							A2($elm$html$Html$Attributes$style, 'margin-bottom', '15px')
+							$elm$html$Html$Attributes$class('scale-row')
 						]),
 					_List_fromArray(
 						[
@@ -8170,13 +8056,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'background', '#fff4e5'),
-							A2($elm$html$Html$Attributes$style, 'border', '2px solid #d4a373'),
-							A2($elm$html$Html$Attributes$style, 'padding', '12px'),
-							A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-							A2($elm$html$Html$Attributes$style, 'margin-bottom', '15px'),
-							A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
-							A2($elm$html$Html$Attributes$style, 'color', '#a05a00')
+							$elm$html$Html$Attributes$class('scale-banner')
 						]),
 					_List_fromArray(
 						[
@@ -8192,13 +8072,7 @@ var $author$project$Main$viewReader = F2(
 							_List_fromArray(
 								[
 									$elm$html$Html$Events$onClick($author$project$Main$ResetScale),
-									A2($elm$html$Html$Attributes$style, 'margin-left', '10px'),
-									A2($elm$html$Html$Attributes$style, 'background', 'none'),
-									A2($elm$html$Html$Attributes$style, 'border', 'none'),
-									A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
-									A2($elm$html$Html$Attributes$style, 'text-decoration', 'underline'),
-									A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-									A2($elm$html$Html$Attributes$style, 'font-size', '13px')
+									$elm$html$Html$Attributes$class('scale-reset')
 								]),
 							_List_fromArray(
 								[
@@ -8209,8 +8083,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$h3,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'border-bottom', '2px solid #A5A58D'),
-							A2($elm$html$Html$Attributes$style, 'padding-bottom', '5px')
+							$elm$html$Html$Attributes$class('section-heading')
 						]),
 					_List_fromArray(
 						[
@@ -8220,8 +8093,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$ul,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'line-height', '1.8'),
-							A2($elm$html$Html$Attributes$style, 'font-size', '18px')
+							$elm$html$Html$Attributes$class('ingredient-list')
 						]),
 					A2(
 						$elm$core$List$map,
@@ -8239,9 +8111,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$h3,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'border-bottom', '2px solid #A5A58D'),
-							A2($elm$html$Html$Attributes$style, 'padding-bottom', '5px'),
-							A2($elm$html$Html$Attributes$style, 'margin-top', '30px')
+							$elm$html$Html$Attributes$class('section-heading-spaced')
 						]),
 					_List_fromArray(
 						[
@@ -8251,8 +8121,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$ol,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'line-height', '1.6'),
-							A2($elm$html$Html$Attributes$style, 'font-size', '18px')
+							$elm$html$Html$Attributes$class('instruction-list')
 						]),
 					A2(
 						$elm$core$List$map,
@@ -8261,7 +8130,7 @@ var $author$project$Main$viewReader = F2(
 								$elm$html$Html$li,
 								_List_fromArray(
 									[
-										A2($elm$html$Html$Attributes$style, 'margin-bottom', '15px')
+										$elm$html$Html$Attributes$class('instruction-item')
 									]),
 								_List_fromArray(
 									[
@@ -8274,10 +8143,7 @@ var $author$project$Main$viewReader = F2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'margin-top', '30px'),
-							A2($elm$html$Html$Attributes$style, 'padding', '15px'),
-							A2($elm$html$Html$Attributes$style, 'background', '#f9f9f9'),
-							A2($elm$html$Html$Attributes$style, 'border-radius', '4px')
+							$elm$html$Html$Attributes$class('notes-box')
 						]),
 					_List_fromArray(
 						[
@@ -8285,7 +8151,7 @@ var $author$project$Main$viewReader = F2(
 							$elm$html$Html$h4,
 							_List_fromArray(
 								[
-									A2($elm$html$Html$Attributes$style, 'margin', '0 0 10px 0')
+									$elm$html$Html$Attributes$class('notes-heading')
 								]),
 							_List_fromArray(
 								[
@@ -8299,14 +8165,7 @@ var $author$project$Main$viewReader = F2(
 						[
 							$elm$html$Html$Events$onClick(
 							$author$project$Main$SetView($author$project$Main$ListView)),
-							A2($elm$html$Html$Attributes$style, 'margin-top', '30px'),
-							A2($elm$html$Html$Attributes$style, 'width', '100%'),
-							A2($elm$html$Html$Attributes$style, 'padding', '15px'),
-							A2($elm$html$Html$Attributes$style, 'background', '#6B705C'),
-							A2($elm$html$Html$Attributes$style, 'color', 'white'),
-							A2($elm$html$Html$Attributes$style, 'border', 'none'),
-							A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-							A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
+							$elm$html$Html$Attributes$class('done-btn')
 						]),
 					_List_fromArray(
 						[
@@ -8386,61 +8245,34 @@ var $author$project$Main$getDailyVerse = function (index) {
 		$elm$core$List$head(
 			A2($elm$core$List$drop, index, $author$project$Main$bibleVerses)));
 };
+var $author$project$Main$masterBtnClass = function (c) {
+	if (c === '#A5A58D') {
+		return 'master-muted';
+	} else {
+		return 'master-sage';
+	}
+};
 var $author$project$Main$masterBtnStyle = function (c) {
 	return _List_fromArray(
 		[
-			A2($elm$html$Html$Attributes$style, 'background', c),
-			A2($elm$html$Html$Attributes$style, 'color', 'white'),
-			A2($elm$html$Html$Attributes$style, 'text-decoration', 'none'),
-			A2($elm$html$Html$Attributes$style, 'padding', '14px'),
-			A2($elm$html$Html$Attributes$style, 'flex', '1'),
-			A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
-			A2($elm$html$Html$Attributes$style, 'border-radius', '8px'),
-			A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
-			A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
-			A2($elm$html$Html$Attributes$style, 'display', 'inline-flex'),
-			A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
-			A2($elm$html$Html$Attributes$style, 'justify-content', 'center'),
-			A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
-			A2($elm$html$Html$Attributes$style, 'line-height', '1')
+			$elm$html$Html$Attributes$class(
+			$author$project$Main$masterBtnClass(c))
 		]);
 };
 var $author$project$Main$searchStyle = _List_fromArray(
 	[
-		A2($elm$html$Html$Attributes$style, 'width', '100%'),
-		A2($elm$html$Html$Attributes$style, 'margin-bottom', '12px'),
-		A2($elm$html$Html$Attributes$style, 'padding', '12px 18px'),
-		A2($elm$html$Html$Attributes$style, 'border', '1px solid #ccc'),
-		A2($elm$html$Html$Attributes$style, 'border-radius', '24px'),
-		A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box'),
-		A2($elm$html$Html$Attributes$style, 'font-size', '16px'),
-		A2($elm$html$Html$Attributes$style, 'font-family', 'inherit')
+		$elm$html$Html$Attributes$class('search')
 	]);
 var $author$project$Main$tagChip = F3(
 	function (label, selected, msg) {
 		return A2(
 			$elm$html$Html$button,
-			_Utils_ap(
-				_List_fromArray(
-					[
-						$elm$html$Html$Events$onClick(msg),
-						A2($elm$html$Html$Attributes$style, 'border-radius', '20px'),
-						A2($elm$html$Html$Attributes$style, 'padding', '10px 16px'),
-						A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
-						A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-						A2($elm$html$Html$Attributes$style, 'border', '1px solid #6B705C'),
-						A2($elm$html$Html$Attributes$style, 'min-height', '44px'),
-						A2($elm$html$Html$Attributes$style, 'box-sizing', 'border-box')
-					]),
-				selected ? _List_fromArray(
-					[
-						A2($elm$html$Html$Attributes$style, 'background', '#6B705C'),
-						A2($elm$html$Html$Attributes$style, 'color', '#fff')
-					]) : _List_fromArray(
-					[
-						A2($elm$html$Html$Attributes$style, 'background', '#fff'),
-						A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
-					])),
+			_List_fromArray(
+				[
+					$elm$html$Html$Events$onClick(msg),
+					$elm$html$Html$Attributes$class(
+					'chip ' + (selected ? 'chip-selected' : 'chip-unselected'))
+				]),
 			_List_fromArray(
 				[
 					$elm$html$Html$text(label)
@@ -8466,12 +8298,7 @@ var $author$project$Main$viewRecipeCard = F2(
 			$elm$html$Html$div,
 			_List_fromArray(
 				[
-					A2($elm$html$Html$Attributes$style, 'background', 'white'),
-					A2($elm$html$Html$Attributes$style, 'padding', '15px'),
-					A2($elm$html$Html$Attributes$style, 'margin-bottom', '15px'),
-					A2($elm$html$Html$Attributes$style, 'border-left', '6px solid #6B705C'),
-					A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-					A2($elm$html$Html$Attributes$style, 'box-shadow', '0 1px 3px rgba(0,0,0,0.1)')
+					$elm$html$Html$Attributes$class('recipe-card')
 				]),
 			_List_fromArray(
 				[
@@ -8479,11 +8306,7 @@ var $author$project$Main$viewRecipeCard = F2(
 					$elm$html$Html$strong,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'font-size', '20px'),
-							A2($elm$html$Html$Attributes$style, 'display', 'block'),
-							A2($elm$html$Html$Attributes$style, 'cursor', 'pointer'),
-							A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
-							A2($elm$html$Html$Attributes$style, 'text-decoration', 'underline'),
+							$elm$html$Html$Attributes$class('recipe-title'),
 							$elm$html$Html$Events$onClick(
 							$author$project$Main$OpenReader(recipe))
 						]),
@@ -8495,9 +8318,7 @@ var $author$project$Main$viewRecipeCard = F2(
 					$elm$html$Html$p,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'font-size', '13px'),
-							A2($elm$html$Html$Attributes$style, 'color', '#777'),
-							A2($elm$html$Html$Attributes$style, 'margin', '5px 0')
+							$elm$html$Html$Attributes$class('recipe-tags')
 						]),
 					_List_fromArray(
 						[
@@ -8508,13 +8329,7 @@ var $author$project$Main$viewRecipeCard = F2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'background', '#fff0f0'),
-							A2($elm$html$Html$Attributes$style, 'padding', '10px'),
-							A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-							A2($elm$html$Html$Attributes$style, 'margin-top', '10px'),
-							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-							A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
-							A2($elm$html$Html$Attributes$style, 'justify-content', 'space-between')
+							$elm$html$Html$Attributes$class('confirm-bar')
 						]),
 					_List_fromArray(
 						[
@@ -8522,7 +8337,7 @@ var $author$project$Main$viewRecipeCard = F2(
 							$elm$html$Html$span,
 							_List_fromArray(
 								[
-									A2($elm$html$Html$Attributes$style, 'color', '#a00')
+									$elm$html$Html$Attributes$class('confirm-text')
 								]),
 							_List_fromArray(
 								[
@@ -8532,8 +8347,7 @@ var $author$project$Main$viewRecipeCard = F2(
 							$elm$html$Html$div,
 							_List_fromArray(
 								[
-									A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-									A2($elm$html$Html$Attributes$style, 'gap', '10px')
+									$elm$html$Html$Attributes$class('btn-row')
 								]),
 							_List_fromArray(
 								[
@@ -8543,12 +8357,7 @@ var $author$project$Main$viewRecipeCard = F2(
 										[
 											$elm$html$Html$Events$onClick(
 											$author$project$Main$ExecuteDelete(recipe.title)),
-											A2($elm$html$Html$Attributes$style, 'background', '#a00'),
-											A2($elm$html$Html$Attributes$style, 'color', 'white'),
-											A2($elm$html$Html$Attributes$style, 'border', 'none'),
-											A2($elm$html$Html$Attributes$style, 'padding', '5px 15px'),
-											A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-											A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
+											$elm$html$Html$Attributes$class('yes-btn')
 										]),
 									_List_fromArray(
 										[
@@ -8559,11 +8368,7 @@ var $author$project$Main$viewRecipeCard = F2(
 									_List_fromArray(
 										[
 											$elm$html$Html$Events$onClick($author$project$Main$CancelDelete),
-											A2($elm$html$Html$Attributes$style, 'background', '#ccc'),
-											A2($elm$html$Html$Attributes$style, 'border', 'none'),
-											A2($elm$html$Html$Attributes$style, 'padding', '5px 15px'),
-											A2($elm$html$Html$Attributes$style, 'border-radius', '4px'),
-											A2($elm$html$Html$Attributes$style, 'cursor', 'pointer')
+											$elm$html$Html$Attributes$class('no-btn')
 										]),
 									_List_fromArray(
 										[
@@ -8574,10 +8379,7 @@ var $author$project$Main$viewRecipeCard = F2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-							A2($elm$html$Html$Attributes$style, 'gap', '8px'),
-							A2($elm$html$Html$Attributes$style, 'margin-top', '10px'),
-							A2($elm$html$Html$Attributes$style, 'flex-wrap', 'wrap')
+							$elm$html$Html$Attributes$class('action-row')
 						]),
 					_List_fromArray(
 						[
@@ -8624,12 +8426,10 @@ var $author$project$Main$viewRecipeCard = F2(
 								$elm$core$List$cons,
 								$elm$html$Html$Events$onClick(
 									$author$project$Main$ConfirmDelete(recipe.title)),
-								_Utils_ap(
-									$author$project$Main$actionBtnStyle('#e5e5e5'),
-									_List_fromArray(
-										[
-											A2($elm$html$Html$Attributes$style, 'color', '#a00')
-										]))),
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('btn-danger-ghost')
+									])),
 							_List_fromArray(
 								[
 									$elm$html$Html$text('Delete')
@@ -8710,8 +8510,7 @@ var $author$project$Main$viewRecipeList = function (model) {
 				$elm$html$Html$h2,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
-						A2($elm$html$Html$Attributes$style, 'margin-bottom', '5px')
+						$elm$html$Html$Attributes$class('list-title')
 					]),
 				_List_fromArray(
 					[
@@ -8721,9 +8520,7 @@ var $author$project$Main$viewRecipeList = function (model) {
 				$elm$html$Html$p,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'color', '#888'),
-						A2($elm$html$Html$Attributes$style, 'font-size', '14px'),
-						A2($elm$html$Html$Attributes$style, 'margin-top', '0')
+						$elm$html$Html$Attributes$class('muted')
 					]),
 				_List_fromArray(
 					[
@@ -8733,12 +8530,7 @@ var $author$project$Main$viewRecipeList = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'margin-bottom', '25px'),
-						A2($elm$html$Html$Attributes$style, 'padding', '20px'),
-						A2($elm$html$Html$Attributes$style, 'background', '#fdfaf0'),
-						A2($elm$html$Html$Attributes$style, 'border-radius', '12px'),
-						A2($elm$html$Html$Attributes$style, 'border', '1px solid #e9e2d0'),
-						A2($elm$html$Html$Attributes$style, 'box-shadow', '0 2px 4px rgba(0,0,0,0.05)')
+						$elm$html$Html$Attributes$class('scripture')
 					]),
 				_List_fromArray(
 					[
@@ -8746,11 +8538,7 @@ var $author$project$Main$viewRecipeList = function (model) {
 						$elm$html$Html$p,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'font-style', 'italic'),
-								A2($elm$html$Html$Attributes$style, 'margin', '0'),
-								A2($elm$html$Html$Attributes$style, 'color', '#4a4a4a'),
-								A2($elm$html$Html$Attributes$style, 'line-height', '1.5'),
-								A2($elm$html$Html$Attributes$style, 'font-size', '16px')
+								$elm$html$Html$Attributes$class('scripture-text')
 							]),
 						_List_fromArray(
 							[
@@ -8760,11 +8548,7 @@ var $author$project$Main$viewRecipeList = function (model) {
 						$elm$html$Html$p,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'font-size', '13px'),
-								A2($elm$html$Html$Attributes$style, 'text-align', 'right'),
-								A2($elm$html$Html$Attributes$style, 'margin', '10px 0 0 0'),
-								A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
-								A2($elm$html$Html$Attributes$style, 'color', '#6B705C')
+								$elm$html$Html$Attributes$class('scripture-ref')
 							]),
 						_List_fromArray(
 							[
@@ -8788,10 +8572,7 @@ var $author$project$Main$viewRecipeList = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-						A2($elm$html$Html$Attributes$style, 'flex-wrap', 'wrap'),
-						A2($elm$html$Html$Attributes$style, 'gap', '8px'),
-						A2($elm$html$Html$Attributes$style, 'margin-bottom', '15px')
+						$elm$html$Html$Attributes$class('chip-row')
 					]),
 				A2(
 					$elm$core$List$cons,
@@ -8815,9 +8596,7 @@ var $author$project$Main$viewRecipeList = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'margin-bottom', '20px'),
-						A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-						A2($elm$html$Html$Attributes$style, 'gap', '10px')
+						$elm$html$Html$Attributes$class('cookbook-row')
 					]),
 				_List_fromArray(
 					[
@@ -8852,9 +8631,7 @@ var $author$project$Main$viewRecipeList = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
-						A2($elm$html$Html$Attributes$style, 'color', '#888'),
-						A2($elm$html$Html$Attributes$style, 'padding', '30px')
+						$elm$html$Html$Attributes$class('empty')
 					]),
 				_List_fromArray(
 					[
@@ -8873,9 +8650,7 @@ var $author$project$Main$view = function (model) {
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				A2($elm$html$Html$Attributes$style, 'background-color', '#FDF5E6'),
-				A2($elm$html$Html$Attributes$style, 'min-height', '100vh'),
-				A2($elm$html$Html$Attributes$style, 'font-family', 'serif')
+				$elm$html$Html$Attributes$class('page')
 			]),
 		_List_fromArray(
 			[
@@ -8883,17 +8658,7 @@ var $author$project$Main$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'background', '#6B705C'),
-						A2($elm$html$Html$Attributes$style, 'padding', '10px 16px'),
-						A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-						A2($elm$html$Html$Attributes$style, 'align-items', 'center'),
-						A2($elm$html$Html$Attributes$style, 'justify-content', 'space-between'),
-						A2($elm$html$Html$Attributes$style, 'flex-wrap', 'wrap'),
-						A2($elm$html$Html$Attributes$style, 'gap', '8px'),
-						A2($elm$html$Html$Attributes$style, 'position', 'sticky'),
-						A2($elm$html$Html$Attributes$style, 'top', '0'),
-						A2($elm$html$Html$Attributes$style, 'z-index', '10'),
-						A2($elm$html$Html$Attributes$style, 'box-shadow', '0 2px 5px rgba(0,0,0,0.2)')
+						$elm$html$Html$Attributes$class('appbar')
 					]),
 				_List_fromArray(
 					[
@@ -8901,9 +8666,7 @@ var $author$project$Main$view = function (model) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-								A2($elm$html$Html$Attributes$style, 'flex-direction', 'column'),
-								A2($elm$html$Html$Attributes$style, 'line-height', '1.15')
+								$elm$html$Html$Attributes$class('appbar-brand')
 							]),
 						_List_fromArray(
 							[
@@ -8911,9 +8674,7 @@ var $author$project$Main$view = function (model) {
 								$elm$html$Html$span,
 								_List_fromArray(
 									[
-										A2($elm$html$Html$Attributes$style, 'color', '#fff'),
-										A2($elm$html$Html$Attributes$style, 'font-weight', 'bold'),
-										A2($elm$html$Html$Attributes$style, 'font-size', '20px')
+										$elm$html$Html$Attributes$class('appbar-title')
 									]),
 								_List_fromArray(
 									[
@@ -8923,10 +8684,7 @@ var $author$project$Main$view = function (model) {
 								$elm$html$Html$span,
 								_List_fromArray(
 									[
-										A2($elm$html$Html$Attributes$style, 'color', '#fff'),
-										A2($elm$html$Html$Attributes$style, 'font-style', 'italic'),
-										A2($elm$html$Html$Attributes$style, 'font-size', '12px'),
-										A2($elm$html$Html$Attributes$style, 'opacity', '0.8')
+										$elm$html$Html$Attributes$class('appbar-subtitle')
 									]),
 								_List_fromArray(
 									[
@@ -8937,8 +8695,7 @@ var $author$project$Main$view = function (model) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'display', 'flex'),
-								A2($elm$html$Html$Attributes$style, 'gap', '8px')
+								$elm$html$Html$Attributes$class('appbar-nav')
 							]),
 						_List_fromArray(
 							[
@@ -8981,9 +8738,7 @@ var $author$project$Main$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'padding', '20px'),
-						A2($elm$html$Html$Attributes$style, 'max-width', '600px'),
-						A2($elm$html$Html$Attributes$style, 'margin', '0 auto')
+						$elm$html$Html$Attributes$class('container')
 					]),
 				_List_fromArray(
 					[
@@ -9005,9 +8760,7 @@ var $author$project$Main$view = function (model) {
 						$elm$html$Html$p,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$Attributes$style, 'text-align', 'center'),
-								A2($elm$html$Html$Attributes$style, 'color', '#6B705C'),
-								A2($elm$html$Html$Attributes$style, 'font-weight', 'bold')
+								$elm$html$Html$Attributes$class('status')
 							]),
 						_List_fromArray(
 							[

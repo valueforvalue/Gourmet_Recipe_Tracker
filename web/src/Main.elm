@@ -346,20 +346,20 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ style "background-color" "#FDF5E6", style "min-height" "100vh", style "font-family" "serif" ]
+    div [ class "page" ]
         [ -- APP BAR
-          div [ style "background" "#6B705C", style "padding" "10px 16px", style "display" "flex", style "align-items" "center", style "justify-content" "space-between", style "flex-wrap" "wrap", style "gap" "8px", style "position" "sticky", style "top" "0", style "z-index" "10", style "box-shadow" "0 2px 5px rgba(0,0,0,0.2)" ]
-            [ div [ style "display" "flex", style "flex-direction" "column", style "line-height" "1.15" ]
-                [ span [ style "color" "#fff", style "font-weight" "bold", style "font-size" "20px" ] [ text "Recipe Tracker" ]
-                , span [ style "color" "#fff", style "font-style" "italic", style "font-size" "12px", style "opacity" "0.8" ] [ text "Morris Family" ]
+          div [ class "appbar" ]
+            [ div [ class "appbar-brand" ]
+                [ span [ class "appbar-title" ] [ text "Recipe Tracker" ]
+                , span [ class "appbar-subtitle" ] [ text "Morris Family" ]
                 ]
-            , div [ style "display" "flex", style "gap" "8px" ]
+            , div [ class "appbar-nav" ]
                 [ button (onClick (SetView EntryView) :: navStyle) [ text "Add" ]
                 , button (onClick (SetView ListView) :: navStyle) [ text "Recipe Box" ]
                 , button (onClick (SetView DeletedView) :: navStyle) [ text "Deleted" ]
                 ]
             ]
-        , div [ style "padding" "20px", style "max-width" "600px", style "margin" "0 auto" ]
+        , div [ class "container" ]
             [ case model.currentView of
                 EntryView ->
                     viewEntryForm model
@@ -372,7 +372,7 @@ view model =
 
                 DeletedView ->
                     viewDeleted model
-            , p [ style "text-align" "center", style "color" "#6B705C", style "font-weight" "bold" ] [ text model.status ]
+            , p [ class "status" ] [ text model.status ]
             ]
         ]
 
@@ -381,17 +381,17 @@ viewEntryForm : Model -> Html Msg
 viewEntryForm model =
     div []
         [ -- SCRAPER SECTION
-          div [ style "background" "#f0f0e0", style "padding" "15px", style "border-radius" "8px", style "margin-bottom" "20px", style "border" "1px dashed #6B705C" ]
-            [ h4 [ style "margin-top" "0", style "color" "#6B705C" ] [ text "✨ Import from Web" ]
-            , div [ style "display" "flex", style "gap" "10px" ]
-                [ input [ placeholder "Paste recipe URL here...", value model.scrapeUrl, onInput UpdateScrapeUrl, style "flex" "3", style "padding" "12px", style "border-radius" "8px", style "border" "1px solid #ccc", style "font-size" "16px" ] []
-                , button [ onClick RunScrape, style "flex" "1", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "8px", style "cursor" "pointer", style "min-height" "44px" ] [ text "Import" ]
+          div [ class "scraper" ]
+            [ h4 [ class "scraper-title" ] [ text "✨ Import from Web" ]
+            , div [ class "scraper-row" ]
+                [ input [ placeholder "Paste recipe URL here...", value model.scrapeUrl, onInput UpdateScrapeUrl, class "scraper-input" ] []
+                , button [ onClick RunScrape, class "scraper-btn" ] [ text "Import" ]
                 ]
             ]
         , -- MANUAL ENTRY SECTION
-          div [ style "background" "white", style "padding" "20px", style "border-radius" "8px", style "box-shadow" "0 2px 10px rgba(0,0,0,0.1)" ]
-            [ div [ style "display" "flex", style "justify-content" "space-between", style "align-items" "center" ]
-                [ h2 [ style "color" "#6B705C" ]
+          div [ class "card" ]
+            [ div [ class "card-head" ]
+                [ h2 [ class "card-title" ]
                     [ text
                         (if String.startsWith "Editing" model.status then
                             "Edit Recipe"
@@ -400,17 +400,17 @@ viewEntryForm model =
                             "Morris Recipe Entry"
                         )
                     ]
-                , button [ onClick ClearForm, style "background" "none", style "border" "none", style "color" "#a00", style "text-decoration" "underline", style "cursor" "pointer", style "font-size" "12px" ] [ text "Clear All" ]
+                , button [ onClick ClearForm, class "clear-btn" ] [ text "Clear All" ]
                 ]
             , input (placeholder "Title" :: value model.title :: onInput UpdateTitle :: inputStyle) []
             , input (placeholder "Tags (e.g. Dinner, Beef, Slow Cooker)" :: value model.tags :: onInput UpdateTags :: inputStyle) []
             , textarea (placeholder "Ingredients (One per line)" :: rows 6 :: value model.ingredients :: onInput UpdateIngredients :: inputStyle) []
             , textarea (placeholder "Instructions (One per line)" :: rows 6 :: value model.instructions :: onInput UpdateInstructions :: inputStyle) []
             , input (placeholder "Notes" :: value model.notes :: onInput UpdateNotes :: inputStyle) []
-            , div [ style "display" "flex", style "gap" "10px" ]
-                [ button [ onClick SaveRecipe, style "background" "#A5A58D", style "color" "white", style "padding" "15px", style "flex" "2", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Save Recipe" ]
+            , div [ class "form-row" ]
+                [ button [ onClick SaveRecipe, class "save-btn" ] [ text "Save Recipe" ]
                 , if String.startsWith "Editing" model.status then
-                    button [ onClick CancelEdit, style "background" "#e5e5e5", style "color" "#555", style "padding" "15px", style "flex" "1", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Cancel" ]
+                    button [ onClick CancelEdit, class "cancel-btn" ] [ text "Cancel" ]
 
                   else
                     text ""
@@ -463,26 +463,26 @@ viewRecipeList model =
             getDailyVerse model.verseIndex
     in
     div []
-        [ h2 [ style "color" "#6B705C", style "margin-bottom" "5px" ] [ text "Morris Family Recipe Box" ]
-        , p [ style "color" "#888", style "font-size" "14px", style "margin-top" "0" ] [ text totalLabel ]
+        [ h2 [ class "list-title" ] [ text "Morris Family Recipe Box" ]
+        , p [ class "muted" ] [ text totalLabel ]
         , -- SCRIPTURE CARD
-          div [ style "margin-bottom" "25px", style "padding" "20px", style "background" "#fdfaf0", style "border-radius" "12px", style "border" "1px solid #e9e2d0", style "box-shadow" "0 2px 4px rgba(0,0,0,0.05)" ]
-            [ p [ style "font-style" "italic", style "margin" "0", style "color" "#4a4a4a", style "line-height" "1.5", style "font-size" "16px" ] [ text ("\"" ++ verse.text ++ "\"") ]
-            , p [ style "font-size" "13px", style "text-align" "right", style "margin" "10px 0 0 0", style "font-weight" "bold", style "color" "#6B705C" ] [ text verse.ref ]
+          div [ class "scripture" ]
+            [ p [ class "scripture-text" ] [ text ("\"" ++ verse.text ++ "\"") ]
+            , p [ class "scripture-ref" ] [ text verse.ref ]
             ]
         , input (placeholder "Search recipes..." :: value model.filterText :: onInput UpdateFilter :: searchStyle) []
         , -- CATEGORY FILTER CHIPS
-          div [ style "display" "flex", style "flex-wrap" "wrap", style "gap" "8px", style "margin-bottom" "15px" ]
+          div [ class "chip-row" ]
             (tagChip "All" (model.activeTag == "") (SetActiveTag "")
                 :: List.map (\t -> tagChip (t ++ " (" ++ String.fromInt (tagCount t) ++ ")") (model.activeTag == t) (SetActiveTag t)) allTags
             )
         , -- MASTER COOKBOOK BUTTONS
-          div [ style "margin-bottom" "20px", style "display" "flex", style "gap" "10px" ]
+          div [ class "cookbook-row" ]
             [ a (href "/api/export/cookbook?booklet=false" :: target "_blank" :: masterBtnStyle "#6B705C") [ text "Letter Cookbook" ]
             , a (href "/api/export/cookbook?booklet=true" :: target "_blank" :: masterBtnStyle "#A5A58D") [ text "Booklet Cookbook" ]
             ]
         , if List.isEmpty filteredRecipes then
-            div [ style "text-align" "center", style "color" "#888", style "padding" "30px" ] [ text "No recipes found." ]
+            div [ class "empty" ] [ text "No recipes found." ]
 
           else
             div [] (List.map (viewRecipeCard model.deletingTitle) filteredRecipes)
@@ -495,24 +495,24 @@ viewRecipeCard deletingTitle recipe =
         isDeleting =
             deletingTitle == Just recipe.title
     in
-    div [ style "background" "white", style "padding" "15px", style "margin-bottom" "15px", style "border-left" "6px solid #6B705C", style "border-radius" "4px", style "box-shadow" "0 1px 3px rgba(0,0,0,0.1)" ]
-        [ strong [ style "font-size" "20px", style "display" "block", style "cursor" "pointer", style "color" "#6B705C", style "text-decoration" "underline", onClick (OpenReader recipe) ] [ text recipe.title ]
-        , p [ style "font-size" "13px", style "color" "#777", style "margin" "5px 0" ] [ text (String.join ",  " recipe.tags) ]
+    div [ class "recipe-card" ]
+        [ strong [ class "recipe-title", onClick (OpenReader recipe) ] [ text recipe.title ]
+        , p [ class "recipe-tags" ] [ text (String.join ",  " recipe.tags) ]
         , if isDeleting then
-            div [ style "background" "#fff0f0", style "padding" "10px", style "border-radius" "4px", style "margin-top" "10px", style "display" "flex", style "align-items" "center", style "justify-content" "space-between" ]
-                [ span [ style "color" "#a00" ] [ text "Delete?" ]
-                , div [ style "display" "flex", style "gap" "10px" ]
-                    [ button [ onClick (ExecuteDelete recipe.title), style "background" "#a00", style "color" "white", style "border" "none", style "padding" "5px 15px", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Yes" ]
-                    , button [ onClick CancelDelete, style "background" "#ccc", style "border" "none", style "padding" "5px 15px", style "border-radius" "4px", style "cursor" "pointer" ] [ text "No" ]
+            div [ class "confirm-bar" ]
+                [ span [ class "confirm-text" ] [ text "Delete?" ]
+                , div [ class "btn-row" ]
+                    [ button [ onClick (ExecuteDelete recipe.title), class "yes-btn" ] [ text "Yes" ]
+                    , button [ onClick CancelDelete, class "no-btn" ] [ text "No" ]
                     ]
                 ]
 
           else
-            div [ style "display" "flex", style "gap" "8px", style "margin-top" "10px", style "flex-wrap" "wrap" ]
+            div [ class "action-row" ]
                 [ a (href ("/api/export/pdf?title=" ++ recipe.title ++ "&booklet=false") :: target "_blank" :: actionBtnStyle "#6B705C") [ text "Letter" ]
                 , a (href ("/api/export/pdf?title=" ++ recipe.title ++ "&booklet=true") :: target "_blank" :: actionBtnStyle "#A5A58D") [ text "Booklet" ]
                 , button (onClick (EditRecipe recipe) :: actionBtnStyle "#d4a373") [ text "Edit" ]
-                , button (onClick (ConfirmDelete recipe.title) :: actionBtnStyle "#e5e5e5" ++ [ style "color" "#a00" ]) [ text "Delete" ]
+                , button (onClick (ConfirmDelete recipe.title) :: [ class "btn-danger-ghost" ]) [ text "Delete" ]
                 ]
         ]
 
@@ -526,38 +526,38 @@ viewReader model recipe =
         scaled =
             model.scaled /= Nothing
     in
-    div [ style "background" "white", style "padding" "20px", style "border-radius" "8px", style "box-shadow" "0 4px 20px rgba(0,0,0,0.1)" ]
-        [ div [ style "display" "flex", style "justify-content" "space-between", style "align-items" "center", style "gap" "8px", style "flex-wrap" "wrap", style "margin-bottom" "10px" ]
-            [ button [ onClick (SetView ListView), style "background" "none", style "border" "none", style "color" "#6B705C", style "font-size" "16px", style "cursor" "pointer", style "padding" "10px 0", style "min-height" "44px" ] [ text "← Back" ]
-            , button [ onClick (EditRecipe recipe), style "background" "#d4a373", style "color" "white", style "border" "none", style "padding" "10px 16px", style "border-radius" "8px", style "cursor" "pointer", style "font-size" "14px", style "min-height" "44px" ] [ text "Edit" ]
+    div [ class "reader-card" ]
+        [ div [ class "reader-head" ]
+            [ button [ onClick (SetView ListView), class "back-btn" ] [ text "← Back" ]
+            , button [ onClick (EditRecipe recipe), class "reader-edit-btn" ] [ text "Edit" ]
             ]
-        , h1 [ style "color" "#6B705C", style "margin-bottom" "10px" ] [ text display.title ]
-        , div [ style "font-style" "italic", style "color" "#888", style "margin-bottom" "20px" ] [ text (String.join ",  " display.tags) ]
-        , div [ style "display" "flex", style "gap" "8px", style "flex-wrap" "wrap", style "margin-bottom" "15px" ]
+        , h1 [ class "reader-title" ] [ text display.title ]
+        , div [ class "reader-tags" ] [ text (String.join ",  " display.tags) ]
+        , div [ class "scale-row" ]
             [ scaleButton model "½×" "0.5"
             , scaleButton model "1×" "1"
             , scaleButton model "2×" "2"
             , scaleButton model "3×" "3"
             ]
         , if scaled then
-            div [ style "background" "#fff4e5", style "border" "2px solid #d4a373", style "padding" "12px", style "border-radius" "8px", style "margin-bottom" "15px", style "font-weight" "bold", style "color" "#a05a00" ]
+            div [ class "scale-banner" ]
                 [ span [] [ text ("⚠ ×" ++ model.scaleFactor ++ " — temporarily scaled") ]
-                , button [ onClick ResetScale, style "margin-left" "10px", style "background" "none", style "border" "none", style "color" "#6B705C", style "text-decoration" "underline", style "cursor" "pointer", style "font-size" "13px" ] [ text "Reset" ]
+                , button [ onClick ResetScale, class "scale-reset" ] [ text "Reset" ]
                 ]
 
           else
             text ""
-        , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px" ] [ text "Ingredients" ]
-        , ul [ style "line-height" "1.8", style "font-size" "18px" ] (List.map (\ing -> li [] [ text ing ]) display.ingredients)
-        , h3 [ style "border-bottom" "2px solid #A5A58D", style "padding-bottom" "5px", style "margin-top" "30px" ] [ text "Instructions" ]
-        , ol [ style "line-height" "1.6", style "font-size" "18px" ] (List.map (\inst -> li [ style "margin-bottom" "15px" ] [ text (cleanInstruction inst) ]) display.instructions)
+        , h3 [ class "section-heading" ] [ text "Ingredients" ]
+        , ul [ class "ingredient-list" ] (List.map (\ing -> li [] [ text ing ]) display.ingredients)
+        , h3 [ class "section-heading-spaced" ] [ text "Instructions" ]
+        , ol [ class "instruction-list" ] (List.map (\inst -> li [ class "instruction-item" ] [ text (cleanInstruction inst) ]) display.instructions)
         , if String.isEmpty display.notes then
             text ""
 
           else
-            div [ style "margin-top" "30px", style "padding" "15px", style "background" "#f9f9f9", style "border-radius" "4px" ]
-                [ h4 [ style "margin" "0 0 10px 0" ] [ text "Notes" ], renderNotes display.notes ]
-        , button [ onClick (SetView ListView), style "margin-top" "30px", style "width" "100%", style "padding" "15px", style "background" "#6B705C", style "color" "white", style "border" "none", style "border-radius" "4px", style "cursor" "pointer" ] [ text "Done Reading" ]
+            div [ class "notes-box" ]
+                [ h4 [ class "notes-heading" ] [ text "Notes" ], renderNotes display.notes ]
+        , button [ onClick (SetView ListView), class "done-btn" ] [ text "Done Reading" ]
         ]
 
 
@@ -569,15 +569,15 @@ viewDeleted model =
             List.length model.selectedDeleted
     in
     div []
-        [ h2 [ style "color" "#6B705C", style "margin-bottom" "5px" ] [ text "Deleted Recipes" ]
-        , p [ style "color" "#888", style "font-size" "14px", style "margin-top" "0" ] [ text "Restore to bring a recipe back, or purge to remove it permanently." ]
+        [ h2 [ class "list-title" ] [ text "Deleted Recipes" ]
+        , p [ class "muted" ] [ text "Restore to bring a recipe back, or purge to remove it permanently." ]
         , if List.isEmpty model.deleted then
-            div [ style "text-align" "center", style "color" "#888", style "padding" "30px" ] [ text "No deleted recipes." ]
+            div [ class "empty" ] [ text "No deleted recipes." ]
 
           else
             div []
-                [ div [ style "display" "flex", style "gap" "8px", style "flex-wrap" "wrap", style "margin-bottom" "15px" ]
-                    [ button (onClick ToggleSelectAll :: actionBtnStyle "#e5e5e5" ++ [ style "color" "#555" ]) [ text "Select All" ]
+                [ div [ class "toolbar-row" ]
+                    [ button (onClick ToggleSelectAll :: [ class "btn-gray" ]) [ text "Select All" ]
                     , button (disabled (selectedCount == 0) :: onClick RestoreSelected :: actionBtnStyle "#6B705C") [ text ("Restore (" ++ String.fromInt selectedCount ++ ")") ]
                     , button (disabled (selectedCount == 0) :: onClick (StartPurge PurgeSelected) :: actionBtnStyle "#a00") [ text "Delete Forever" ]
                     , button (onClick (StartPurge PurgeAll) :: actionBtnStyle "#a00") [ text "Purge All" ]
@@ -590,12 +590,12 @@ viewDeleted model =
 
 viewDeletedCard : List String -> Recipe -> Html Msg
 viewDeletedCard selected recipe =
-    div [ style "background" "white", style "padding" "12px 15px", style "margin-bottom" "12px", style "border-left" "6px solid #a00", style "border-radius" "4px", style "box-shadow" "0 1px 3px rgba(0,0,0,0.1)" ]
-        [ label [ style "display" "flex", style "align-items" "center", style "gap" "10px", style "cursor" "pointer" ]
+    div [ class "deleted-card" ]
+        [ label [ class "deleted-label" ]
             [ input [ type_ "checkbox", checked (List.member recipe.title selected), onCheck (\_ -> ToggleDeletedSelect recipe.title) ] []
             , div []
-                [ strong [ style "font-size" "18px", style "color" "#6B705C" ] [ text recipe.title ]
-                , p [ style "font-size" "13px", style "color" "#777", style "margin" "4px 0 0 0" ] [ text (String.join ",  " recipe.tags) ]
+                [ strong [ class "deleted-title" ] [ text recipe.title ]
+                , p [ class "deleted-tags" ] [ text (String.join ",  " recipe.tags) ]
                 ]
             ]
         ]
@@ -620,12 +620,12 @@ viewPurgeConfirm model =
                 confirmed =
                     model.purgeConfirm == "yesdeary"
             in
-            div [ style "background" "#fff0f0", style "padding" "15px", style "border-radius" "8px", style "border" "1px solid #a00", style "margin-top" "15px" ]
-                [ p [ style "color" "#a00", style "font-weight" "bold", style "margin-top" "0" ] [ text ("This permanently deletes " ++ target ++ ". Type \"yesdeary\" to confirm.") ]
+            div [ class "purge-box" ]
+                [ p [ class "purge-warning" ] [ text ("This permanently deletes " ++ target ++ ". Type \"yesdeary\" to confirm.") ]
                 , input (placeholder "yesdeary" :: value model.purgeConfirm :: onInput UpdatePurgeConfirm :: inputStyle) []
-                , div [ style "display" "flex", style "gap" "10px" ]
+                , div [ class "btn-row" ]
                     [ button (disabled (not confirmed) :: onClick ConfirmPurge :: actionBtnStyle "#a00") [ text "Permanently Delete" ]
-                    , button (onClick CancelPurge :: actionBtnStyle "#e5e5e5" ++ [ style "color" "#555" ]) [ text "Cancel" ]
+                    , button (onClick CancelPurge :: [ class "btn-gray" ]) [ text "Cancel" ]
                     ]
                 ]
 
@@ -698,7 +698,7 @@ linkifyFrom str cursor matches =
                     m.index + String.length url
             in
             [ text (String.slice cursor m.index str)
-            , a [ href url, target "_blank", style "color" "#6B705C" ] [ text url ]
+            , a [ href url, target "_blank", class "link" ] [ text url ]
             ]
                 ++ linkifyFrom str nextCursor rest
 
@@ -709,7 +709,7 @@ renderNotes notes =
         (notes
             |> String.split "\n"
             |> List.filter (\line -> String.trim line /= "")
-            |> List.map (\line -> p [ style "margin" "4px 0" ] (linkify line))
+            |> List.map (\line -> p [ class "note-line" ] (linkify line))
         )
 
 
@@ -785,45 +785,56 @@ purgeAllRequest =
 
 
 inputStyle =
-    [ style "width" "100%", style "margin-bottom" "12px", style "padding" "12px 14px", style "border" "1px solid #ccc", style "border-radius" "10px", style "box-sizing" "border-box", style "font-size" "16px", style "font-family" "inherit" ]
+    [ class "input" ]
 
 
 searchStyle =
-    [ style "width" "100%", style "margin-bottom" "12px", style "padding" "12px 18px", style "border" "1px solid #ccc", style "border-radius" "24px", style "box-sizing" "border-box", style "font-size" "16px", style "font-family" "inherit" ]
+    [ class "search" ]
 
 
+actionBtnClass : String -> String
+actionBtnClass c =
+    case c of
+        "#A5A58D" ->
+            "btn-muted"
+
+        "#d4a373" ->
+            "btn-tan"
+
+        "#a00" ->
+            "btn-red"
+
+        _ ->
+            "btn-sage"
+
+
+actionBtnStyle : String -> List (Attribute Msg)
 actionBtnStyle c =
-    [ style "background" c, style "border" "none", style "padding" "12px 16px", style "border-radius" "8px", style "cursor" "pointer", style "color" "white", style "text-decoration" "none", style "text-align" "center", style "font-size" "14px", style "min-height" "44px", style "display" "inline-flex", style "align-items" "center", style "justify-content" "center", style "box-sizing" "border-box", style "line-height" "1" ]
+    [ class (actionBtnClass c) ]
 
 
+masterBtnClass : String -> String
+masterBtnClass c =
+    case c of
+        "#A5A58D" ->
+            "master-muted"
+
+        _ ->
+            "master-sage"
+
+
+masterBtnStyle : String -> List (Attribute Msg)
 masterBtnStyle c =
-    [ style "background" c, style "color" "white", style "text-decoration" "none", style "padding" "14px", style "flex" "1", style "text-align" "center", style "border-radius" "8px", style "font-size" "14px", style "min-height" "44px", style "display" "inline-flex", style "align-items" "center", style "justify-content" "center", style "box-sizing" "border-box", style "line-height" "1" ]
+    [ class (masterBtnClass c) ]
 
 
 navStyle =
-    [ style "background" "rgba(255,255,255,0.15)", style "border" "1px solid rgba(255,255,255,0.35)", style "color" "white", style "font-size" "15px", style "cursor" "pointer", style "font-weight" "bold", style "padding" "10px 16px", style "border-radius" "20px", style "min-height" "44px", style "box-sizing" "border-box" ]
+    [ class "nav-btn" ]
 
 
 tagChip : String -> Bool -> Msg -> Html Msg
 tagChip label selected msg =
-    button
-        ([ onClick msg
-         , style "border-radius" "20px"
-         , style "padding" "10px 16px"
-         , style "font-size" "14px"
-         , style "cursor" "pointer"
-         , style "border" "1px solid #6B705C"
-         , style "min-height" "44px"
-         , style "box-sizing" "border-box"
-         ]
-            ++ (if selected then
-                    [ style "background" "#6B705C", style "color" "#fff" ]
-
-                else
-                    [ style "background" "#fff", style "color" "#6B705C" ]
-               )
-        )
-        [ text label ]
+    button [ onClick msg, class ("chip " ++ (if selected then "chip-selected" else "chip-unselected")) ] [ text label ]
 
 
 
