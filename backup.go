@@ -1,17 +1,29 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 // snapshotFileName is the JSON snapshot written to the vault after every
 // mutation. It is the primary import path for crash recovery.
 const snapshotFileName = "recipes.json"
+
+// Snapshot is the on-disk shape of recipes.json: the full active library plus
+// provenance (app version, schema version, export time) so a backup can be
+// traced back to the build that produced it.
+type Snapshot struct {
+	AppVersion    string   `json:"app_version"`
+	SchemaVersion int      `json:"schema_version"`
+	ExportedAt    string   `json:"exported_at"`
+	Recipes       []Recipe `json:"recipes"`
+}
 
 // snapshotMu serializes snapshot writes so concurrent request handlers cannot
 // interleave a temp-file write with its rename.
@@ -24,7 +36,13 @@ func writeSnapshot(dir string, db *sql.DB) error {
 	if err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(recipes, "", "  ")
+	snap := Snapshot{
+		AppVersion:    Version,
+		SchemaVersion: SchemaVersion,
+		ExportedAt:    time.Now().Format(time.RFC3339),
+		Recipes:       recipes,
+	}
+	data, err := json.MarshalIndent(snap, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -66,10 +84,21 @@ func ImportFromJSON(path string, db *sql.DB) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	var recipes []Recipe
-	if err := json.Unmarshal(data, &recipes); err != nil {
-		return 0, fmt.Errorf("parse %s: %w", path, err)
+	if trimmed := bytes.TrimSpace(data); len(trimmed) > 0 && trimmed[0] == '[' {
+		// Legacy snapshot: a bare recipe array with no provenance fields.
+		if err := json.Unmarshal(data, &recipes); err != nil {
+			return 0, fmt.Errorf("parse %s: %w", path, err)
+		}
+	} else {
+		var snap Snapshot
+		if err := json.Unmarshal(data, &snap); err != nil {
+			return 0, fmt.Errorf("parse %s: %w", path, err)
+		}
+		recipes = snap.Recipes
 	}
+
 	for _, r := range recipes {
 		if err := saveRecipeDB(db, r); err != nil {
 			return 0, fmt.Errorf("import %q: %w", r.Title, err)

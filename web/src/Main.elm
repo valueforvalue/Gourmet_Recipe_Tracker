@@ -366,6 +366,7 @@ view model =
                 [ button (onClick (SetView EntryView) :: navStyle) [ text "Add" ]
                 , button (onClick (SetView ListView) :: navStyle) [ text "Recipe Box" ]
                 , button (onClick (SetView DeletedView) :: navStyle) [ text "Deleted" ]
+                , a (href "https://submit-form.com/SftusnkmF" :: target "_blank" :: rel "noopener" :: navStyle) [ text "Feedback" ]
                 ]
             ]
         , div [ class "container" ]

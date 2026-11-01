@@ -26,12 +26,21 @@ func TestWriteSnapshotRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []Recipe
+	var got Snapshot
 	if err := json.Unmarshal(data, &got); err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 2 {
-		t.Errorf("snapshot has %d recipes, want 2", len(got))
+	if len(got.Recipes) != 2 {
+		t.Errorf("snapshot has %d recipes, want 2", len(got.Recipes))
+	}
+	if got.AppVersion != Version {
+		t.Errorf("app_version = %q, want %q", got.AppVersion, Version)
+	}
+	if got.SchemaVersion != SchemaVersion {
+		t.Errorf("schema_version = %d, want %d", got.SchemaVersion, SchemaVersion)
+	}
+	if got.ExportedAt == "" {
+		t.Error("exported_at should be set")
 	}
 }
 
@@ -73,6 +82,33 @@ func TestImportFromJSONMalformed(t *testing.T) {
 	}
 	if _, err := ImportFromJSON(path, db); err == nil {
 		t.Error("ImportFromJSON should fail on malformed JSON")
+	}
+}
+
+func TestImportFromJSONSnapshotObject(t *testing.T) {
+	GlobalConfig.GitSync = false
+	db := newSoftDeleteTestDB(t)
+
+	snap := Snapshot{
+		AppVersion:    "test-version",
+		SchemaVersion: SchemaVersion,
+		Recipes:       []Recipe{{Title: "Obj A"}, {Title: "Obj B"}},
+	}
+	data, err := json.Marshal(snap)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "recipes.json")
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	n, err := ImportFromJSON(path, db)
+	if err != nil {
+		t.Fatalf("ImportFromJSON: %v", err)
+	}
+	if n != 2 {
+		t.Errorf("imported %d, want 2", n)
 	}
 }
 

@@ -7345,6 +7345,7 @@ var $author$project$Main$update = F2(
 var $author$project$Main$SetView = function (a) {
 	return {$: 'SetView', a: a};
 };
+var $elm$html$Html$a = _VirtualDom_node('a');
 var $elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {
 		return A2(
@@ -7363,6 +7364,12 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
 var $author$project$Main$navStyle = _List_fromArray(
 	[
 		$elm$html$Html$Attributes$class('nav-btn')
@@ -7385,6 +7392,7 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		$elm$json$Json$Decode$succeed(msg));
 };
 var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$html$Html$Attributes$rel = _VirtualDom_attribute('rel');
 var $author$project$Main$seasonToString = function (season) {
 	switch (season.$) {
 		case 'Spring':
@@ -7398,6 +7406,7 @@ var $author$project$Main$seasonToString = function (season) {
 	}
 };
 var $elm$html$Html$span = _VirtualDom_node('span');
+var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $author$project$Main$PurgeAll = {$: 'PurgeAll'};
@@ -8028,14 +8037,6 @@ var $elm$html$Html$h3 = _VirtualDom_node('h3');
 var $elm$html$Html$li = _VirtualDom_node('li');
 var $elm$html$Html$ol = _VirtualDom_node('ol');
 var $elm$regex$Regex$find = _Regex_findAtMost(_Regex_infinity);
-var $elm$html$Html$a = _VirtualDom_node('a');
-var $elm$html$Html$Attributes$href = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'href',
-		_VirtualDom_noJavaScriptUri(url));
-};
-var $elm$html$Html$Attributes$target = $elm$html$Html$Attributes$stringProperty('target');
 var $author$project$Main$linkifyFrom = F3(
 	function (str, cursor, matches) {
 		if (!matches.b) {
@@ -8888,6 +8889,22 @@ var $author$project$Main$view = function (model) {
 								_List_fromArray(
 									[
 										$elm$html$Html$text('Deleted')
+									])),
+								A2(
+								$elm$html$Html$a,
+								A2(
+									$elm$core$List$cons,
+									$elm$html$Html$Attributes$href('https://submit-form.com/SftusnkmF'),
+									A2(
+										$elm$core$List$cons,
+										$elm$html$Html$Attributes$target('_blank'),
+										A2(
+											$elm$core$List$cons,
+											$elm$html$Html$Attributes$rel('noopener'),
+											$author$project$Main$navStyle))),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Feedback')
 									]))
 							]))
 					])),

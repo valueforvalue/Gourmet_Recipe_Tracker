@@ -12,6 +12,11 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// SchemaVersion is the SQLite schema version. It is stored in the database via
+// PRAGMA user_version and stamped into backups and logs so a DB or snapshot can
+// be matched to the code that produced it.
+const SchemaVersion = 1
+
 // --- CONFIGURATION ---
 
 // InitConfig prepares the git-backed vault when GitSync is enabled: it
@@ -85,6 +90,12 @@ func InitDB(dbPath string) (*sql.DB, error) {
 	_, err = db.Exec(query)
 	if err != nil {
 		return nil, err
+	}
+
+	// Record the schema version so backups and logs can reference it.
+	if _, err := db.Exec(fmt.Sprintf("PRAGMA user_version = %d", SchemaVersion)); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("set schema version: %w", err)
 	}
 
 	// Normalize existing titles to fix legacy data issues

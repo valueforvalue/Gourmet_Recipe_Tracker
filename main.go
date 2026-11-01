@@ -26,7 +26,9 @@ import (
 )
 
 // Version is the build version reported by -version and the startup banner.
-var Version = "4.1-SystemOverhaul"
+// It defaults to "dev" and is stamped at build time via
+// -ldflags "-X main.Version=<version>" (see Justfile build/release).
+var Version = "dev"
 
 // purgeConfirmWord is the exact phrase a client must echo to authorize a
 // permanent (hard) delete.
@@ -167,7 +169,7 @@ func main() {
 	flag.Parse()
 
 	if *versionFlag {
-		fmt.Printf("Morris Family Recipe Tracker v%s\n", Version)
+		fmt.Printf("Morris Family Recipe Tracker v%s (schema v%d)\n", Version, SchemaVersion)
 		return
 	}
 
@@ -260,7 +262,7 @@ func main() {
 	}
 
 	logInfo("-----------------------------------------------")
-	logInfo("Morris Family Recipe Tracker v%s", Version)
+	logInfo("Morris Family Recipe Tracker v%s (schema v%d)", Version, SchemaVersion)
 	if GlobalConfig.GitSync {
 		logInfo("git sync enabled (target: %s)", GlobalConfig.BackupPath)
 	} else {

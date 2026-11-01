@@ -142,6 +142,10 @@
   border-radius: 20px;
   min-height: 44px;
   box-sizing: border-box;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ---------- Scraper ---------- */

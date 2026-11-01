@@ -58,6 +58,12 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Seasonal color themes for the web UI: spring / summer / autumn / winter
   palettes applied via CSS custom properties, with Elm setting `data-theme`
   from the current month (northern-hemisphere astronomical seasons).
+- Version + schema provenance: a `VERSION` file and Justfile `-ldflags` stamp
+  the build version into the exe; `SchemaVersion` is stored in SQLite via
+  `PRAGMA user_version`; both are tagged in `recipes.json`
+  (`app_version` / `schema_version` / `exported_at`) and in the startup log.
+  (Regression: `TestWriteSnapshotRoundTrip`, `TestImportFromJSONSnapshotObject`)
+- Web app bar gains a "Feedback" link that opens the submit-form endpoint.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
