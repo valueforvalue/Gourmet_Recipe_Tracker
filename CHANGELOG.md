@@ -88,6 +88,20 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Empty collections (`/api/recipes`, `/api/deleted`) now JSON-encode as `[]`
   instead of `null` when there are no rows. (Regression:
   `TestEmptyCollectionsAreNonNil`)
+- Git vault sync now commits before pulling, so `git pull --rebase` runs on a
+  clean tree instead of always failing with "You have unstaged changes".
+  `git add`/`commit` are serialized against the snapshot write, fixing the
+  "short read while indexing recipes.json" race.
+- Git vault sync resolves the checked-out branch instead of hardcoding
+  `master`, so fresh repos on `main` sync correctly. (Regression:
+  `TestGitCurrentBranch`)
+- `git_remote_url` is now authoritative: a stale vault `origin` (e.g. a
+  deleted repo) is redirected with `git remote set-url`, so config.json
+  recovers the push target. (Regression: `TestEnsureRemote`)
+- A permanently unreachable remote (deleted repo, bad credentials) now cools
+  down network sync for a minute instead of spamming the log on every save;
+  local sidecar writes and commits still happen. (Regression:
+  `TestIsPermanentPushError`, `TestSyncBackoff`)
 
 ### Maintenance
 - Documented every exported identifier with `Name — contract` doc comments

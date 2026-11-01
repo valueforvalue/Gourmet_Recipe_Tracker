@@ -31,15 +31,18 @@ func InitConfig() {
 			exec.Command("git", "-C", GlobalConfig.BackupPath, "init").Run()
 		}
 
-		// Automatically link remote if provided and not already linked
+		// Link the configured remote authoritatively: if origin is missing it is
+		// added, and if it points elsewhere (e.g. a stale test repo) it is
+		// redirected to the configured URL. config.json's git_remote_url is the
+		// single source of truth for where backups are pushed.
 		if GlobalConfig.GitRemoteURL != "" {
-			// Check if origin already exists
-			out, _ := exec.Command("git", "-C", GlobalConfig.BackupPath, "remote").Output()
-			if !strings.Contains(string(out), "origin") {
-				logInfo("git: linking to remote %s", GlobalConfig.GitRemoteURL)
-				exec.Command("git", "-C", GlobalConfig.BackupPath, "remote", "add", "origin", GlobalConfig.GitRemoteURL).Run()
-				// Initial pull to sync with existing remote data if any
-				exec.Command("git", "-C", GlobalConfig.BackupPath, "pull", "origin", "master").Run()
+			if err := ensureRemote(GlobalConfig.BackupPath, GlobalConfig.GitRemoteURL); err != nil {
+				logWarn("git: %v", err)
+			} else if branch, err := gitCurrentBranch(GlobalConfig.BackupPath); err == nil {
+				// Initial pull to sync with any existing remote data.
+				if err := gitPull(GlobalConfig.BackupPath, branch); err != nil {
+					logWarn("git: initial pull: %v", err)
+				}
 			}
 		}
 	}

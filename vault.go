@@ -221,12 +221,69 @@ func recoverTask(name string, fn func() error) (err error) {
 	return fn()
 }
 
+// syncBackoffDuration is how long network sync (pull/push) is skipped after a
+// permanent remote failure (e.g. the remote repository was deleted). It is a
+// var so tests can shrink it.
+var syncBackoffDuration = time.Minute
+
+// syncBackoffMu guards syncBackoffUntil.
+var syncBackoffMu sync.Mutex
+
+// syncBackoffUntil is the earliest time network sync should be retried.
+var syncBackoffUntil time.Time
+
+// syncNetworkReady reports whether a pull/push should be attempted now. It is
+// false during the cooldown after a permanent remote failure.
+func syncNetworkReady() bool {
+	syncBackoffMu.Lock()
+	defer syncBackoffMu.Unlock()
+	return !time.Now().Before(syncBackoffUntil)
+}
+
+// markSyncBackoff starts a cooldown so the worker stops hammering a remote
+// that is permanently unreachable (missing repo, bad credentials). Local
+// sidecar writes and commits still happen; only the network hop is deferred.
+func markSyncBackoff() {
+	syncBackoffMu.Lock()
+	defer syncBackoffMu.Unlock()
+	syncBackoffUntil = time.Now().Add(syncBackoffDuration)
+}
+
+// isPermanentPushError reports whether a push error will not resolve on its
+// own (missing/deleted remote, bad credentials, not a git repository), as
+// opposed to a transient network hiccup worth retrying.
+func isPermanentPushError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	for _, marker := range []string{
+		"Repository not found",
+		"fatal: repository",
+		"does not appear to be a git repository",
+		"could not read from remote repository",
+		"remote: Not Found",
+		"Authentication failed",
+		"access denied",
+		"could not read Username",
+	} {
+		if strings.Contains(msg, marker) {
+			return true
+		}
+	}
+	return false
+}
+
 func processSyncTask(task SyncTask) error {
 	dir := vaultDir()
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
 	if err := ensureGitIdentity(dir); err != nil {
+		return err
+	}
+	branch, err := gitCurrentBranch(dir)
+	if err != nil {
 		return err
 	}
 
@@ -246,12 +303,29 @@ func processSyncTask(task SyncTask) error {
 		return fmt.Errorf("unknown sync op %q", task.Op)
 	}
 
-	// Rebase onto the remote before pushing so a remote that moved ahead does
-	// not cause a hard push failure.
-	if err := gitPull(dir); err != nil {
+	// Commit locally first: SyncSnapshot already dirtied the tree with
+	// recipes.json, and this task's sidecar write adds to it. Committing before
+	// pulling leaves a clean tree so `git pull --rebase` can run (it refuses on
+	// unstaged changes).
+	if err := gitCommit(dir, task.Op, task.Title); err != nil {
+		return err
+	}
+
+	if !syncNetworkReady() {
+		logWarn("sync: push skipped (remote unavailable, cooling down)")
+		return nil
+	}
+	if err := gitPull(dir, branch); err != nil {
 		logWarn("sync: pull: %v", err)
 	}
-	return gitAddCommitPush(dir, task.Op, task.Title)
+	if err := gitPush(dir, branch); err != nil {
+		if isPermanentPushError(err) {
+			markSyncBackoff()
+		}
+		return err
+	}
+	logInfo("git: %s vaulted", task.Title)
+	return nil
 }
 
 // ensureGitIdentity sets a local identity in the vault repo when neither a
@@ -276,15 +350,59 @@ func gitConfigValue(dir, key string) string {
 	return strings.TrimSpace(string(out))
 }
 
-func gitPull(dir string) error {
-	out, err := exec.Command("git", "-C", dir, "pull", "--rebase", "origin", "master").CombinedOutput()
+// gitCurrentBranch returns the vault repo's checked-out branch name (e.g.
+// "master" or "main"). Sync must never hardcode a branch: a fresh `git init`
+// can land on either name depending on git version and user config. It uses
+// symbolic-ref (not rev-parse) so it also works on an unborn HEAD before the
+// first commit.
+func gitCurrentBranch(dir string) (string, error) {
+	out, err := exec.Command("git", "-C", dir, "symbolic-ref", "--short", "HEAD").CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("resolve branch: %s", strings.TrimSpace(string(out)))
+	}
+	branch := strings.TrimSpace(string(out))
+	if branch == "" {
+		return "", fmt.Errorf("resolve branch: empty")
+	}
+	return branch, nil
+}
+
+// ensureRemote points the repo's origin at url, adding it when absent and
+// replacing it when it points elsewhere. It makes config.json's git_remote_url
+// the single source of truth for where backups are pushed.
+func ensureRemote(dir, url string) error {
+	out, _ := exec.Command("git", "-C", dir, "remote", "get-url", "origin").Output()
+	current := strings.TrimSpace(string(out))
+	if current == url {
+		return nil
+	}
+	action := "set-url"
+	if current == "" {
+		action = "add"
+	}
+	if out, err := exec.Command("git", "-C", dir, "remote", action, "origin", url).CombinedOutput(); err != nil {
+		return fmt.Errorf("%s: %s", action, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
+func gitPull(dir, branch string) error {
+	out, err := exec.Command("git", "-C", dir, "pull", "--rebase", "origin", branch).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s", strings.TrimSpace(string(out)))
 	}
 	return nil
 }
 
-func gitAddCommitPush(dir, op, title string) error {
+func gitCommit(dir, op, title string) error {
+	// SyncSnapshot writes recipes.json (atomic tmp+rename) from request
+	// handlers. `git add -A` racing that rename produces "short read while
+	// indexing recipes.json". Holding snapshotMu serializes indexing against
+	// snapshot writes. The lock covers only the local add+commit, never the
+	// network pull/push, so a slow remote cannot stall snapshot writes.
+	snapshotMu.Lock()
+	defer snapshotMu.Unlock()
+
 	if out, err := exec.Command("git", "-C", dir, "add", "-A").CombinedOutput(); err != nil {
 		return fmt.Errorf("add: %s", strings.TrimSpace(string(out)))
 	}
@@ -300,10 +418,12 @@ func gitAddCommitPush(dir, op, title string) error {
 			return fmt.Errorf("commit: %s", strings.TrimSpace(string(out)))
 		}
 	}
+	return nil
+}
 
-	if out, err := exec.Command("git", "-C", dir, "push", "origin", "master").CombinedOutput(); err != nil {
+func gitPush(dir, branch string) error {
+	if out, err := exec.Command("git", "-C", dir, "push", "origin", branch).CombinedOutput(); err != nil {
 		return fmt.Errorf("push: %s", strings.TrimSpace(string(out)))
 	}
-	logInfo("git: %s vaulted", title)
 	return nil
 }
