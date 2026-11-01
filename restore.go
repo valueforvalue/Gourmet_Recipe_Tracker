@@ -3,7 +3,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -24,15 +23,15 @@ func RestoreFromVault(dir string, db *sql.DB) (int, error) {
 	for _, f := range files {
 		r, err := ParseRecipeFile(filepath.Join(dir, f))
 		if err != nil {
-			fmt.Printf(" [Restore] skip %s: %v\n", f, err)
+			logWarn("restore: skip %s: %v", f, err)
 			continue
 		}
 		if r.Title == "" {
-			fmt.Printf(" [Restore] skip %s: missing title\n", f)
+			logWarn("restore: skip %s: missing title", f)
 			continue
 		}
 		if err := saveRecipeDB(db, r); err != nil {
-			fmt.Printf(" [Restore] failed %s: %v\n", f, err)
+			logError("restore: failed %s: %v", f, err)
 			continue
 		}
 		restored++

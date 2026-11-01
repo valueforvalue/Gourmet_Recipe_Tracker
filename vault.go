@@ -95,12 +95,12 @@ func SyncVaultDelete(title string) {
 		case syncQueue <- SyncTask{Op: "delete", Title: title}:
 			return
 		default:
-			fmt.Printf(" [Sync Error]: queue full, vault delete for %q skipped\n", title)
+			logError("sync: queue full, vault delete for %q skipped", title)
 			return
 		}
 	}
 	if _, err := removeVaultEntry(vaultDir(), title); err != nil {
-		fmt.Printf(" [Sync Error]: %v\n", err)
+		logError("sync: %v", err)
 	}
 }
 
@@ -197,7 +197,7 @@ func removeManifestEntry(entries []ManifestEntry, title string) []ManifestEntry 
 func StartSyncWorker() {
 	for task := range syncQueue {
 		if err := processSyncTaskGuarded(task); err != nil {
-			fmt.Printf(" [Sync Error]: %v\n", err)
+			logError("sync: %v", err)
 		}
 	}
 }
@@ -246,7 +246,7 @@ func processSyncTask(task SyncTask) error {
 	// Rebase onto the remote before pushing so a remote that moved ahead does
 	// not cause a hard push failure.
 	if err := gitPull(dir); err != nil {
-		fmt.Printf(" [Sync Warning]: pull: %v\n", err)
+		logWarn("sync: pull: %v", err)
 	}
 	return gitAddCommitPush(dir, task.Op, task.Title)
 }
@@ -301,6 +301,6 @@ func gitAddCommitPush(dir, op, title string) error {
 	if out, err := exec.Command("git", "-C", dir, "push", "origin", "master").CombinedOutput(); err != nil {
 		return fmt.Errorf("push: %s", strings.TrimSpace(string(out)))
 	}
-	fmt.Printf(" [Git Success]: %s vaulted to GitHub.\n", title)
+	logInfo("git: %s vaulted", title)
 	return nil
 }

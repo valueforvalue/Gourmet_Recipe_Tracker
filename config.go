@@ -55,12 +55,12 @@ func loadConfig(path string) error {
 		if err := os.Chmod(path, 0600); err != nil {
 			return fmt.Errorf("chmod %s: %w", path, err)
 		}
-		fmt.Println(" [Config]: Loaded settings from", path)
+		logInfo("config: loaded settings from %s", path)
 	case os.IsNotExist(err):
 		if err := saveConfig(path); err != nil {
 			return fmt.Errorf("create default %s: %w", path, err)
 		}
-		fmt.Println(" [Config]: Created default", path)
+		logInfo("config: created default %s", path)
 	default:
 		return fmt.Errorf("read %s: %w", path, err)
 	}
@@ -102,7 +102,7 @@ func applyEnvOverrides() {
 		if b, err := strconv.ParseBool(v); err == nil {
 			GlobalConfig.GitSync = b
 		} else {
-			fmt.Printf(" [Config] Warning: RECIPE_GIT_SYNC=%q is not a bool (use true/false)\n", v)
+			logWarn("config: RECIPE_GIT_SYNC=%q is not a bool (use true/false)", v)
 		}
 	}
 	if v := os.Getenv("RECIPE_GIT_REMOTE"); v != "" {

@@ -25,6 +25,10 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing
   `config.json` keeps its stored value. Git backup is opt-in.
+- Logging: all diagnostics now go through a rotating `tracker.log`
+  (10 MB → `tracker.log.1`) with unified `[INFO]`/`[WARN]`/`[ERROR]` levels.
+  Previously `fmt.Print*` calls in config/db/vault/restore bypassed the log
+  file. (Regression: `TestRotatingLogWriter`)
 - `just build` now targets `morris-tracker.exe` (matches the existing
   deployment binary name); `run_tracker.bat` just launches that exe instead
   of rebuilding from source or checking for updates.

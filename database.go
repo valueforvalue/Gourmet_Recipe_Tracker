@@ -27,7 +27,7 @@ func InitConfig() {
 		// Check if it's already a git repo
 		dotGit := filepath.Join(GlobalConfig.BackupPath, ".git")
 		if _, err := os.Stat(dotGit); os.IsNotExist(err) {
-			fmt.Printf(" [Git]: Initializing new repository at %s\n", GlobalConfig.BackupPath)
+			logInfo("git: initializing new repository at %s", GlobalConfig.BackupPath)
 			exec.Command("git", "-C", GlobalConfig.BackupPath, "init").Run()
 		}
 
@@ -36,7 +36,7 @@ func InitConfig() {
 			// Check if origin already exists
 			out, _ := exec.Command("git", "-C", GlobalConfig.BackupPath, "remote").Output()
 			if !strings.Contains(string(out), "origin") {
-				fmt.Printf(" [Git]: Linking to remote %s\n", GlobalConfig.GitRemoteURL)
+				logInfo("git: linking to remote %s", GlobalConfig.GitRemoteURL)
 				exec.Command("git", "-C", GlobalConfig.BackupPath, "remote", "add", "origin", GlobalConfig.GitRemoteURL).Run()
 				// Initial pull to sync with existing remote data if any
 				exec.Command("git", "-C", GlobalConfig.BackupPath, "pull", "origin", "master").Run()
@@ -105,11 +105,11 @@ func InitDB(dbPath string) (*sql.DB, error) {
 // SaveRecipe persists a recipe and mirrors it to the vault.
 func SaveRecipe(db *sql.DB, r Recipe) error {
 	if err := saveRecipeDB(db, r); err != nil {
-		fmt.Printf(" [DB Error]: %v\n", err)
+		logError("db: %v", err)
 		return err
 	}
 	if err := SyncSidecar(r); err != nil {
-		fmt.Printf(" [Sync Error]: %v\n", err)
+		logError("sync: %v", err)
 	}
 	return nil
 }

@@ -37,3 +37,4 @@ release/
 *.swp
 *.bak
 *.log
+*.log.*

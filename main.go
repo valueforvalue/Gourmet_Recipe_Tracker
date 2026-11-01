@@ -8,7 +8,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"io/fs"
 	"log"
 	"net"
@@ -63,7 +62,7 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
-				log.Printf(" [Panic] %s %s: %v", r.Method, r.URL.Path, rec)
+				logError("panic %s %s: %v", r.Method, r.URL.Path, rec)
 				http.Error(w, "Internal server error", http.StatusInternalServerError)
 			}
 		}()
@@ -76,7 +75,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		next.ServeHTTP(w, r)
-		log.Printf(" [API] %s %s (%s)", r.Method, r.URL.Path, time.Since(start))
+		logInfo("api %s %s (%s)", r.Method, r.URL.Path, time.Since(start))
 	})
 }
 
@@ -92,14 +91,13 @@ func main() {
 	}
 
 	// Initialize Logging
-	logFile, err := os.OpenFile("tracker.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logFile, err := setupLogging()
 	if err != nil {
 		fmt.Printf(" [!] Warning: Could not create log file: %v\n", err)
+		log.SetOutput(os.Stdout)
+		log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	} else {
 		defer logFile.Close()
-		multi := io.MultiWriter(os.Stdout, logFile)
-		log.SetOutput(multi)
-		log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	}
 
 	if err := LoadConfig(); err != nil {
@@ -127,7 +125,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Restore failed: %v", err)
 		}
-		log.Printf("Restored %d recipe(s) from %s", n, dir)
+		logInfo("restored %d recipe(s) from %s", n, dir)
 		return
 	}
 
@@ -136,12 +134,12 @@ func main() {
 		go StartSyncWorker()
 	}
 
-	log.Println("-----------------------------------------------")
-	log.Printf(" Morris Family Recipe Tracker v%s", Version)
+	logInfo("-----------------------------------------------")
+	logInfo("Morris Family Recipe Tracker v%s", Version)
 	if GlobalConfig.GitSync {
-		log.Printf(" [!] GIT SYNC: ENABLED (Target: %s)", GlobalConfig.BackupPath)
+		logInfo("git sync enabled (target: %s)", GlobalConfig.BackupPath)
 	} else {
-		log.Println(" [ ] GIT SYNC: DISABLED (Local only mode)")
+		logInfo("git sync disabled (local only mode)")
 	}
 
 	mux := http.NewServeMux()
@@ -156,7 +154,7 @@ func main() {
 	mux.HandleFunc("/api/recipes", func(w http.ResponseWriter, r *http.Request) {
 		recipes, err := GetAllRecipes(db)
 		if err != nil {
-			log.Printf(" [Error] GetAllRecipes: %v", err)
+			logError("GetAllRecipes: %v", err)
 			http.Error(w, "Failed to load recipes", http.StatusInternalServerError)
 			return
 		}
@@ -170,29 +168,29 @@ func main() {
 
 	mux.HandleFunc("/api/scrape", func(w http.ResponseWriter, r *http.Request) {
 		targetURL := r.URL.Query().Get("url")
-		log.Printf(" [API] GET /api/scrape: %s", targetURL)
+		logInfo("scrape %s", targetURL)
 		if !isSafeURL(targetURL) {
-			log.Printf(" [Error] Scrape blocked unsafe URL: %s", targetURL)
+			logError("scrape blocked unsafe URL: %s", targetURL)
 			http.Error(w, "Invalid or disallowed URL", http.StatusBadRequest)
 			return
 		}
 		resp, err := scrapeClient.Get(targetURL)
 		if err != nil {
-			log.Printf(" [Error] Scrape Fetch: %v", err)
+			logError("scrape fetch: %v", err)
 			http.Error(w, "Failed to fetch URL", http.StatusInternalServerError)
 			return
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != 200 {
-			log.Printf(" [Error] Scrape Status: %d", resp.StatusCode)
+			logError("scrape status: %d", resp.StatusCode)
 			http.Error(w, fmt.Sprintf("Website returned status code: %d", resp.StatusCode), http.StatusBadRequest)
 			return
 		}
 
 		doc, err := goquery.NewDocumentFromReader(resp.Body)
 		if err != nil {
-			log.Printf(" [Error] Scrape Parse: %v", err)
+			logError("scrape parse: %v", err)
 			http.Error(w, "Failed to parse HTML", http.StatusInternalServerError)
 			return
 		}
@@ -240,17 +238,17 @@ func main() {
 
 	mux.HandleFunc("/api/export/pdf", func(w http.ResponseWriter, r *http.Request) {
 		title := r.URL.Query().Get("title")
-		log.Printf(" [API] GET /api/export/pdf: %s", title)
+		logInfo("export pdf: %s", title)
 		isBooklet := r.URL.Query().Get("booklet") == "true"
 		recipe, err := GetRecipeByTitle(db, title)
 		if err != nil {
-			log.Printf(" [Error] GetRecipeByTitle: %v", err)
+			logError("GetRecipeByTitle: %v", err)
 			http.Error(w, "Recipe not found", http.StatusNotFound)
 			return
 		}
 
 		if err := ExportToPDF(recipe, isBooklet); err != nil {
-			log.Printf(" [Error] ExportToPDF: %v", err)
+			logError("ExportToPDF: %v", err)
 			http.Error(w, "Failed to export PDF", http.StatusInternalServerError)
 			return
 		}
@@ -272,13 +270,13 @@ func main() {
 		isBooklet := r.URL.Query().Get("booklet") == "true"
 		recipes, err := GetAllRecipes(db)
 		if err != nil {
-			log.Printf(" [Error] GetAllRecipes: %v", err)
+			logError("GetAllRecipes: %v", err)
 			http.Error(w, "Failed to load recipes", http.StatusInternalServerError)
 			return
 		}
 
 		if err := ExportMasterCookbook(recipes, isBooklet); err != nil {
-			log.Printf(" [Error] ExportMasterCookbook: %v", err)
+			logError("ExportMasterCookbook: %v", err)
 			http.Error(w, "Failed to export cookbook", http.StatusInternalServerError)
 			return
 		}
@@ -295,17 +293,15 @@ func main() {
 	})
 
 	localIP := getLocalIP()
-	log.Printf(" [Mobile Access]: http://%s:%s", localIP, GlobalConfig.Port)
-	log.Println("-----------------------------------------------")
+	logInfo("mobile access: http://%s:%s", localIP, GlobalConfig.Port)
+	logInfo("-----------------------------------------------")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	handler := corsMiddleware(loggingMiddleware(recoveryMiddleware(mux)))
-	if err := runSupervised(ctx, ":"+GlobalConfig.Port, handler); err != nil {
-		log.Fatalf("Server error: %v", err)
-	}
-	log.Println("Server stopped.")
+	_ = runSupervised(ctx, ":"+GlobalConfig.Port, handler)
+	logInfo("server stopped.")
 }
 
 // newHTTPServer builds an http.Server with conservative timeouts so a slow
@@ -354,9 +350,8 @@ func sleepCtx(ctx context.Context, d time.Duration) bool {
 }
 
 // runSupervised serves handler on addr until ctx is cancelled, restarting on
-// transient listen/serve failures with exponential backoff. A graceful
-// shutdown returns nil; it returns a non-nil error only when ctx is cancelled
-// mid-backoff.
+// transient listen/serve failures with exponential backoff. It returns nil on
+// graceful shutdown.
 func runSupervised(ctx context.Context, addr string, handler http.Handler) error {
 	backoff := time.Second
 	for {
@@ -364,9 +359,9 @@ func runSupervised(ctx context.Context, addr string, handler http.Handler) error
 
 		ln, err := net.Listen("tcp", addr)
 		if err != nil {
-			log.Printf(" [Server] listen %s: %v; retry in %s", addr, err, backoff)
+			logWarn("listen %s: %v; retry in %s", addr, err, backoff)
 			if !sleepCtx(ctx, backoff) {
-				return ctx.Err()
+				return nil
 			}
 			backoff = nextBackoff(backoff)
 			continue
@@ -380,14 +375,14 @@ func runSupervised(ctx context.Context, addr string, handler http.Handler) error
 			_ = s.Shutdown(shutdownCtx)
 		}(srv)
 
-		log.Printf(" [Server] listening on %s", addr)
+		logInfo("listening on %s", addr)
 		err = srv.Serve(ln)
 		if !shouldRestart(err) {
 			return nil
 		}
-		log.Printf(" [Server] crashed: %v; restart in %s", err, backoff)
+		logError("server crashed: %v; restart in %s", err, backoff)
 		if !sleepCtx(ctx, backoff) {
-			return ctx.Err()
+			return nil
 		}
 		backoff = nextBackoff(backoff)
 	}
@@ -416,7 +411,7 @@ func handleSaveRecipe(db *sql.DB) http.HandlerFunc {
 		}
 		var rcp Recipe
 		if err := json.NewDecoder(r.Body).Decode(&rcp); err != nil {
-			log.Printf(" [Error] POST /api/save (Decode): %v", err)
+			logError("save decode: %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -425,9 +420,9 @@ func handleSaveRecipe(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "Recipe title is required", http.StatusBadRequest)
 			return
 		}
-		log.Printf(" [API] POST /api/save: %s", rcp.Title)
+		logInfo("save: %s", rcp.Title)
 		if err := SaveRecipe(db, rcp); err != nil {
-			log.Printf(" [Error] SaveRecipe: %v", err)
+			logError("SaveRecipe: %v", err)
 			http.Error(w, "Failed to save recipe", http.StatusInternalServerError)
 			return
 		}
@@ -444,9 +439,9 @@ func handleDeleteRecipe(db *sql.DB) http.HandlerFunc {
 			return
 		}
 		title := r.URL.Query().Get("title")
-		log.Printf(" [API] POST /api/delete: %s", title)
+		logInfo("delete: %s", title)
 		if err := DeleteRecipe(db, title); err != nil {
-			log.Printf(" [Error] DeleteRecipe: %v", err)
+			logError("DeleteRecipe: %v", err)
 			http.Error(w, "Failed to delete recipe", http.StatusInternalServerError)
 			return
 		}
@@ -473,7 +468,7 @@ func getLocalIP() string {
 func ensureDirExists(path string) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.Mkdir(path, 0755); err != nil {
-			log.Printf(" [!] Warning: Could not create directory %s: %v", path, err)
+			logWarn("could not create directory %s: %v", path, err)
 		}
 	}
 }
