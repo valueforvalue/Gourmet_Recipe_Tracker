@@ -3,6 +3,7 @@
 // Home screen — displays all recipes with live search/filter.
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/recipe.dart';
 import '../services/api_service.dart';
 import 'recipe_detail_screen.dart';
@@ -115,12 +116,28 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     }
   }
 
+  Future<void> _openFeedback() async {
+    const url = 'https://submit-form.com/SftusnkmF';
+    if (!await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open feedback form')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recipe Tracker'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.feedback_outlined),
+            tooltip: 'Send Feedback',
+            onPressed: _openFeedback,
+          ),
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Server Settings',
