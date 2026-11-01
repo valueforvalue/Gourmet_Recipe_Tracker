@@ -6928,7 +6928,7 @@ var $author$project$Main$update = F2(
 								ingredients: A2($elm$core$String$join, '\n', r.ingredients),
 								instructions: A2($elm$core$String$join, '\n', r.instructions),
 								notes: r.notes,
-								status: empty ? 'Scrape found no recipe data. Try a different URL, or enter manually below.' : 'Scraped! Review and edit below, then Save.',
+								status: empty ? 'Scrape found no recipe data. Try a different URL, or enter the recipe manually.' : 'Scraped! Review and edit the recipe, then Save.',
 								title: r.title
 							}),
 						$elm$core$Platform$Cmd$none);

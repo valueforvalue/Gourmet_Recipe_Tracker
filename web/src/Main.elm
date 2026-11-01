@@ -175,10 +175,10 @@ update msg model =
                         , notes = r.notes
                         , status =
                             if empty then
-                                "Scrape found no recipe data. Try a different URL, or enter manually below."
+                                "Scrape found no recipe data. Try a different URL, or enter the recipe manually."
 
                             else
-                                "Scraped! Review and edit below, then Save."
+                                "Scraped! Review and edit the recipe, then Save."
                       }
                     , Cmd.none
                     )
