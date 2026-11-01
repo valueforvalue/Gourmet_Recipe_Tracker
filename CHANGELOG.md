@@ -74,6 +74,7 @@ Commit subjects follow [Conventional Commits](https://www.conventionalcommits.or
 - Flutter: "Deleted" tab with restore + permanent purge (single + purge-all
   with `yesdeary` confirmation), backed by the server's soft-delete endpoints.
 - Flutter: feedback button in the list screen opens the submit-form endpoint.
+- Flutter list screen shows total recipe count and per-tag counts on chips.
 
 ### Changed
 - `git_sync` now defaults to `false` for brand-new config files; an existing

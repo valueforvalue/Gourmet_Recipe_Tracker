@@ -89,6 +89,13 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
     return tags;
   }
 
+  int _tagCount(String tag) => _allRecipes.where((r) => r.tags.contains(tag)).length;
+
+  String get _totalLabel {
+    final n = _allRecipes.length;
+    return n == 1 ? '1 recipe' : '$n recipes';
+  }
+
   Future<void> _deleteRecipe(Recipe recipe) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -227,6 +234,13 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
 
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(_totalLabel, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          ),
+        ),
         if (tags.isNotEmpty)
           SizedBox(
             height: 44,
@@ -239,7 +253,7 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
                   _applyFilter();
                 }),
                 for (final tag in tags)
-                  _TagChip(label: tag, selected: _activeTag == tag, onTap: () {
+                  _TagChip(label: '$tag (${_tagCount(tag)})', selected: _activeTag == tag, onTap: () {
                     setState(() => _activeTag = _activeTag == tag ? '' : tag);
                     _applyFilter();
                   }),
